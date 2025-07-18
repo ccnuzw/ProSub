@@ -1,0 +1,58 @@
+23:53:04.401	Cloning repository...
+23:53:05.049	From https://github.com/imzyb/ProSub
+23:53:05.050	 * branch            4991c59664d4ad59eb8987e1770089c9e89f07a3 -> FETCH_HEAD
+23:53:05.050	
+23:53:05.077	HEAD is now at 4991c59 创建
+23:53:05.077	
+23:53:05.158	
+23:53:05.158	Using v2 root directory strategy
+23:53:05.181	Success: Finished cloning repository files
+23:53:06.930	Checking for configuration in a Wrangler configuration file (BETA)
+23:53:06.931	
+23:53:08.047	No wrangler.toml file found. Continuing.
+23:53:08.112	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+23:53:08.112	Installing project dependencies: npm clean-install --progress=false
+23:53:22.750	
+23:53:22.751	added 451 packages, and audited 452 packages in 14s
+23:53:22.751	
+23:53:22.751	143 packages are looking for funding
+23:53:22.751	  run `npm fund` for details
+23:53:22.752	
+23:53:22.752	found 0 vulnerabilities
+23:53:22.786	Executing user command: npm install && npm run build
+23:53:24.055	
+23:53:24.056	up to date, audited 452 packages in 948ms
+23:53:24.056	
+23:53:24.056	143 packages are looking for funding
+23:53:24.056	  run `npm fund` for details
+23:53:24.056	
+23:53:24.057	found 0 vulnerabilities
+23:53:24.444	
+23:53:24.444	> prosub@0.1.0 build
+23:53:24.444	> next build
+23:53:24.444	
+23:53:25.384	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+23:53:25.389	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+23:53:25.389	This information is used to shape Next.js' roadmap and prioritize features.
+23:53:25.389	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+23:53:25.390	https://nextjs.org/telemetry
+23:53:25.390	
+23:53:25.507	   ▲ Next.js 15.4.1
+23:53:25.508	
+23:53:25.529	   Creating an optimized production build ...
+23:53:40.627	Failed to compile.
+23:53:40.627	
+23:53:40.627	src/app/layout.tsx
+23:53:40.627	An error occurred in `next/font`.
+23:53:40.628	
+23:53:40.628	Error: Your custom PostCSS configuration must export a `plugins` key.
+23:53:40.628	    at getPostCssPlugins (/opt/buildhome/repo/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:114:37)
+23:53:40.628	    at async /opt/buildhome/repo/node_modules/next/dist/build/webpack/config/blocks/css/index.js:125:36
+23:53:40.628	    at async /opt/buildhome/repo/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js:94:33
+23:53:40.628	    at async Span.traceAsyncFn (/opt/buildhome/repo/node_modules/next/dist/trace/trace.js:157:20)
+23:53:40.628	
+23:53:40.631	
+23:53:40.632	> Build failed because of webpack errors
+23:53:40.692	Failed: Error while executing user command. Exited with error code: 1
+23:53:40.703	Failed: build command exited with code: 1
+23:53:41.991	Failed: error occurred while running build command
