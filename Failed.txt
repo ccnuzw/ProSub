@@ -1,60 +1,108 @@
-00:37:54.451	Cloning repository...
-00:37:55.075	From https://github.com/imzyb/ProSub
-00:37:55.075	 * branch            633b7372b98815534e98c2f0e22a63cf2d898cd2 -> FETCH_HEAD
-00:37:55.075	
-00:37:55.106	HEAD is now at 633b737 创建
-00:37:55.107	
-00:37:55.185	
-00:37:55.186	Using v2 root directory strategy
-00:37:55.206	Success: Finished cloning repository files
-00:37:56.907	Checking for configuration in a Wrangler configuration file (BETA)
-00:37:56.907	
-00:37:58.018	No wrangler.toml file found. Continuing.
-00:37:58.087	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-00:37:58.088	Installing project dependencies: npm clean-install --progress=false
-00:38:12.638	
-00:38:12.639	added 451 packages, and audited 452 packages in 14s
-00:38:12.639	
-00:38:12.639	143 packages are looking for funding
-00:38:12.639	  run `npm fund` for details
-00:38:12.640	
-00:38:12.640	found 0 vulnerabilities
-00:38:12.672	Executing user command: npm install && npm run build
-00:38:13.943	
-00:38:13.943	up to date, audited 452 packages in 951ms
-00:38:13.943	
-00:38:13.944	143 packages are looking for funding
-00:38:13.944	  run `npm fund` for details
-00:38:13.944	
-00:38:13.945	found 0 vulnerabilities
-00:38:14.355	
-00:38:14.355	> prosub@0.1.0 build
-00:38:14.355	> next build
-00:38:14.356	
-00:38:15.303	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
-00:38:15.309	Attention: Next.js now collects completely anonymous telemetry regarding usage.
-00:38:15.309	This information is used to shape Next.js' roadmap and prioritize features.
-00:38:15.310	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-00:38:15.310	https://nextjs.org/telemetry
-00:38:15.310	
-00:38:15.430	   ▲ Next.js 15.4.1
-00:38:15.431	
-00:38:15.452	   Creating an optimized production build ...
-00:38:43.614	 ✓ Compiled successfully in 24.0s
-00:38:43.619	   Linting and checking validity of types ...
-00:38:48.288	Failed to compile.
-00:38:48.289	
-00:38:48.289	./src/app/api/auth/login/route.ts:8:35
-00:38:48.290	Type error: Cannot find name 'KVNamespace'.
-00:38:48.290	
-00:38:48.290	   6 |
-00:38:48.290	   7 | const getKVNamespace = () => {
-00:38:48.290	>  8 |   return process.env.PROSUB_KV as KVNamespace
-00:38:48.290	     |                                   ^
-00:38:48.291	   9 | }
-00:38:48.291	  10 |
-00:38:48.291	  11 | export async function POST(request: Request) {
-00:38:48.318	Next.js build worker exited with code: 1 and signal: null
-00:38:48.342	Failed: Error while executing user command. Exited with error code: 1
-00:38:48.355	Failed: build command exited with code: 1
-00:38:49.370	Failed: error occurred while running build command
+01:05:35.831	Cloning repository...
+01:05:36.539	From https://github.com/imzyb/ProSub
+01:05:36.539	 * branch            3674876733f1f9243ba1642c303d94d2e85a1d48 -> FETCH_HEAD
+01:05:36.540	
+01:05:36.570	HEAD is now at 3674876 创建
+01:05:36.570	
+01:05:36.652	
+01:05:36.656	Using v2 root directory strategy
+01:05:36.679	Success: Finished cloning repository files
+01:05:38.363	Checking for configuration in a Wrangler configuration file (BETA)
+01:05:38.364	
+01:05:39.464	No wrangler.toml file found. Continuing.
+01:05:39.534	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+01:05:39.535	Installing project dependencies: npm clean-install --progress=false
+01:05:53.897	
+01:05:53.897	added 452 packages, and audited 453 packages in 14s
+01:05:53.897	
+01:05:53.897	143 packages are looking for funding
+01:05:53.898	  run `npm fund` for details
+01:05:53.898	
+01:05:53.898	found 0 vulnerabilities
+01:05:53.931	Executing user command: npm install && npm run build
+01:05:55.191	
+01:05:55.191	up to date, audited 453 packages in 938ms
+01:05:55.192	
+01:05:55.192	143 packages are looking for funding
+01:05:55.192	  run `npm fund` for details
+01:05:55.192	
+01:05:55.193	found 0 vulnerabilities
+01:05:55.589	
+01:05:55.589	> prosub@0.1.0 build
+01:05:55.589	> next build
+01:05:55.590	
+01:05:56.535	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+01:05:56.540	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+01:05:56.540	This information is used to shape Next.js' roadmap and prioritize features.
+01:05:56.540	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+01:05:56.541	https://nextjs.org/telemetry
+01:05:56.541	
+01:05:56.657	   ▲ Next.js 15.4.1
+01:05:56.657	
+01:05:56.679	   Creating an optimized production build ...
+01:06:25.227	 ✓ Compiled successfully in 24.0s
+01:06:25.233	   Linting and checking validity of types ...
+01:06:29.870	   Collecting page data ...
+01:06:33.432	   Generating static pages (0/31) ...
+01:06:34.117	   Generating static pages (7/31) 
+01:06:34.489	   Generating static pages (15/31) 
+01:06:35.095	   Generating static pages (23/31) 
+01:06:35.495	 ✓ Generating static pages (31/31)
+01:06:35.816	   Finalizing page optimization ...
+01:06:35.816	   Collecting build traces ...
+01:06:41.986	
+01:06:41.989	Route (app)                                 Size  First Load JS
+01:06:41.989	┌ ○ /                                    5.46 kB         105 kB
+01:06:41.990	├ ○ /_not-found                            999 B         101 kB
+01:06:41.990	├ ƒ /api/auth/login                        175 B         100 kB
+01:06:41.990	├ ƒ /api/auth/logout                       175 B         100 kB
+01:06:41.990	├ ƒ /api/auth/me                           175 B         100 kB
+01:06:41.990	├ ƒ /api/auth/register                     175 B         100 kB
+01:06:41.990	├ ƒ /api/config/registration-enabled       175 B         100 kB
+01:06:41.990	├ ƒ /api/node-health-check                 175 B         100 kB
+01:06:41.990	├ ƒ /api/node-statuses                     175 B         100 kB
+01:06:41.990	├ ƒ /api/nodes                             175 B         100 kB
+01:06:41.991	├ ƒ /api/nodes/[id]                        175 B         100 kB
+01:06:41.991	├ ƒ /api/profiles                          175 B         100 kB
+01:06:41.991	├ ƒ /api/profiles/[id]                     175 B         100 kB
+01:06:41.991	├ ƒ /api/subscribe/[profile_id]            175 B         100 kB
+01:06:41.991	├ ƒ /api/subscriptions                     175 B         100 kB
+01:06:41.991	├ ƒ /api/subscriptions/[id]                175 B         100 kB
+01:06:41.991	├ ƒ /api/traffic                           175 B         100 kB
+01:06:41.991	├ ƒ /api/users                             175 B         100 kB
+01:06:41.991	├ ƒ /api/users/[id]                        175 B         100 kB
+01:06:41.992	├ ○ /dashboard                            109 kB         445 kB
+01:06:41.992	├ ○ /nodes                               5.62 kB         333 kB
+01:06:41.992	├ ƒ /nodes/[id]                          1.74 kB         262 kB
+01:06:41.992	├ ○ /nodes/new                           1.53 kB         262 kB
+01:06:41.992	├ ○ /profiles                            1.66 kB         338 kB
+01:06:41.992	├ ƒ /profiles/[id]                       1.48 kB         259 kB
+01:06:41.992	├ ○ /profiles/new                        1.29 kB         259 kB
+01:06:41.992	├ ○ /subscriptions                       1.11 kB         328 kB
+01:06:41.992	├ ƒ /subscriptions/[id]                   1.1 kB         222 kB
+01:06:41.992	├ ○ /subscriptions/new                     891 B         222 kB
+01:06:41.993	├ ○ /user                                4.22 kB         332 kB
+01:06:41.993	├ ƒ /user/[id]                           1.64 kB         257 kB
+01:06:41.993	├ ○ /user/change-password                1.15 kB         222 kB
+01:06:41.993	├ ○ /user/login                            947 B         222 kB
+01:06:41.993	├ ○ /user/new                            1.29 kB         257 kB
+01:06:41.993	├ ○ /user/profile                        2.94 kB         218 kB
+01:06:41.993	├ ○ /user/register                       1.08 kB         222 kB
+01:06:41.993	└ ○ /user/subscription                     342 B         100 kB
+01:06:41.993	+ First Load JS shared by all            99.9 kB
+01:06:41.994	  ├ chunks/4bd1b696-cc729d47eba2cee4.js  54.1 kB
+01:06:41.994	  ├ chunks/5964-1bef4b29c2fdd00a.js      43.9 kB
+01:06:41.994	  └ other shared chunks (total)          1.94 kB
+01:06:41.994	
+01:06:41.994	
+01:06:41.994	○  (Static)   prerendered as static content
+01:06:41.994	ƒ  (Dynamic)  server-rendered on demand
+01:06:41.994	
+01:06:42.042	Finished
+01:06:42.970	Checking for configuration in a Wrangler configuration file (BETA)
+01:06:42.970	
+01:06:44.087	No wrangler.toml file found. Continuing.
+01:06:44.088	Note: No functions dir at /functions found. Skipping.
+01:06:44.089	Validating asset output directory
+01:06:44.089	Error: Output directory "dist" not found.
+01:06:45.121	Failed: build output directory not found
