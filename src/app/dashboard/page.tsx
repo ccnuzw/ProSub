@@ -3,13 +3,39 @@
 
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import { Card, Col, Row, Statistic, message, Spin, Table, Select, Space } from 'antd'
 import { Node, Subscription, Profile, ProfileTrafficData } from '@/types'
 import { ClusterOutlined, FileTextOutlined, UsergroupAddOutlined, LineChartOutlined } from '@ant-design/icons'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const { Option } = Select
+
+// Dynamically import Recharts components
+const LineChart = dynamic(() => import('recharts').then((mod) => mod.LineChart), {
+  ssr: false,
+})
+const Line = dynamic(() => import('recharts').then((mod) => mod.Line), {
+  ssr: false,
+})
+const XAxis = dynamic(() => import('recharts').then((mod) => mod.XAxis), {
+  ssr: false,
+})
+const YAxis = dynamic(() => import('recharts').then((mod) => mod.YAxis), {
+  ssr: false,
+})
+const CartesianGrid = dynamic(() => import('recharts').then((mod) => mod.CartesianGrid), {
+  ssr: false,
+})
+const Tooltip = dynamic(() => import('recharts').then((mod) => mod.Tooltip), {
+  ssr: false,
+})
+const Legend = dynamic(() => import('recharts').then((mod) => mod.Legend), {
+  ssr: false,
+})
+const ResponsiveContainer = dynamic(() => import('recharts').then((mod) => mod.ResponsiveContainer), {
+  ssr: false,
+})
 
 export default function DashboardPage() {
   const [nodeCount, setNodeCount] = useState<number>(0)
