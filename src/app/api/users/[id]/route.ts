@@ -7,7 +7,9 @@ const getKVNamespace = () => {
   return process.env.PROSUB_KV as KVNamespace
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   const authenticatedUser = await authenticateUser(request)
   if (!authenticatedUser) {
     return NextResponse.json({ message: '未授权' }, { status: 401 })
@@ -29,7 +31,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   const authenticatedUser = await authenticateUser(request)
   if (!authenticatedUser) {
     return NextResponse.json({ message: '未授权' }, { status: 401 })
@@ -75,7 +79,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   const authenticatedUser = await authenticateUser(request)
   if (!authenticatedUser) {
     return NextResponse.json({ message: '未授权' }, { status: 401 })
