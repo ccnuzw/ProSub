@@ -3,13 +3,16 @@ import { NextResponse, NextRequest } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { User } from '@/types'
 import { authenticateUser } from '@/lib/auth'
-import bcrypt from 'bcryptjs'
+import { scrypt, randomBytes } from 'crypto'
+import { promisify } from 'util'
 
 interface UserCreateRequest {
   name: string;
   password: string;
   profiles?: string[];
 }
+
+const scryptPromise = promisify(scrypt)
 
 const getKV = () => {
   return process.env.KV as KVNamespace
@@ -29,8 +32,9 @@ export async function GET(request: NextRequest) {
     const adminUser = await KV.get(adminUserKey)
 
     if (!adminUser) {
-      const hashedPassword = await bcrypt.hash('admin', 10) // Default password is 'admin'
-      const newAdmin: User = { id: 'admin', name: 'admin', password: hashedPassword, profiles: [], defaultPasswordChanged: false }
+      const salt = randomBytes(16).toString('hex')
+      const hashedPassword = (await scryptPromise('admin', salt, 64)) as Buffer
+      const newAdmin: User = { id: 'admin', name: 'admin', password: `${salt}:${hashedPassword.toString('hex')}`, profiles: [], defaultPasswordChanged: false }
       await KV.put(adminUserKey, JSON.stringify(newAdmin))
       console.log('Default admin user created.')
     }
@@ -80,9 +84,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: '用户已存在' }, { status: 409 })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10) // Hash password with salt rounds = 10
+    const salt = randomBytes(16).toString('hex')
+    const hashedPassword = (await scryptPromise(password, salt, 64)) as Buffer
     const id = uuidv4()
-    const newUser: User = { id, name, password: hashedPassword, profiles: profiles || [], defaultPasswordChanged: true } // New users created via POST have changed password
+    const newUser: User = { id, name, password: `${salt}:${hashedPassword.toString('hex')}`, profiles: profiles || [], defaultPasswordChanged: true } // New users created via POST have changed password
     
     await KV.put(`user:${id}`, JSON.stringify(newUser))
     

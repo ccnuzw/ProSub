@@ -1,12 +1,21 @@
 
 import { NextResponse } from 'next/server'
 import { serialize } from 'cookie'
-import bcrypt from 'bcryptjs'
+import { scrypt, randomBytes } from 'crypto'
+import { promisify } from 'util'
 import { User } from '@/types'
 
 interface LoginRequest {
   name: string;
   password: string;
+}
+
+const scryptPromise = promisify(scrypt)
+
+async function scryptCompare(password: string, hash: string): Promise<boolean> {
+  const [salt, key] = hash.split(':')
+  const derivedKey = (await scryptPromise(password, salt, 64)) as Buffer
+  return derivedKey.toString('hex') === key
 }
 
 const getKV = () => {
@@ -36,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   // Compare provided password with hashed password
-  const passwordMatch = await bcrypt.compare(password, user.password)
+  const passwordMatch = await scryptCompare(password, user.password)
 
   if (!passwordMatch) {
     return NextResponse.json({ message: '用户名或密码不正确' }, { status: 401 })

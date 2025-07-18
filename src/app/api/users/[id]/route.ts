@@ -1,13 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { User } from '@/types'
 import { authenticateUser } from '@/lib/auth'
-import bcrypt from 'bcryptjs'
+import { scrypt, randomBytes } from 'crypto'
+import { promisify } from 'util'
 
 interface UserUpdateRequest {
   name: string;
   password?: string;
   profiles: string[];
 }
+
+const scryptPromise = promisify(scrypt)
 
 const getKV = () => {
   return process.env.KV as KVNamespace
@@ -58,7 +61,9 @@ export async function PUT(request: NextRequest, { params }: { // eslint-disable-
     let defaultPasswordChanged = existingUser.defaultPasswordChanged
 
     if (password) {
-      hashedPassword = await bcrypt.hash(password, 10)
+      const salt = randomBytes(16).toString('hex')
+      const derivedKey = (await scryptPromise(password, salt, 64)) as Buffer
+      hashedPassword = `${salt}:${derivedKey.toString('hex')}`
       // If admin user is changing password, mark defaultPasswordChanged as true
       if (existingUser.name === 'admin' && existingUser.defaultPasswordChanged === false) {
         defaultPasswordChanged = true

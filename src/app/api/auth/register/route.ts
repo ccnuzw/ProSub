@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { User } from '@/types'
-import bcrypt from 'bcryptjs'
+import { scrypt, randomBytes } from 'crypto'
+import { promisify } from 'util'
 
 const REGISTRATION_ENABLED_KEY = 'config:registration_enabled'
 
@@ -9,6 +10,8 @@ interface RegisterRequest {
   name: string;
   password: string;
 }
+
+const scryptPromise = promisify(scrypt)
 
 const getKV = () => {
   return process.env.KV as KVNamespace
@@ -42,9 +45,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: '用户已存在' }, { status: 409 })
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10) // Hash password with salt rounds = 10
+    const salt = randomBytes(16).toString('hex')
+    const hashedPassword = (await scryptPromise(password, salt, 64)) as Buffer
     const id = uuidv4()
-    const newUser: User = { id, name, password: hashedPassword, profiles: [] } // New users start with no profiles
+    const newUser: User = { id, name, password: `${salt}:${hashedPassword.toString('hex')}`, profiles: [] } // New users start with no profiles
     
     await KV.put(`user:${id}`, JSON.stringify(newUser))
     
