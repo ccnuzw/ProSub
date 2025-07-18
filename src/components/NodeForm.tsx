@@ -144,7 +144,7 @@ export default function NodeForm({ node }: NodeFormProps) {
           label="协议特定参数 (JSON 格式)"
           tooltip="请输入协议特有的配置参数，例如 VLESS 的 flow、Trojan 的 sni 等，格式为 JSON。"
         >
-          <Input.TextArea rows={4} placeholder="例如: { \"flow\": \"xtls-rprx-vision\", \"sni\": \"example.com\" }" />
+          <Input.TextArea rows={4} placeholder='例如: { "flow": "xtls-rprx-vision", "sni": "example.com" }' />
         </Form.Item>
       )}
 

@@ -15,10 +15,10 @@ const { Header, Content, Footer } = Layout
 const inter = Inter({ subsets: ['latin'] })
 
 // Metadata is not directly used in client components, but kept for consistency
-export const metadata: Metadata = {
-  title: 'ProSub - 节点订阅管理',
-  description: '轻量级机场订阅和自建节点管理分享项目',
-}
+// export const metadata: Metadata = {
+//   title: 'ProSub - 节点订阅管理',
+//   description: '轻量级机场订阅和自建节点管理分享项目',
+// }
 
 export default function RootLayout({
   children,

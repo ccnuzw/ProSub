@@ -116,10 +116,85 @@ ProSub 是一个基于 Cloudflare Pages 和 KV 存储的轻量级机场订阅和
 
 ## 4. 部署
 
-1.  **前端后端部署，无需分两次部署，一个项目即可完成：**
-    *   将 Next.js 项目连接到 Cloudflare Pages。
-    *   配置构建命令和输出目录。
-z
+ProSub 项目的部署主要依赖于 Cloudflare Pages 和 Cloudflare KV。由于项目的前端 (Next.js) 和后端 API (Next.js API Routes，由 Cloudflare Pages 自动作为 Serverless Functions 处理) 都集成在一个 Next.js 项目中，因此部署过程非常简化。
+
+### 4.1. 前提条件
+
+*   一个 Cloudflare 账号。
+*   已安装 Git。
+
+### 4.2. 克隆项目仓库
+
+首先，将 ProSub 项目仓库克隆到您的本地机器：
+
+```bash
+git clone https://github.com/imzyb/ProSub.git
+cd ProSub
+```
+
+### 4.3. 配置 Cloudflare KV 存储
+
+ProSub 使用 Cloudflare KV (Key-Value) 存储来持久化节点、订阅和配置文件数据。您需要创建一个 KV 命名空间并将其绑定到您的 Pages 项目。
+
+1.  **登录 Cloudflare Dashboard**：
+    访问 [Cloudflare Dashboard](https://dash.cloudflare.com/) 并登录您的账号。
+2.  **创建 KV 命名空间**：
+    *   在 Dashboard 左侧导航栏中，点击 **Workers & Pages**。
+    *   点击 **KV** 选项卡。
+    *   点击 **创建命名空间** 按钮。
+    *   为您的 KV 命名空间命名，例如 `PROSUB_DB` (这个名称将在后续步骤中用到)。
+    *   点击 **添加**。
+
+### 4.4. 部署到 Cloudflare Pages
+
+现在，您可以将项目部署到 Cloudflare Pages。Cloudflare Pages 会自动处理 Next.js 项目的构建和部署，包括将 API Routes 转换为 Serverless Functions。
+
+1.  **创建新的 Pages 项目**：
+    *   在 Cloudflare Dashboard 左侧导航栏中，点击 **Workers & Pages**。
+    *   点击 **创建应用程序**。
+    *   选择 **Pages** 选项卡，然后点击 **连接到 Git**。
+    *   选择您的 Git 提供商 (例如 GitHub)，授权 Cloudflare 访问您的仓库。
+    *   选择您刚刚克隆的 `ProSub` 仓库，然后点击 **开始设置**。
+2.  **配置构建设置**：
+    *   **项目名称**：输入一个项目名称 (例如 `prosub-app`)。
+    *   **生产分支**：选择 `main` (或您希望部署的分支)。
+    *   **构建设置**：
+        *   **框架预设**：选择 `Next.js`。
+        *   **构建命令**：`npm install && npm run build`
+        *   **构建输出目录**：`.next`
+    *   **环境变量**：
+        *   在 **环境变量** 部分，点击 **添加变量**。
+        *   **变量名称**：`PROSUB_KV` (这个名称是项目代码中预期的 KV 绑定名称)。
+        *   **值**：选择您在步骤 4.3 中创建的 KV 命名空间 (例如 `PROSUB_DB`)。
+        *   点击 **保存**。
+3.  **部署项目**：
+    *   点击 **保存并部署**。
+    *   Cloudflare Pages 将会自动拉取您的代码，安装依赖，构建项目，并将您的应用程序部署到全球的 Cloudflare CDN 上。
+
+部署完成后，您将获得一个 Pages 域名，您的 ProSub 应用程序将通过该域名访问。
+
+### 4.5. 自定义域名 (可选)
+
+如果您想使用自己的域名，可以在 Cloudflare Pages 项目设置中进行配置：
+
+1.  在 Cloudflare Dashboard 中，导航到您的 Pages 项目。
+2.  点击 **自定义域** 选项卡。
+3.  按照指示添加和配置您的自定义域名。
+
+### 4.6. 本地开发
+
+如果您想在本地进行开发和测试，可以按照以下步骤运行项目：
+
+1.  **安装依赖**：
+    ```bash
+    npm install
+    ```
+2.  **运行开发服务器**：
+    ```bash
+    npm run dev
+    ```
+    项目将在 `http://localhost:3000` (默认) 启动。请注意，本地开发环境无法直接访问 Cloudflare KV，您可能需要模拟 KV 行为或使用本地存储进行开发。
+
 ## 5. 总结
 
 ProSub 是一个功能强大且高度可定制的项目。通过遵循本文档中的设计和计划，您可以构建一个满足您所有代理管理需求的轻量级、高效的解决方案。
