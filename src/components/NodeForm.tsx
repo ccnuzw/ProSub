@@ -11,6 +11,10 @@ interface NodeFormProps {
   node?: Node
 }
 
+interface NodeFormValues extends Omit<Node, 'params'> {
+  params?: string;
+}
+
 export default function NodeForm({ node }: NodeFormProps) {
   const [form] = Form.useForm()
   const router = useRouter()
@@ -32,7 +36,7 @@ export default function NodeForm({ node }: NodeFormProps) {
     }
   }, [node, form])
 
-  const onFinish = async (values: Node) => {
+  const onFinish = async (values: NodeFormValues) => {
     setLoading(true)
     const method = node ? 'PUT' : 'POST'
     const url = node ? `/api/nodes/${node.id}` : '/api/nodes'
@@ -52,7 +56,7 @@ export default function NodeForm({ node }: NodeFormProps) {
     const dataToSend = {
       ...values,
       params: parsedParams,
-    }
+    } as Node
 
     try {
       const res = await fetch(url, {

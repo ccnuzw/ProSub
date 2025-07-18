@@ -34,7 +34,7 @@ export default function RootLayout({
       try {
         const res = await fetch('/api/auth/me')
         if (res.ok) {
-          const user = await res.json()
+          const user = await res.json() as User
           setCurrentUser(user)
           // If admin user and default password not changed, redirect to change password page
           if (user.name === 'admin' && user.defaultPasswordChanged === false && pathname !== '/user/change-password') {

@@ -1,18 +1,24 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { Profile } from '@/types'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface ProfileRequest {
+  name: string;
+  nodes: string[];
+  subscriptions: string[];
+}
+
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function GET() {
   try {
-    const kv = getKVNamespace()
-    const profileList = await kv.list({ prefix: 'profile:' })
+    const KV = getKV()
+    const profileList = await KV.list({ prefix: 'profile:' })
     const profiles = await Promise.all(
       profileList.keys.map(async ({ name }) => {
-        const profileJson = await kv.get(name)
+        const profileJson = await KV.get(name)
         return profileJson ? JSON.parse(profileJson) : null
       })
     )
@@ -23,14 +29,14 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, nodes, subscriptions } = await request.json()
+    const { name, nodes, subscriptions } = (await request.json()) as ProfileRequest
     const id = uuidv4()
     const newProfile: Profile = { id, name, nodes, subscriptions }
     
-    const kv = getKVNamespace()
-    await kv.put(`profile:${id}`, JSON.stringify(newProfile))
+    const KV = getKV()
+    await KV.put(`profile:${id}`, JSON.stringify(newProfile))
     
     return NextResponse.json(newProfile)
   } catch (error) {

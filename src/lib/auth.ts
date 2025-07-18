@@ -2,8 +2,8 @@
 import { NextRequest } from 'next/server'
 import { User } from '@/types'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function authenticateUser(request: NextRequest): Promise<User | null> {
@@ -13,9 +13,9 @@ export async function authenticateUser(request: NextRequest): Promise<User | nul
     return null
   }
 
-  const kv = getKVNamespace()
+  const KV = getKV()
   // In our simplified setup, the token is the user ID
-  const userJson = await kv.get(`user:${token}`)
+  const userJson = await KV.get(`user:${token}`)
 
   if (!userJson) {
     return null

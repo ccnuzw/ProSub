@@ -16,7 +16,7 @@ export default function EditProfilePage() {
       const fetchProfile = async () => {
         const res = await fetch(`/api/profiles/${id}`)
         if (res.ok) {
-          const data = await res.json()
+          const data = (await res.json()) as Profile
           setProfile(data)
         }
       }

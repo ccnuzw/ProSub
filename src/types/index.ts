@@ -4,7 +4,7 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      PROSUB_KV: KVNamespace;
+      KV: KVNamespace;
     }
   }
 }

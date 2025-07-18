@@ -5,33 +5,38 @@ import bcrypt from 'bcryptjs'
 
 const REGISTRATION_ENABLED_KEY = 'config:registration_enabled'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface RegisterRequest {
+  name: string;
+  password: string;
+}
+
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function POST(request: Request) {
   try {
-    const kv = getKVNamespace()
-    const isRegistrationEnabled = await kv.get(REGISTRATION_ENABLED_KEY)
+    const KV = getKV()
+    const isRegistrationEnabled = await KV.get(REGISTRATION_ENABLED_KEY)
     // Default to true if not set, or if explicitly true
     if (isRegistrationEnabled !== null && !JSON.parse(isRegistrationEnabled)) {
       return NextResponse.json({ message: '注册功能已关闭' }, { status: 403 })
     }
 
-    const { name, password } = await request.json()
+    const { name, password } = (await request.json()) as RegisterRequest
 
     if (!name || !password) {
       return NextResponse.json({ message: '用户名和密码是必填项' }, { status: 400 })
     }
 
     // Check if user already exists by name
-    const userList = await kv.list({ prefix: 'user:' })
+    const userList = await KV.list({ prefix: 'user:' })
     const existingUser = (await Promise.all(
-      userList.keys.map(async ({ name: keyName }) => {
-        const userJson = await kv.get(keyName)
+      userList.keys.map(async ({ name: keyName }: { name: string }) => {
+        const userJson = await KV.get(keyName)
         return userJson ? JSON.parse(userJson) : null
       })
-    )).filter(Boolean).find(u => u.name === name)
+    )).filter(Boolean).find((u: User) => u.name === name)
 
     if (existingUser) {
       return NextResponse.json({ message: '用户已存在' }, { status: 409 })
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
     const id = uuidv4()
     const newUser: User = { id, name, password: hashedPassword, profiles: [] } // New users start with no profiles
     
-    await kv.put(`user:${id}`, JSON.stringify(newUser))
+    await KV.put(`user:${id}`, JSON.stringify(newUser))
     
     // Do not return password hash
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

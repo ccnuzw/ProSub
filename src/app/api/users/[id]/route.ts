@@ -1,13 +1,19 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { User } from '@/types'
 import { authenticateUser } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface UserUpdateRequest {
+  name: string;
+  password?: string;
+  profiles: string[];
 }
 
-export async function GET(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getKV = () => {
+  return process.env.KV as KVNamespace
+}
+
+export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   const authenticatedUser = await authenticateUser(request)
@@ -16,8 +22,8 @@ export async function GET(request: Request, { params }: { // eslint-disable-next
   }
 
   try {
-    const kv = getKVNamespace()
-    const userJson = await kv.get(`user:${params.id}`)
+    const KV = getKV()
+    const userJson = await KV.get(`user:${params.id}`)
     if (!userJson) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
@@ -31,7 +37,7 @@ export async function GET(request: Request, { params }: { // eslint-disable-next
   }
 }
 
-export async function PUT(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   const authenticatedUser = await authenticateUser(request)
@@ -40,9 +46,9 @@ export async function PUT(request: Request, { params }: { // eslint-disable-next
   }
 
   try {
-    const { name, password, profiles } = await request.json()
-    const kv = getKVNamespace()
-    const userJson = await kv.get(`user:${params.id}`)
+    const { name, password, profiles } = (await request.json()) as UserUpdateRequest
+    const KV = getKV()
+    const userJson = await KV.get(`user:${params.id}`)
     if (!userJson) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
@@ -67,7 +73,7 @@ export async function PUT(request: Request, { params }: { // eslint-disable-next
       defaultPasswordChanged: defaultPasswordChanged
     }
     
-    await kv.put(`user:${params.id}`, JSON.stringify(updatedUser))
+    await KV.put(`user:${params.id}`, JSON.stringify(updatedUser))
     
     // Do not return password hash
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -79,7 +85,7 @@ export async function PUT(request: Request, { params }: { // eslint-disable-next
   }
 }
 
-export async function DELETE(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   const authenticatedUser = await authenticateUser(request)
@@ -88,8 +94,8 @@ export async function DELETE(request: Request, { params }: { // eslint-disable-n
   }
 
   try {
-    const kv = getKVNamespace()
-    await kv.delete(`user:${params.id}`)
+    const KV = getKV()
+    await KV.delete(`user:${params.id}`)
     
     return new Response(null, { status: 204 })
   } catch (error) {

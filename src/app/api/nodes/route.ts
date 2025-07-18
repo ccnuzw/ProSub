@@ -1,21 +1,26 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { Node } from '@/types'
 
-// This is a placeholder for the KV namespace.
-// In a real Cloudflare Workers environment, you would get this from the environment bindings.
-const getKVNamespace = () => {
-  // In a real application, process.env.PROSUB_KV would be populated by Cloudflare
-  return process.env.PROSUB_KV as KVNamespace
+interface NodeRequest {
+  name: string;
+  server: string;
+  port: number;
+  password?: string;
+  type: 'ss' | 'ssr' | 'vmess' | 'vless' | 'trojan' | 'socks5' | 'anytls' | 'tuic' | 'hysteria' | 'hysteria2' | 'vless-reality';
+}
+
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function GET() {
   try {
-    const kv = getKVNamespace()
-    const nodeList = await kv.list({ prefix: 'node:' })
+    const KV = getKV()
+    const nodeList = await KV.list({ prefix: 'node:' })
     const nodes = await Promise.all(
       nodeList.keys.map(async ({ name }) => {
-        const nodeJson = await kv.get(name)
+        const nodeJson = await KV.get(name)
         return nodeJson ? JSON.parse(nodeJson) : null
       })
     )
@@ -26,14 +31,14 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, server, port, password, type } = await request.json()
+    const { name, server, port, password, type } = (await request.json()) as NodeRequest
     const id = uuidv4()
     const newNode: Node = { id, name, server, port, password, type }
     
-    const kv = getKVNamespace()
-    await kv.put(`node:${id}`, JSON.stringify(newNode))
+    const KV = getKV()
+    await KV.put(`node:${id}`, JSON.stringify(newNode))
     
     return NextResponse.json(newNode)
   } catch (error) {

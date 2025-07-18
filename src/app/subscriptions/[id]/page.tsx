@@ -16,7 +16,7 @@ export default function EditSubscriptionPage() {
       const fetchSubscription = async () => {
         const res = await fetch(`/api/subscriptions/${id}`)
         if (res.ok) {
-          const data = await res.json()
+          const data = (await res.json()) as Subscription
           setSubscription(data)
         }
       }

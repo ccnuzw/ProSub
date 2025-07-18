@@ -1,32 +1,32 @@
 
 
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { Profile, Node, Subscription } from '@/types'
 import { Buffer } from 'buffer'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
-async function getProfile(kv: KVNamespace, profileId: string): Promise<Profile | null> {
-  const profileJson = await kv.get(`profile:${profileId}`)
+async function getProfile(KV: KVNamespace, profileId: string): Promise<Profile | null> {
+  const profileJson = await KV.get(`profile:${profileId}`)
   return profileJson ? JSON.parse(profileJson) : null
 }
 
-async function getNodes(kv: KVNamespace, nodeIds: string[]): Promise<Node[]> {
+async function getNodes(KV: KVNamespace, nodeIds: string[]): Promise<Node[]> {
   const nodes = await Promise.all(
     nodeIds.map(async (id) => {
-      const nodeJson = await kv.get(`node:${id}`)
+      const nodeJson = await KV.get(`node:${id}`)
       return nodeJson ? JSON.parse(nodeJson) : null
     })
   )
   return nodes.filter(Boolean)
 }
 
-async function getSubscriptions(kv: KVNamespace, subIds: string[]): Promise<Subscription[]> {
+async function getSubscriptions(KV: KVNamespace, subIds: string[]): Promise<Subscription[]> {
   const subs = await Promise.all(
     subIds.map(async (id) => {
-      const subJson = await kv.get(`subscription:${id}`)
+      const subJson = await KV.get(`subscription:${id}`)
       return subJson ? JSON.parse(subJson) : null
     })
   )
@@ -199,35 +199,35 @@ function convertNodeToUri(node: Node): string {
 }
 
 // Records a traffic event in KV
-async function recordTraffic(kv: KVNamespace, profileId: string) {
+async function recordTraffic(KV: KVNamespace, profileId: string) {
   try {
     const timestamp = new Date().toISOString()
     const key = `traffic:${profileId}:${timestamp}`
-    await kv.put(key, JSON.stringify({ timestamp, profileId }))
+    await KV.put(key, JSON.stringify({ timestamp, profileId }))
   } catch (error) {
     console.error('Failed to record traffic:', error)
   }
 }
 
-export async function GET(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   try {
-    const kv = getKVNamespace()
-    const profile = await getProfile(kv, params.profile_id)
+    const KV = getKV()
+    const profile = await getProfile(KV, params.profile_id)
 
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
     // Record traffic before generating the subscription
-    await recordTraffic(kv, params.profile_id)
+    await recordTraffic(KV, params.profile_id)
 
     const target = request.nextUrl.searchParams.get('target') || 'clash' // Default to clash
 
     const [manualNodes, subscriptions] = await Promise.all([
-      getNodes(kv, profile.nodes || []),
-      getSubscriptions(kv, profile.subscriptions || []),
+      getNodes(KV, profile.nodes || []),
+      getSubscriptions(KV, profile.subscriptions || []),
     ])
 
     // 1. Generate raw node links from manual nodes

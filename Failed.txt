@@ -1,60 +1,60 @@
-00:35:20.298	Cloning repository...
-00:35:20.921	From https://github.com/imzyb/ProSub
-00:35:20.922	 * branch            bd9e228d8279a35cf71c8881e1449bc572b9a326 -> FETCH_HEAD
-00:35:20.922	
-00:35:20.952	HEAD is now at bd9e228 创建
-00:35:20.952	
-00:35:21.029	
-00:35:21.029	Using v2 root directory strategy
-00:35:21.051	Success: Finished cloning repository files
-00:35:22.787	Checking for configuration in a Wrangler configuration file (BETA)
-00:35:22.788	
-00:35:23.895	No wrangler.toml file found. Continuing.
-00:35:23.965	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-00:35:23.966	Installing project dependencies: npm clean-install --progress=false
-00:35:38.487	
-00:35:38.488	added 451 packages, and audited 452 packages in 14s
-00:35:38.488	
-00:35:38.488	143 packages are looking for funding
-00:35:38.488	  run `npm fund` for details
-00:35:38.489	
-00:35:38.489	found 0 vulnerabilities
-00:35:38.520	Executing user command: npm install && npm run build
-00:35:39.775	
-00:35:39.775	up to date, audited 452 packages in 930ms
-00:35:39.776	
-00:35:39.776	143 packages are looking for funding
-00:35:39.776	  run `npm fund` for details
-00:35:39.776	
-00:35:39.776	found 0 vulnerabilities
-00:35:40.165	
-00:35:40.166	> prosub@0.1.0 build
-00:35:40.166	> next build
-00:35:40.166	
-00:35:41.114	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
-00:35:41.118	Attention: Next.js now collects completely anonymous telemetry regarding usage.
-00:35:41.118	This information is used to shape Next.js' roadmap and prioritize features.
-00:35:41.118	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-00:35:41.118	https://nextjs.org/telemetry
-00:35:41.119	
-00:35:41.242	   ▲ Next.js 15.4.1
-00:35:41.242	
-00:35:41.263	   Creating an optimized production build ...
-00:36:08.967	 ✓ Compiled successfully in 24.0s
-00:36:08.972	   Linting and checking validity of types ...
-00:36:13.510	Failed to compile.
-00:36:13.510	
-00:36:13.511	./src/app/api/auth/login/route.ts:8:35
-00:36:13.511	Type error: Cannot find name 'KVNamespace'.
-00:36:13.511	
-00:36:13.511	   6 |
-00:36:13.511	   7 | const getKVNamespace = () => {
-00:36:13.511	>  8 |   return process.env.PROSUB_KV as KVNamespace
-00:36:13.512	     |                                   ^
-00:36:13.512	   9 | }
-00:36:13.512	  10 |
-00:36:13.512	  11 | export async function POST(request: Request) {
-00:36:13.538	Next.js build worker exited with code: 1 and signal: null
-00:36:13.562	Failed: Error while executing user command. Exited with error code: 1
-00:36:13.573	Failed: build command exited with code: 1
-00:36:14.785	Failed: error occurred while running build command
+00:37:54.451	Cloning repository...
+00:37:55.075	From https://github.com/imzyb/ProSub
+00:37:55.075	 * branch            633b7372b98815534e98c2f0e22a63cf2d898cd2 -> FETCH_HEAD
+00:37:55.075	
+00:37:55.106	HEAD is now at 633b737 创建
+00:37:55.107	
+00:37:55.185	
+00:37:55.186	Using v2 root directory strategy
+00:37:55.206	Success: Finished cloning repository files
+00:37:56.907	Checking for configuration in a Wrangler configuration file (BETA)
+00:37:56.907	
+00:37:58.018	No wrangler.toml file found. Continuing.
+00:37:58.087	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+00:37:58.088	Installing project dependencies: npm clean-install --progress=false
+00:38:12.638	
+00:38:12.639	added 451 packages, and audited 452 packages in 14s
+00:38:12.639	
+00:38:12.639	143 packages are looking for funding
+00:38:12.639	  run `npm fund` for details
+00:38:12.640	
+00:38:12.640	found 0 vulnerabilities
+00:38:12.672	Executing user command: npm install && npm run build
+00:38:13.943	
+00:38:13.943	up to date, audited 452 packages in 951ms
+00:38:13.943	
+00:38:13.944	143 packages are looking for funding
+00:38:13.944	  run `npm fund` for details
+00:38:13.944	
+00:38:13.945	found 0 vulnerabilities
+00:38:14.355	
+00:38:14.355	> prosub@0.1.0 build
+00:38:14.355	> next build
+00:38:14.356	
+00:38:15.303	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+00:38:15.309	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+00:38:15.309	This information is used to shape Next.js' roadmap and prioritize features.
+00:38:15.310	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+00:38:15.310	https://nextjs.org/telemetry
+00:38:15.310	
+00:38:15.430	   ▲ Next.js 15.4.1
+00:38:15.431	
+00:38:15.452	   Creating an optimized production build ...
+00:38:43.614	 ✓ Compiled successfully in 24.0s
+00:38:43.619	   Linting and checking validity of types ...
+00:38:48.288	Failed to compile.
+00:38:48.289	
+00:38:48.289	./src/app/api/auth/login/route.ts:8:35
+00:38:48.290	Type error: Cannot find name 'KVNamespace'.
+00:38:48.290	
+00:38:48.290	   6 |
+00:38:48.290	   7 | const getKVNamespace = () => {
+00:38:48.290	>  8 |   return process.env.PROSUB_KV as KVNamespace
+00:38:48.290	     |                                   ^
+00:38:48.291	   9 | }
+00:38:48.291	  10 |
+00:38:48.291	  11 | export async function POST(request: Request) {
+00:38:48.318	Next.js build worker exited with code: 1 and signal: null
+00:38:48.342	Failed: Error while executing user command. Exited with error code: 1
+00:38:48.355	Failed: build command exited with code: 1
+00:38:49.370	Failed: error occurred while running build command

@@ -1,38 +1,44 @@
 
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { User } from '@/types'
 import { authenticateUser } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface UserCreateRequest {
+  name: string;
+  password: string;
+  profiles?: string[];
 }
 
-export async function GET(request: Request) {
+const getKV = () => {
+  return process.env.KV as KVNamespace
+}
+
+export async function GET(request: NextRequest) {
   const authenticatedUser = await authenticateUser(request)
   if (!authenticatedUser) {
     return NextResponse.json({ message: '未授权' }, { status: 401 })
   }
 
   try {
-    const kv = getKVNamespace()
+    const KV = getKV()
 
     // Check for and create default admin user if not exists
     const adminUserKey = 'user:admin' // Using a fixed key for admin
-    const adminUser = await kv.get(adminUserKey)
+    const adminUser = await KV.get(adminUserKey)
 
     if (!adminUser) {
       const hashedPassword = await bcrypt.hash('admin', 10) // Default password is 'admin'
       const newAdmin: User = { id: 'admin', name: 'admin', password: hashedPassword, profiles: [], defaultPasswordChanged: false }
-      await kv.put(adminUserKey, JSON.stringify(newAdmin))
+      await KV.put(adminUserKey, JSON.stringify(newAdmin))
       console.log('Default admin user created.')
     }
 
-    const userList = await kv.list({ prefix: 'user:' })
+    const userList = await KV.list({ prefix: 'user:' })
     const users = await Promise.all(
       userList.keys.map(async ({ name: keyName }) => {
-        const userJson = await kv.get(keyName)
+        const userJson = await KV.get(keyName)
         // Do not return password hash
         const user = userJson ? JSON.parse(userJson) : null
         if (user) {
@@ -48,25 +54,25 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const authenticatedUser = await authenticateUser(request)
   if (!authenticatedUser) {
     return NextResponse.json({ message: '未授权' }, { status: 401 })
   }
 
   try {
-    const { name, password, profiles } = await request.json()
+    const { name, password, profiles } = (await request.json()) as UserCreateRequest
 
     if (!name || !password) {
       return NextResponse.json({ message: '用户名和密码是必填项' }, { status: 400 })
     }
 
-    const kv = getKVNamespace()
+    const KV = getKV()
     // Check if user already exists
-    const existingUserList = await kv.list({ prefix: 'user:' })
+    const existingUserList = await KV.list({ prefix: 'user:' })
     const existingUsers = await Promise.all(
       existingUserList.keys.map(async ({ name: keyName }) => {
-        const userJson = await kv.get(keyName)
+        const userJson = await KV.get(keyName)
         return userJson ? JSON.parse(userJson) : null
       })
     )
@@ -78,7 +84,7 @@ export async function POST(request: Request) {
     const id = uuidv4()
     const newUser: User = { id, name, password: hashedPassword, profiles: profiles || [], defaultPasswordChanged: true } // New users created via POST have changed password
     
-    await kv.put(`user:${id}`, JSON.stringify(newUser))
+    await KV.put(`user:${id}`, JSON.stringify(newUser))
     
     // Do not return password hash
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

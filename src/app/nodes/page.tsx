@@ -19,8 +19,8 @@ export default function NodesPage() {
         fetch('/api/nodes'),
         fetch('/api/node-statuses'),
       ])
-      const nodesData = await nodesRes.json()
-      const statusesData = await statusesRes.json()
+      const nodesData = (await nodesRes.json()) as Node[]
+      const statusesData = (await statusesRes.json()) as Record<string, { status: 'online' | 'offline' | 'checking', timestamp: string }>
 
       setNodes(nodesData)
       setNodeStatus(statusesData)
@@ -40,7 +40,7 @@ export default function NodesPage() {
     setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }))
     try {
       const res = await fetch(`/api/node-health-check?server=${node.server}&port=${node.port}&nodeId=${node.id}`)
-      const data = await res.json()
+      const data = (await res.json()) as { status: 'online' | 'offline' | 'checking', timestamp: string }
       setNodeStatus(prev => ({ ...prev, [node.id]: data }))
     } catch (error) {
       console.error('Failed to check node health:', error)

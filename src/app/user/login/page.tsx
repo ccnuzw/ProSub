@@ -27,7 +27,7 @@ export default function LoginPage() {
         message.success('登录成功')
         router.push('/dashboard') // Redirect to dashboard after login
       } else {
-        const errorData = await res.json()
+        const errorData = (await res.json()) as { message: string }
         message.error(errorData.message || '登录失败')
       }
     } catch (error) {

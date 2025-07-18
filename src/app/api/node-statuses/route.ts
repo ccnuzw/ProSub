@@ -1,19 +1,20 @@
 
 import { NextResponse } from 'next/server'
+import { HealthStatus } from '@/types'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function GET() {
   try {
-    const kv = getKVNamespace()
-    const statusList = await kv.list({ prefix: 'node-status:' })
+    const KV = getKV()
+    const statusList = await KV.list({ prefix: 'node-status:' })
     const nodeStatuses: Record<string, HealthStatus> = {}
     await Promise.all(
       statusList.keys.map(async ({ name }) => {
         const nodeId = name.replace('node-status:', '')
-        const statusJson = await kv.get(name)
+        const statusJson = await KV.get(name)
         if (statusJson) {
           nodeStatuses[nodeId] = JSON.parse(statusJson)
         }

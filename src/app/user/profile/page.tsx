@@ -19,7 +19,7 @@ export default function UserProfilePage() {
         // For simplicity, we'll try to get user from /api/users/[id] using the token's ID
         const res = await fetch('/api/auth/me') // We need to create this endpoint
         if (res.ok) {
-          const data = await res.json()
+          const data = (await res.json()) as User
           setUser(data)
         } else if (res.status === 401) {
           message.warning('请先登录')

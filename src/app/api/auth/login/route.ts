@@ -4,27 +4,32 @@ import { serialize } from 'cookie'
 import bcrypt from 'bcryptjs'
 import { User } from '@/types'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface LoginRequest {
+  name: string;
+  password: string;
+}
+
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function POST(request: Request) {
-  const { name, password } = await request.json()
+  const { name, password } = (await request.json()) as LoginRequest
 
   if (!name || !password) {
     return NextResponse.json({ message: '用户名和密码是必填项' }, { status: 400 })
   }
 
-  const kv = getKVNamespace()
+  const KV = getKV()
   // Find user by name
-  const userList = await kv.list({ prefix: 'user:' })
+  const userList = await KV.list({ prefix: 'user:' })
   const users = await Promise.all(
-    userList.keys.map(async ({ name: keyName }) => {
-      const userJson = await kv.get(keyName)
+    userList.keys.map(async ({ name: keyName }: { name: string }) => {
+      const userJson = await KV.get(keyName)
       return userJson ? JSON.parse(userJson) : null
     })
   )
-  const user = users.filter(Boolean).find(u => u.name === name) as User | undefined
+  const user = users.filter(Boolean).find((u: User) => u.name === name) as User | undefined
 
   if (!user || !user.password) {
     return NextResponse.json({ message: '用户名或密码不正确' }, { status: 401 })

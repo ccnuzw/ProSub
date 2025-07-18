@@ -19,7 +19,7 @@ export default function UsersPage() {
     setLoading(true)
     try {
       const res = await fetch('/api/users')
-      const data = await res.json()
+      const data = (await res.json()) as User[]
       setUsers(data)
     } catch (error) {
       console.error('Failed to fetch users:', error)
@@ -33,7 +33,7 @@ export default function UsersPage() {
     setConfigLoading(true)
     try {
       const res = await fetch('/api/config/registration-enabled')
-      const data = await res.json()
+      const data = (await res.json()) as { enabled: boolean }
       setRegistrationEnabled(data.enabled)
     } catch (error) {
       console.error('Failed to fetch registration status:', error)
@@ -48,7 +48,7 @@ export default function UsersPage() {
     try {
       const res = await fetch('/api/auth/me')
       if (res.ok) {
-        const user = await res.json()
+        const user = (await res.json()) as User
         setCurrentUser(user)
       } else {
         setCurrentUser(null)
@@ -78,7 +78,7 @@ export default function UsersPage() {
         message.success(`注册功能已${checked ? '开启' : '关闭'}`)
         setRegistrationEnabled(checked)
       } else {
-        const errorData = await res.json()
+        const errorData = (await res.json()) as { message: string }
         message.error(errorData.message || '更新注册状态失败')
       }
     } catch (error) {

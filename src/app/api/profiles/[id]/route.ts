@@ -1,17 +1,23 @@
 
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { Profile } from '@/types'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface ProfileRequest {
+  name: string;
+  nodes: string[];
+  subscriptions: string[];
 }
 
-export async function GET(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getKV = () => {
+  return process.env.KV as KVNamespace
+}
+
+export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   try {
-    const kv = getKVNamespace()
-    const profileJson = await kv.get(`profile:${params.id}`)
+    const KV = getKV()
+    const profileJson = await KV.get(`profile:${params.id}`)
     if (!profileJson) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
@@ -22,15 +28,15 @@ export async function GET(request: Request, { params }: { // eslint-disable-next
   }
 }
 
-export async function PUT(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   try {
-    const { name, nodes, subscriptions } = await request.json()
+    const { name, nodes, subscriptions } = (await request.json()) as ProfileRequest
     const updatedProfile: Profile = { id: params.id, name, nodes, subscriptions }
     
-    const kv = getKVNamespace()
-    await kv.put(`profile:${params.id}`, JSON.stringify(updatedProfile))
+    const KV = getKV()
+    await KV.put(`profile:${params.id}`, JSON.stringify(updatedProfile))
     
     return NextResponse.json(updatedProfile)
   } catch (error) {
@@ -39,12 +45,12 @@ export async function PUT(request: Request, { params }: { // eslint-disable-next
   }
 }
 
-export async function DELETE(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function DELETE(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
   params: any
 }) {
   try {
-    const kv = getKVNamespace()
-    await kv.delete(`profile:${params.id}`)
+    const KV = getKV()
+    await KV.delete(`profile:${params.id}`)
     
     return new Response(null, { status: 204 })
   } catch (error) {

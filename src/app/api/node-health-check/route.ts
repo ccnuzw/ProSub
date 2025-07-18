@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const server = searchParams.get('server')
   const port = searchParams.get('port')
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Server, port, and nodeId are required' }, { status: 400 })
   }
 
-  const kv = getKVNamespace()
+  const KV = getKV()
   let status = 'offline'
   let errorMessage = ''
 
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   }
 
   // Store the health status in KV
-  await kv.put(`node-status:${nodeId}`, JSON.stringify(healthStatus))
+  await KV.put(`node-status:${nodeId}`, JSON.stringify(healthStatus))
 
   return NextResponse.json(healthStatus)
 }

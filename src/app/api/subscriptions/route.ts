@@ -1,18 +1,23 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { Subscription } from '@/types'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+interface SubscriptionRequest {
+  name: string;
+  url: string;
+}
+
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
 export async function GET() {
   try {
-    const kv = getKVNamespace()
-    const subList = await kv.list({ prefix: 'subscription:' })
+    const KV = getKV()
+    const subList = await KV.list({ prefix: 'subscription:' })
     const subscriptions = await Promise.all(
       subList.keys.map(async ({ name }) => {
-        const subJson = await kv.get(name)
+        const subJson = await KV.get(name)
         return subJson ? JSON.parse(subJson) : null
       })
     )
@@ -23,14 +28,14 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, url } = await request.json()
+    const { name, url } = (await request.json()) as SubscriptionRequest
     const id = uuidv4()
     const newSubscription: Subscription = { id, name, url }
     
-    const kv = getKVNamespace()
-    await kv.put(`subscription:${id}`, JSON.stringify(newSubscription))
+    const KV = getKV()
+    await KV.put(`subscription:${id}`, JSON.stringify(newSubscription))
     
     return NextResponse.json(newSubscription)
   } catch (error) {

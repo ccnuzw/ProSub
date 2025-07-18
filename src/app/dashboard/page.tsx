@@ -1,19 +1,21 @@
 
 'use client'
 
+'use client'
+
 import { useState, useEffect } from 'react'
 import { Card, Col, Row, Statistic, message, Spin, Table, Select, Space } from 'antd'
-import { Node, Subscription, Profile } from '@/types'
+import { Node, Subscription, Profile, ProfileTrafficData } from '@/types'
 import { ClusterOutlined, FileTextOutlined, UsergroupAddOutlined, LineChartOutlined } from '@ant-design/icons'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 const { Option } = Select
 
 export default function DashboardPage() {
-  const [nodeCount, setNodeCount] = useState<number | null>(null)
-  const [subscriptionCount, setSubscriptionCount] = useState<number | null>(null)
-  const [profileCount, setProfileCount] = useState<number | null>(null)
-  const [totalTrafficCount, setTotalTrafficCount] = useState<number | null>(null)
+  const [nodeCount, setNodeCount] = useState<number>(0)
+  const [subscriptionCount, setSubscriptionCount] = useState<number>(0)
+  const [profileCount, setProfileCount] = useState<number>(0)
+  const [totalTrafficCount, setTotalTrafficCount] = useState<number>(0)
   const [profileTraffic, setProfileTraffic] = useState<Record<string, number>>({}) // Traffic per profile in last 24h
   const [trafficTrend, setTrafficTrend] = useState<{ date: string, count: number }[]>([]) // Traffic trend over time
   const [loading, setLoading] = useState(true)
@@ -31,9 +33,9 @@ export default function DashboardPage() {
           fetch('/api/profiles'),
         ])
 
-        const nodes: Node[] = await nodesRes.json()
-        const subscriptions: Subscription[] = await subsRes.json()
-        const profilesData: Profile[] = await profilesRes.json()
+        const nodes: Node[] = (await nodesRes.json()) as Node[]
+        const subscriptions: Subscription[] = (await subsRes.json()) as Subscription[]
+        const profilesData: Profile[] = (await profilesRes.json()) as Profile[]
 
         setNodeCount(nodes.length)
         setSubscriptionCount(subscriptions.length)
@@ -42,7 +44,7 @@ export default function DashboardPage() {
 
         // Fetch raw traffic for 24h count and profile-wise traffic
         const rawTrafficRes = await fetch('/api/traffic')
-        const rawTrafficRecords: { timestamp: string, profileId: string }[] = await rawTrafficRes.json()
+        const rawTrafficRecords: { timestamp: string, profileId: string }[] = (await rawTrafficRes.json()) as { timestamp: string, profileId: string }[]
         const twentyFourHoursAgo = new Date()
         twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
         const recentTraffic = rawTrafficRecords.filter(record => {
@@ -59,7 +61,7 @@ export default function DashboardPage() {
         // Fetch traffic trend based on selected granularity and profile
         const trendUrl = `/api/traffic?granularity=${trafficGranularity}${selectedProfileForTrend ? `&profileId=${selectedProfileForTrend}` : ''}`
         const trendRes = await fetch(trendUrl)
-        const trafficTrendData: { date: string, count: number }[] = await trendRes.json()
+        const trafficTrendData: { date: string, count: number }[] = (await trendRes.json()) as { date: string, count: number }[]
         setTrafficTrend(trafficTrendData)
 
       } catch (error) {

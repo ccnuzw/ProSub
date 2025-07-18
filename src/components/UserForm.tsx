@@ -31,7 +31,7 @@ export default function UserForm({ user }: UserFormProps) {
       setDataLoading(true)
       try {
         const profilesRes = await fetch('/api/profiles')
-        setAllProfiles(await profilesRes.json())
+        setAllProfiles((await profilesRes.json()) as Profile[])
       } catch (error) {
         console.error('Failed to fetch profile data:', error)
         message.error('加载配置文件数据失败')
@@ -62,7 +62,7 @@ export default function UserForm({ user }: UserFormProps) {
         message.success(user ? '用户更新成功' : '用户创建成功')
         router.push('/user')
       } else {
-        const errorData = await res.json()
+        const errorData = (await res.json()) as { message: string }
         message.error(errorData.message || '操作失败')
       }
     } catch (error) {

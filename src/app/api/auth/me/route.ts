@@ -1,8 +1,8 @@
 
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { authenticateUser } from '@/lib/auth'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const user = await authenticateUser(request)
 
   if (!user) {

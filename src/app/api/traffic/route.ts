@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
-const getKVNamespace = () => {
-  return process.env.PROSUB_KV as KVNamespace
+const getKV = () => {
+  return process.env.KV as KVNamespace
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const granularity = searchParams.get('granularity') || 'day' // 'day', 'week', 'month'
   const profileId = searchParams.get('profileId') // Optional: filter by profile
 
   try {
-    const kv = getKVNamespace()
-    const trafficList = await kv.list({ prefix: 'traffic:' })
+    const KV = getKV()
+    const trafficList = await KV.list({ prefix: 'traffic:' })
     let trafficRecords: { timestamp: string, profileId: string }[] = await Promise.all(
       trafficList.keys.map(async ({ name }) => {
-        const recordJson = await kv.get(name)
+        const recordJson = await KV.get(name)
         return recordJson ? JSON.parse(recordJson) : null
       })
     )

@@ -14,7 +14,7 @@ export default function SubscriptionsPage() {
     setLoading(true)
     try {
       const res = await fetch('/api/subscriptions')
-      const data = await res.json()
+      const data = (await res.json()) as Subscription[]
       setSubscriptions(data)
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error)

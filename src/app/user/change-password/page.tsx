@@ -4,6 +4,7 @@
 import { Form, Input, Button, message } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { User } from '@/types'
 
 interface ChangePasswordFormValues {
   newPassword?: string;
@@ -21,7 +22,7 @@ export default function ChangePasswordPage() {
       if (!res.ok) {
         throw new Error('无法获取当前用户信息')
       }
-      const currentUser = await res.json()
+      const currentUser = (await res.json()) as User
 
       const updateRes = await fetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
@@ -33,7 +34,7 @@ export default function ChangePasswordPage() {
         message.success('密码修改成功')
         router.push('/dashboard') // Redirect to dashboard after password change
       } else {
-        const errorData = await updateRes.json()
+        const errorData = (await updateRes.json()) as { message: string }
         message.error(errorData.message || '密码修改失败')
       }
     } catch (error) {

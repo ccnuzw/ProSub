@@ -28,7 +28,7 @@ export default function RegisterPage() {
         message.success('注册成功，请登录')
         router.push('/user/login') // Redirect to login page after successful registration
       } else {
-        const errorData = await res.json()
+        const errorData = (await res.json()) as { message: string }
         message.error(errorData.message || '注册失败')
       }
     } catch (error) {

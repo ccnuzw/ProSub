@@ -20,7 +20,7 @@ export default function EditUserPage() {
         try {
           const res = await fetch(`/api/users/${id}`)
           if (res.ok) {
-            const data = await res.json()
+            const data = (await res.json()) as User
             setUser(data)
           } else {
             throw new Error('用户不存在')

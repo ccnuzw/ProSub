@@ -14,7 +14,7 @@ export default function ProfilesPage() {
     setLoading(true)
     try {
       const res = await fetch('/api/profiles')
-      const data = await res.json()
+      const data = (await res.json()) as Profile[]
       setProfiles(data)
     } catch (error) {
       console.error('Failed to fetch profiles:', error)

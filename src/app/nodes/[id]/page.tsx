@@ -16,7 +16,7 @@ export default function EditNodePage() {
       const fetchNode = async () => {
         const res = await fetch(`/api/nodes/${id}`)
         if (res.ok) {
-          const data = await res.json()
+          const data = (await res.json()) as Node
           setNode(data)
         }
       }
