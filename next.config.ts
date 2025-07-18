@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 const nextConfig: NextConfig = {
   output: "standalone",
   distDir: "dist",
-  swcMinify: true,
   modularizeImports: {
     'antd': {
       transform: 'antd/lib/{{member}}',
@@ -13,4 +16,4 @@ const nextConfig: NextConfig = {
   /* config options here */
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

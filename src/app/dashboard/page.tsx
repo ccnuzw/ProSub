@@ -3,39 +3,12 @@
 
 'use client'
 
-import dynamic from 'next/dynamic'
 import { useState, useEffect } from 'react'
 import { Card, Col, Row, Statistic, message, Spin, Table, Select, Space } from 'antd'
 import { Node, Subscription, Profile, ProfileTrafficData } from '@/types'
 import { ClusterOutlined, FileTextOutlined, UsergroupAddOutlined, LineChartOutlined } from '@ant-design/icons'
 
 const { Option } = Select
-
-// Dynamically import Recharts components
-const LineChart = dynamic(() => import('recharts').then((mod) => mod.LineChart), {
-  ssr: false,
-})
-const Line = dynamic(() => import('recharts').then((mod) => mod.Line), {
-  ssr: false,
-})
-const XAxis = dynamic(() => import('recharts').then((mod) => mod.XAxis), {
-  ssr: false,
-})
-const YAxis = dynamic(() => import('recharts').then((mod) => mod.YAxis), {
-  ssr: false,
-})
-const CartesianGrid = dynamic(() => import('recharts').then((mod) => mod.CartesianGrid), {
-  ssr: false,
-})
-const Tooltip = dynamic(() => import('recharts').then((mod) => mod.Tooltip), {
-  ssr: false,
-})
-const Legend = dynamic(() => import('recharts').then((mod) => mod.Legend), {
-  ssr: false,
-})
-const ResponsiveContainer = dynamic(() => import('recharts').then((mod) => mod.ResponsiveContainer), {
-  ssr: false,
-})
 
 export default function DashboardPage() {
   const [nodeCount, setNodeCount] = useState<number>(0)
@@ -195,16 +168,9 @@ export default function DashboardPage() {
               </Space>
             }
           >
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trafficTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="count" stroke="#8884d8" activeDot={{ r: 8 }} name="请求次数" />
-              </LineChart>
-            </ResponsiveContainer>
+            <div style={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center', border: '1px dashed #ccc' }}>
+              <p>图表区域 (Recharts 已移除)</p>
+            </div>
           </Card>
         </Col>
       </Row>
