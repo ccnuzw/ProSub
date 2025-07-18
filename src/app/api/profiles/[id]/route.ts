@@ -6,7 +6,9 @@ const getKVNamespace = () => {
   return process.env.PROSUB_KV as KVNamespace
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   try {
     const kv = getKVNamespace()
     const profileJson = await kv.get(`profile:${params.id}`)
@@ -20,7 +22,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   try {
     const { name, nodes, subscriptions } = await request.json()
     const updatedProfile: Profile = { id: params.id, name, nodes, subscriptions }
@@ -35,7 +39,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   try {
     const kv = getKVNamespace()
     await kv.delete(`profile:${params.id}`)
