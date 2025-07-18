@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     await kv.put(`user:${id}`, JSON.stringify(newUser))
     
     // Do not return password hash
-    const { password, ...userWithoutPassword } = newUser
+    const { password: _, ...userWithoutPassword } = newUser
     return NextResponse.json(userWithoutPassword)
   } catch (error) {
     console.error('Failed to create user:', error)
