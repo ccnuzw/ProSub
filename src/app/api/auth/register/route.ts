@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     await kv.put(`user:${id}`, JSON.stringify(newUser))
     
     // Do not return password hash
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = newUser
     return NextResponse.json({ message: '注册成功', user: userWithoutPassword })
   } catch (error) {

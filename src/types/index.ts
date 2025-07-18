@@ -1,6 +1,6 @@
 // To extend ProcessEnv for Cloudflare Workers KV binding
 // This is a common pattern for adding custom environment variables to TypeScript's ProcessEnv
-// eslint-disable-next-line @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
@@ -8,6 +8,7 @@ declare global {
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-namespace */
 
 export interface Node {
   id: string;

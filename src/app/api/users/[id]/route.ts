@@ -66,6 +66,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     await kv.put(`user:${params.id}`, JSON.stringify(updatedUser))
     
     // Do not return password hash
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = updatedUser
     return NextResponse.json(userWithoutPassword)
   } catch (error) {

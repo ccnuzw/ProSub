@@ -1,75 +1,67 @@
-00:06:48.330	Cloning repository...
-00:06:48.926	From https://github.com/imzyb/ProSub
-00:06:48.927	 * branch            f50b2e9d3631cdb92adf9aa3bc9ca1d27ee4a96d -> FETCH_HEAD
-00:06:48.927	
-00:06:48.954	HEAD is now at f50b2e9 创建
-00:06:48.954	
-00:06:49.030	
-00:06:49.030	Using v2 root directory strategy
-00:06:49.053	Success: Finished cloning repository files
-00:06:50.754	Checking for configuration in a Wrangler configuration file (BETA)
-00:06:50.755	
-00:06:51.863	No wrangler.toml file found. Continuing.
-00:06:51.929	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-00:06:51.929	Installing project dependencies: npm clean-install --progress=false
-00:07:06.022	
-00:07:06.022	added 451 packages, and audited 452 packages in 14s
-00:07:06.023	
-00:07:06.023	143 packages are looking for funding
-00:07:06.023	  run `npm fund` for details
-00:07:06.023	
-00:07:06.024	found 0 vulnerabilities
-00:07:06.054	Executing user command: npm install && npm run build
-00:07:07.309	
-00:07:07.310	up to date, audited 452 packages in 944ms
-00:07:07.310	
-00:07:07.310	143 packages are looking for funding
-00:07:07.310	  run `npm fund` for details
-00:07:07.310	
-00:07:07.311	found 0 vulnerabilities
-00:07:07.683	
-00:07:07.684	> prosub@0.1.0 build
-00:07:07.684	> next build
-00:07:07.684	
-00:07:08.608	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
-00:07:08.612	Attention: Next.js now collects completely anonymous telemetry regarding usage.
-00:07:08.612	This information is used to shape Next.js' roadmap and prioritize features.
-00:07:08.612	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-00:07:08.612	https://nextjs.org/telemetry
-00:07:08.612	
-00:07:08.728	   ▲ Next.js 15.4.1
-00:07:08.729	
-00:07:08.749	   Creating an optimized production build ...
-00:07:35.556	 ✓ Compiled successfully in 22.0s
-00:07:35.560	   Linting and checking validity of types ...
-00:07:38.688	
-00:07:38.688	Failed to compile.
-00:07:38.688	
-00:07:38.688	./src/app/api/auth/logout/route.ts
-00:07:38.688	2:10  Warning: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
-00:07:38.688	
-00:07:38.689	./src/app/api/auth/me/route.ts
-00:07:38.689	13:11  Warning: 'password' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-00:07:38.689	
-00:07:38.689	./src/app/api/auth/register/route.ts
-00:07:38.689	47:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-00:07:38.689	
-00:07:38.689	./src/app/api/users/[id]/route.ts
-00:07:38.689	69:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-00:07:38.689	
-00:07:38.689	./src/app/api/users/route.ts
-00:07:38.690	84:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-00:07:38.690	
-00:07:38.690	./src/app/nodes/page.tsx
-00:07:38.690	97:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-00:07:38.690	
-00:07:38.690	./src/app/profiles/page.tsx
-00:07:38.690	67:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-00:07:38.690	
-00:07:38.690	./src/types/index.ts
-00:07:38.691	2:3  Error: ES2015 module syntax is preferred over namespaces.  @typescript-eslint/no-namespace
-00:07:38.691	
-00:07:38.691	info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
-00:07:38.732	Failed: Error while executing user command. Exited with error code: 1
-00:07:38.742	Failed: build command exited with code: 1
-00:07:39.812	Failed: error occurred while running build command
+00:10:05.646	Cloning repository...
+00:10:06.279	From https://github.com/imzyb/ProSub
+00:10:06.279	 * branch            283206c468f79b0a460e9a8ec7a1c730f14656c2 -> FETCH_HEAD
+00:10:06.279	
+00:10:06.308	HEAD is now at 283206c 创建
+00:10:06.308	
+00:10:06.388	
+00:10:06.389	Using v2 root directory strategy
+00:10:06.410	Success: Finished cloning repository files
+00:10:09.724	Checking for configuration in a Wrangler configuration file (BETA)
+00:10:09.724	
+00:10:10.837	No wrangler.toml file found. Continuing.
+00:10:10.906	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+00:10:10.907	Installing project dependencies: npm clean-install --progress=false
+00:10:25.602	
+00:10:25.602	added 451 packages, and audited 452 packages in 14s
+00:10:25.603	
+00:10:25.603	143 packages are looking for funding
+00:10:25.603	  run `npm fund` for details
+00:10:25.604	
+00:10:25.605	found 0 vulnerabilities
+00:10:25.636	Executing user command: npm install && npm run build
+00:10:26.883	
+00:10:26.883	up to date, audited 452 packages in 925ms
+00:10:26.883	
+00:10:26.883	143 packages are looking for funding
+00:10:26.883	  run `npm fund` for details
+00:10:26.884	
+00:10:26.884	found 0 vulnerabilities
+00:10:27.284	
+00:10:27.284	> prosub@0.1.0 build
+00:10:27.284	> next build
+00:10:27.284	
+00:10:28.226	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+00:10:28.231	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+00:10:28.231	This information is used to shape Next.js' roadmap and prioritize features.
+00:10:28.231	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+00:10:28.231	https://nextjs.org/telemetry
+00:10:28.231	
+00:10:28.352	   ▲ Next.js 15.4.1
+00:10:28.353	
+00:10:28.375	   Creating an optimized production build ...
+00:10:47.770	
+00:10:47.770	
+00:10:47.771	Retrying 1/3...
+00:10:56.328	 ✓ Compiled successfully in 24.0s
+00:10:56.333	   Linting and checking validity of types ...
+00:10:59.472	
+00:10:59.472	Failed to compile.
+00:10:59.473	
+00:10:59.473	./src/app/api/auth/me/route.ts
+00:10:59.473	13:21  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:10:59.473	
+00:10:59.473	./src/app/api/auth/register/route.ts
+00:10:59.473	47:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:10:59.473	
+00:10:59.474	./src/app/api/users/[id]/route.ts
+00:10:59.474	69:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:10:59.474	
+00:10:59.474	./src/types/index.ts
+00:10:59.474	3:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-namespace').
+00:10:59.474	5:3  Error: ES2015 module syntax is preferred over namespaces.  @typescript-eslint/no-namespace
+00:10:59.474	
+00:10:59.474	info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+00:10:59.517	Failed: Error while executing user command. Exited with error code: 1
+00:10:59.528	Failed: build command exited with code: 1
+00:11:00.527	Failed: error occurred while running build command
