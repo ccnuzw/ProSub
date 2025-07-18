@@ -6,11 +6,11 @@ ProSub 是一个基于 Cloudflare Pages 和 KV 存储的轻量级机场订阅和
 
 ### 1.1. 核心功能
 
-*   **多协议支持：** 支持所有主流代理协议，包括 Vless、anytls、vless reality、tuic、hysteria、hysteria2、Shadowsocks、V2Ray (VMess)、Trojan、SOCKS5 等。
-*   **通用订阅解析：** 能够解析来自不同机场的通用订阅链接，包括base64、ymal、txt 等。
+*   **多协议支持：** 支持所有主流代理协议，包括 Vless、vless reality、tuic、hysteria、hysteria2、ss、ssr、vmess、anytls、V2Ray (VMess)、Trojan、SOCKS5 等。
+*   **通用订阅解析：** 能够解析来自不同机场的通用订阅链接。
 *   **灵活的节点组合：** 允许用户自由组合来自不同订阅和自建节点的代理，生成新的自定义订阅。
 *   **用户管理：** （可选）支持简单的用户系统，为不同用户生成专属的订阅链接。
-*   **通用订阅输出：** 生成的订阅链接兼容所有主流代理客户端，如 V2RanyN、Clash、Clash Meta、Mihomo、Sing-box、Shadowrocket、Quantumult X、loon、surge、flyclash、karing 等。
+*   **通用订阅输出：** 生成的订阅链接兼容所有主流代理客户端，如 openclash、clash meta、flyclash、loon、surge、karing、mihomo、sing-box、Clash、Shadowrocket、Quantumult X 等。
 *   **无第三方依赖：** 所有订阅转换和处理都在 Cloudflare Workers 中完成，无需依赖任何第三方服务。
 
 ### 1.2. 技术栈
@@ -79,6 +79,8 @@ ProSub 是一个基于 Cloudflare Pages 和 KV 存储的轻量级机场订阅和
 
 ## 3. 开发计划
 
+## 参考项目：sub-store（https://github.com/sub-store-org/Sub-Store）、sub-hub(https://github.com/shiyi11yi/Sub-Hub)、sublink-worker（https://github.com/7Sageer/sublink-worker）、MiSub（https://github.com/imzyb/MiSub）
+
 ### 3.1. 阶段一：核心功能实现
 
 1.  **环境搭建：**
@@ -95,7 +97,7 @@ ProSub 是一个基于 Cloudflare Pages 和 KV 存储的轻量级机场订阅和
     *   实现配置文件的增删改查 (CRUD) API。
     *   创建配置文件管理的前端界面，允许用户从节点和订阅中选择并组合。
 5.  **订阅生成：**
-    *   实现 `/sub/:profile_id` 端点。
+    *   实现 `/subscribe/:profile_id` 端点。
     *   在该端点中，获取配置文件信息，解析订阅链接，组合节点，并生成兼容的订阅内容。
 
 ### 3.2. 阶段二：高级功能和优化
@@ -114,11 +116,10 @@ ProSub 是一个基于 Cloudflare Pages 和 KV 存储的轻量级机场订阅和
 
 ## 4. 部署
 
-1.  **项目上传至github，然后在cloudflare的pages部署，前端后端都部署在同一个pages内：**
+1.  **前端后端部署，无需分两次部署，一个项目即可完成：**
     *   将 Next.js 项目连接到 Cloudflare Pages。
     *   配置构建命令和输出目录。
-
-
+z
 ## 5. 总结
 
 ProSub 是一个功能强大且高度可定制的项目。通过遵循本文档中的设计和计划，您可以构建一个满足您所有代理管理需求的轻量级、高效的解决方案。
