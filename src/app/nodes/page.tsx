@@ -94,7 +94,7 @@ export default function NodesPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Node) => (
+      render: (_: unknown, record: Node) => (
         <Space size="middle">
           <Button icon={<ReloadOutlined />} onClick={() => checkNodeHealth(record)} loading={nodeStatus[record.id]?.status === 'checking'}>检查</Button>
           <Link href={`/nodes/${record.id}`}>

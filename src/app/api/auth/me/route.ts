@@ -10,6 +10,6 @@ export async function GET(request: Request) {
   }
 
   // Do not return password in the response
-  const { password, ...userWithoutPassword } = user
+  const { password: _, ...userWithoutPassword } = user
   return NextResponse.json(userWithoutPassword)
 }

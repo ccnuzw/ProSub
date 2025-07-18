@@ -1,64 +1,75 @@
-00:05:17.907	Cloning repository...
-00:05:18.573	From https://github.com/imzyb/ProSub
-00:05:18.574	 * branch            7e68855047c43ec84c4e4872566b6ff4eb0cc62d -> FETCH_HEAD
-00:05:18.574	
-00:05:18.601	HEAD is now at 7e68855 创建
-00:05:18.602	
-00:05:18.676	
-00:05:18.677	Using v2 root directory strategy
-00:05:18.700	Success: Finished cloning repository files
-00:05:20.335	Checking for configuration in a Wrangler configuration file (BETA)
-00:05:20.336	
-00:05:21.437	No wrangler.toml file found. Continuing.
-00:05:21.503	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-00:05:21.504	Installing project dependencies: npm clean-install --progress=false
-00:05:35.872	
-00:05:35.873	added 451 packages, and audited 452 packages in 14s
-00:05:35.873	
-00:05:35.873	143 packages are looking for funding
-00:05:35.873	  run `npm fund` for details
-00:05:35.874	
-00:05:35.874	found 0 vulnerabilities
-00:05:35.904	Executing user command: npm install && npm run build
-00:05:37.193	
-00:05:37.193	up to date, audited 452 packages in 968ms
-00:05:37.193	
-00:05:37.194	143 packages are looking for funding
-00:05:37.194	  run `npm fund` for details
-00:05:37.194	
-00:05:37.195	found 0 vulnerabilities
-00:05:37.566	
-00:05:37.567	> prosub@0.1.0 build
-00:05:37.567	> next build
-00:05:37.567	
-00:05:38.483	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
-00:05:38.487	Attention: Next.js now collects completely anonymous telemetry regarding usage.
-00:05:38.488	This information is used to shape Next.js' roadmap and prioritize features.
-00:05:38.488	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-00:05:38.488	https://nextjs.org/telemetry
-00:05:38.488	
-00:05:38.603	   ▲ Next.js 15.4.1
-00:05:38.603	
-00:05:38.623	   Creating an optimized production build ...
-00:05:53.397	Failed to compile.
-00:05:53.398	
-00:05:53.398	./src/app/api/users/route.ts
-00:05:53.398	Module parse failed: Identifier 'password' has already been declared (105:16)
-00:05:53.398	File was processed with these loaders:
-00:05:53.398	 * ./node_modules/next/dist/build/webpack/loaders/next-flight-loader/index.js
-00:05:53.398	 * ./node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
-00:05:53.399	You may need an additional loader to handle the result of these loaders.
-00:05:53.399	|         await kv.put(`user:${id}`, JSON.stringify(newUser));
-00:05:53.399	|         // Do not return password hash
-00:05:53.399	>         const { password, ...userWithoutPassword } = newUser;
-00:05:53.399	|         return NextResponse.json(userWithoutPassword);
-00:05:53.399	|     } catch (error) {
-00:05:53.399	
-00:05:53.399	Import trace for requested module:
-00:05:53.400	./src/app/api/users/route.ts
-00:05:53.400	
-00:05:53.402	
-00:05:53.403	> Build failed because of webpack errors
-00:05:53.456	Failed: Error while executing user command. Exited with error code: 1
-00:05:53.468	Failed: build command exited with code: 1
-00:05:54.644	Failed: error occurred while running build command
+00:06:48.330	Cloning repository...
+00:06:48.926	From https://github.com/imzyb/ProSub
+00:06:48.927	 * branch            f50b2e9d3631cdb92adf9aa3bc9ca1d27ee4a96d -> FETCH_HEAD
+00:06:48.927	
+00:06:48.954	HEAD is now at f50b2e9 创建
+00:06:48.954	
+00:06:49.030	
+00:06:49.030	Using v2 root directory strategy
+00:06:49.053	Success: Finished cloning repository files
+00:06:50.754	Checking for configuration in a Wrangler configuration file (BETA)
+00:06:50.755	
+00:06:51.863	No wrangler.toml file found. Continuing.
+00:06:51.929	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+00:06:51.929	Installing project dependencies: npm clean-install --progress=false
+00:07:06.022	
+00:07:06.022	added 451 packages, and audited 452 packages in 14s
+00:07:06.023	
+00:07:06.023	143 packages are looking for funding
+00:07:06.023	  run `npm fund` for details
+00:07:06.023	
+00:07:06.024	found 0 vulnerabilities
+00:07:06.054	Executing user command: npm install && npm run build
+00:07:07.309	
+00:07:07.310	up to date, audited 452 packages in 944ms
+00:07:07.310	
+00:07:07.310	143 packages are looking for funding
+00:07:07.310	  run `npm fund` for details
+00:07:07.310	
+00:07:07.311	found 0 vulnerabilities
+00:07:07.683	
+00:07:07.684	> prosub@0.1.0 build
+00:07:07.684	> next build
+00:07:07.684	
+00:07:08.608	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+00:07:08.612	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+00:07:08.612	This information is used to shape Next.js' roadmap and prioritize features.
+00:07:08.612	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+00:07:08.612	https://nextjs.org/telemetry
+00:07:08.612	
+00:07:08.728	   ▲ Next.js 15.4.1
+00:07:08.729	
+00:07:08.749	   Creating an optimized production build ...
+00:07:35.556	 ✓ Compiled successfully in 22.0s
+00:07:35.560	   Linting and checking validity of types ...
+00:07:38.688	
+00:07:38.688	Failed to compile.
+00:07:38.688	
+00:07:38.688	./src/app/api/auth/logout/route.ts
+00:07:38.688	2:10  Warning: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+00:07:38.688	
+00:07:38.689	./src/app/api/auth/me/route.ts
+00:07:38.689	13:11  Warning: 'password' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:07:38.689	
+00:07:38.689	./src/app/api/auth/register/route.ts
+00:07:38.689	47:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:07:38.689	
+00:07:38.689	./src/app/api/users/[id]/route.ts
+00:07:38.689	69:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:07:38.689	
+00:07:38.689	./src/app/api/users/route.ts
+00:07:38.690	84:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+00:07:38.690	
+00:07:38.690	./src/app/nodes/page.tsx
+00:07:38.690	97:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+00:07:38.690	
+00:07:38.690	./src/app/profiles/page.tsx
+00:07:38.690	67:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+00:07:38.690	
+00:07:38.690	./src/types/index.ts
+00:07:38.691	2:3  Error: ES2015 module syntax is preferred over namespaces.  @typescript-eslint/no-namespace
+00:07:38.691	
+00:07:38.691	info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+00:07:38.732	Failed: Error while executing user command. Exited with error code: 1
+00:07:38.742	Failed: build command exited with code: 1
+00:07:39.812	Failed: error occurred while running build command

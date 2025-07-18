@@ -64,7 +64,7 @@ export default function ProfilesPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Profile) => (
+      render: (_: unknown, record: Profile) => (
         <Space size="middle">
           <Link href={`/profiles/${record.id}`}>
             <Button icon={<EditOutlined />}>编辑</Button>
