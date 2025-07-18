@@ -1,54 +1,54 @@
-00:19:16.183	Cloning repository...
-00:19:16.809	From https://github.com/imzyb/ProSub
-00:19:16.810	 * branch            135199346cfb05390808d4783ee90578b780a9d7 -> FETCH_HEAD
-00:19:16.810	
-00:19:16.837	HEAD is now at 1351993 创建
-00:19:16.838	
-00:19:16.922	
-00:19:16.922	Using v2 root directory strategy
-00:19:16.945	Success: Finished cloning repository files
-00:19:18.650	Checking for configuration in a Wrangler configuration file (BETA)
-00:19:18.650	
-00:19:19.746	No wrangler.toml file found. Continuing.
-00:19:19.816	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-00:19:19.817	Installing project dependencies: npm clean-install --progress=false
-00:19:34.098	
-00:19:34.098	added 451 packages, and audited 452 packages in 14s
-00:19:34.098	
-00:19:34.098	143 packages are looking for funding
-00:19:34.098	  run `npm fund` for details
-00:19:34.099	
-00:19:34.099	found 0 vulnerabilities
-00:19:34.130	Executing user command: npm install && npm run build
-00:19:35.374	
-00:19:35.374	up to date, audited 452 packages in 915ms
-00:19:35.374	
-00:19:35.374	143 packages are looking for funding
-00:19:35.375	  run `npm fund` for details
-00:19:35.375	
-00:19:35.375	found 0 vulnerabilities
-00:19:35.744	
-00:19:35.744	> prosub@0.1.0 build
-00:19:35.745	> next build
-00:19:35.745	
-00:19:36.698	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
-00:19:36.702	Attention: Next.js now collects completely anonymous telemetry regarding usage.
-00:19:36.703	This information is used to shape Next.js' roadmap and prioritize features.
-00:19:36.703	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-00:19:36.703	https://nextjs.org/telemetry
-00:19:36.703	
-00:19:36.827	   ▲ Next.js 15.4.1
-00:19:36.828	
-00:19:36.850	   Creating an optimized production build ...
-00:20:04.408	 ✓ Compiled successfully in 23.0s
-00:20:04.413	   Linting and checking validity of types ...
-00:20:08.975	Failed to compile.
-00:20:08.975	
-00:20:08.976	src/app/api/profiles/[id]/route.ts
-00:20:08.976	Type error: Route "src/app/api/profiles/[id]/route.ts" has an invalid "GET" export:
-00:20:08.976	  Type "{ params: { id: string; }; }" is not a valid type for the function's second argument.
-00:20:08.976	
-00:20:09.003	Next.js build worker exited with code: 1 and signal: null
-00:20:09.025	Failed: Error while executing user command. Exited with error code: 1
-00:20:09.036	Failed: build command exited with code: 1
-00:20:10.124	Failed: error occurred while running build command
+00:21:20.461	Cloning repository...
+00:21:21.093	From https://github.com/imzyb/ProSub
+00:21:21.093	 * branch            41b51daf20e940823f74e96711a1b8d50273c931 -> FETCH_HEAD
+00:21:21.094	
+00:21:21.120	HEAD is now at 41b51da 创建
+00:21:21.121	
+00:21:21.201	
+00:21:21.202	Using v2 root directory strategy
+00:21:21.223	Success: Finished cloning repository files
+00:21:22.841	Checking for configuration in a Wrangler configuration file (BETA)
+00:21:22.842	
+00:21:23.947	No wrangler.toml file found. Continuing.
+00:21:24.016	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+00:21:24.017	Installing project dependencies: npm clean-install --progress=false
+00:21:38.318	
+00:21:38.318	added 451 packages, and audited 452 packages in 14s
+00:21:38.318	
+00:21:38.318	143 packages are looking for funding
+00:21:38.318	  run `npm fund` for details
+00:21:38.319	
+00:21:38.320	found 0 vulnerabilities
+00:21:38.353	Executing user command: npm install && npm run build
+00:21:39.651	
+00:21:39.651	up to date, audited 452 packages in 968ms
+00:21:39.651	
+00:21:39.651	143 packages are looking for funding
+00:21:39.651	  run `npm fund` for details
+00:21:39.652	
+00:21:39.652	found 0 vulnerabilities
+00:21:40.023	
+00:21:40.023	> prosub@0.1.0 build
+00:21:40.023	> next build
+00:21:40.023	
+00:21:40.997	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+00:21:41.001	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+00:21:41.001	This information is used to shape Next.js' roadmap and prioritize features.
+00:21:41.001	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+00:21:41.001	https://nextjs.org/telemetry
+00:21:41.002	
+00:21:41.122	   ▲ Next.js 15.4.1
+00:21:41.122	
+00:21:41.144	   Creating an optimized production build ...
+00:22:08.822	 ✓ Compiled successfully in 24.0s
+00:22:08.828	   Linting and checking validity of types ...
+00:22:13.309	Failed to compile.
+00:22:13.309	
+00:22:13.309	src/app/api/subscribe/[profile_id]/route.ts
+00:22:13.310	Type error: Route "src/app/api/subscribe/[profile_id]/route.ts" has an invalid "GET" export:
+00:22:13.310	  Type "{ params: { profile_id: string; }; }" is not a valid type for the function's second argument.
+00:22:13.310	
+00:22:13.338	Next.js build worker exited with code: 1 and signal: null
+00:22:13.362	Failed: Error while executing user command. Exited with error code: 1
+00:22:13.374	Failed: build command exited with code: 1
+00:22:14.334	Failed: error occurred while running build command

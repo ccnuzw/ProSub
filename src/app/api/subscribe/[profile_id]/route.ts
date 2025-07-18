@@ -209,7 +209,9 @@ async function recordTraffic(kv: KVNamespace, profileId: string) {
   }
 }
 
-export async function GET(request: Request, { params }: { params: { profile_id: string } }) {
+export async function GET(request: Request, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: any
+}) {
   try {
     const kv = getKVNamespace()
     const profile = await getProfile(kv, params.profile_id)
