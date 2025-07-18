@@ -12,6 +12,13 @@ interface UserFormProps {
   user?: User
 }
 
+interface UserFormValues {
+  name?: string;
+  password?: string;
+  confirmPassword?: string;
+  profiles?: string[];
+}
+
 export default function UserForm({ user }: UserFormProps) {
   const [form] = Form.useForm()
   const router = useRouter()
@@ -26,6 +33,7 @@ export default function UserForm({ user }: UserFormProps) {
         const profilesRes = await fetch('/api/profiles')
         setAllProfiles(await profilesRes.json())
       } catch (error) {
+        console.error('Failed to fetch profile data:', error)
         message.error('加载配置文件数据失败')
       } finally {
         setDataLoading(false)
@@ -38,7 +46,7 @@ export default function UserForm({ user }: UserFormProps) {
     }
   }, [user, form])
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: UserFormValues) => {
     setLoading(true)
     const method = user ? 'PUT' : 'POST'
     const url = user ? `/api/users/${user.id}` : '/api/users'
@@ -58,6 +66,7 @@ export default function UserForm({ user }: UserFormProps) {
         message.error(errorData.message || '操作失败')
       }
     } catch (error) {
+      console.error('User operation failed:', error)
       message.error('操作失败，请重试')
     } finally {
       setLoading(false)

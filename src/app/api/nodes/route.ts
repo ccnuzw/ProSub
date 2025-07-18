@@ -6,7 +6,7 @@ import { Node } from '@/types'
 // In a real Cloudflare Workers environment, you would get this from the environment bindings.
 const getKVNamespace = () => {
   // In a real application, process.env.PROSUB_KV would be populated by Cloudflare
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET() {

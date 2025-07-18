@@ -5,11 +5,16 @@ import { Form, Input, Button, message } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+interface LoginFormValues {
+  name?: string;
+  password?: string;
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: LoginFormValues) => {
     setLoading(true)
     try {
       const res = await fetch('/api/auth/login', {
@@ -26,6 +31,7 @@ export default function LoginPage() {
         message.error(errorData.message || '登录失败')
       }
     } catch (error) {
+      console.error('Login failed:', error)
       message.error('网络错误，请重试')
     } finally {
       setLoading(false)

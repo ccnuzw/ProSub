@@ -22,6 +22,7 @@ export default function UsersPage() {
       const data = await res.json()
       setUsers(data)
     } catch (error) {
+      console.error('Failed to fetch users:', error)
       message.error('加载用户列表失败')
     } finally {
       setLoading(false)
@@ -35,6 +36,7 @@ export default function UsersPage() {
       const data = await res.json()
       setRegistrationEnabled(data.enabled)
     } catch (error) {
+      console.error('Failed to fetch registration status:', error)
       message.error('加载注册状态失败')
     } finally {
       setConfigLoading(false)
@@ -80,6 +82,7 @@ export default function UsersPage() {
         message.error(errorData.message || '更新注册状态失败')
       }
     } catch (error) {
+      console.error('Failed to update registration status:', error)
       message.error('网络错误，更新注册状态失败')
     }
   }
@@ -90,6 +93,7 @@ export default function UsersPage() {
       message.success('用户删除成功')
       fetchUsers()
     } catch (error) {
+      console.error('Failed to delete user:', error)
       message.error('删除用户失败')
     }
   }
@@ -100,7 +104,7 @@ export default function UsersPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: User) => (
+      render: (_: unknown, record: User) => (
         <Space size="middle">
           <Link href={`/user/${record.id}`}>
             <Button icon={<EditOutlined />}>编辑</Button>

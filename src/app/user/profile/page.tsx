@@ -47,6 +47,7 @@ export default function UserProfilePage() {
         throw new Error('登出失败')
       }
     } catch (error) {
+      console.error('Failed to logout:', error)
       message.error('登出失败，请重试')
     }
   }

@@ -17,6 +17,7 @@ export default function SubscriptionsPage() {
       const data = await res.json()
       setSubscriptions(data)
     } catch (error) {
+      console.error('Failed to fetch subscriptions:', error)
       message.error('加载订阅列表失败')
     } finally {
       setLoading(false)
@@ -33,6 +34,7 @@ export default function SubscriptionsPage() {
       message.success('订阅删除成功')
       fetchSubscriptions()
     } catch (error) {
+      console.error('Failed to delete subscription:', error)
       message.error('删除订阅失败')
     }
   }
@@ -43,7 +45,7 @@ export default function SubscriptionsPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: Subscription) => (
+      render: (_: unknown, record: Subscription) => (
         <Space size="middle">
           <Link href={`/subscriptions/${record.id}`}>
             <Button icon={<EditOutlined />}>编辑</Button>

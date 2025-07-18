@@ -5,11 +5,16 @@ import { Form, Input, Button, message } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+interface ChangePasswordFormValues {
+  newPassword?: string;
+  confirmNewPassword?: string;
+}
+
 export default function ChangePasswordPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: ChangePasswordFormValues) => {
     setLoading(true)
     try {
       const res = await fetch('/api/auth/me') // Get current user info
@@ -31,8 +36,12 @@ export default function ChangePasswordPage() {
         const errorData = await updateRes.json()
         message.error(errorData.message || '密码修改失败')
       }
-    } catch (error: any) {
-      message.error(error.message || '网络错误，请重试')
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message || '网络错误，请重试')
+      } else {
+        message.error(String(error) || '网络错误，请重试')
+      }
     } finally {
       setLoading(false)
     }

@@ -15,7 +15,7 @@ export default function SubscriptionForm({ subscription }: SubscriptionFormProps
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: Subscription) => {
     setLoading(true)
     const method = subscription ? 'PUT' : 'POST'
     const url = subscription ? `/api/subscriptions/${subscription.id}` : '/api/subscriptions'
@@ -34,6 +34,7 @@ export default function SubscriptionForm({ subscription }: SubscriptionFormProps
         throw new Error('操作失败')
       }
     } catch (error) {
+      console.error('Subscription operation failed:', error)
       message.error('操作失败，请重试')
     } finally {
       setLoading(false)

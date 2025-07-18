@@ -30,6 +30,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         setAllNodes(await nodesRes.json())
         setAllSubscriptions(await subsRes.json())
       } catch (error) {
+        console.error('Failed to fetch nodes and subscriptions:', error)
         message.error('加载节点和订阅数据失败')
       } finally {
         setDataLoading(false)
@@ -38,7 +39,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     fetchData()
   }, [])
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: Profile) => {
     setLoading(true)
     const method = profile ? 'PUT' : 'POST'
     const url = profile ? `/api/profiles/${profile.id}` : '/api/profiles'
@@ -57,6 +58,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         throw new Error('操作失败')
       }
     } catch (error) {
+      console.error('Profile operation failed:', error)
       message.error('操作失败，请重试')
     } finally {
       setLoading(false)

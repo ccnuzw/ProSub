@@ -1,6 +1,5 @@
 'use client'
 
-import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Layout, Menu, Button, message } from 'antd'
@@ -66,6 +65,7 @@ export default function RootLayout({
         throw new Error('登出失败')
       }
     } catch (error) {
+      console.error('Failed to logout:', error)
       message.error('登出失败，请重试')
     }
   }

@@ -6,7 +6,7 @@ import { authenticateUser } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET(request: Request) {
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
     // Check for and create default admin user if not exists
     const adminUserKey = 'user:admin' // Using a fixed key for admin
-    let adminUser = await kv.get(adminUserKey)
+    const adminUser = await kv.get(adminUserKey)
 
     if (!adminUser) {
       const hashedPassword = await bcrypt.hash('admin', 10) // Default password is 'admin'
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     await kv.put(`user:${id}`, JSON.stringify(newUser))
     
     // Do not return password hash
-    const { password: _, ...userWithoutPassword } = newUser
+    const { password, ...userWithoutPassword } = newUser
     return NextResponse.json(userWithoutPassword)
   } catch (error) {
     console.error('Failed to create user:', error)

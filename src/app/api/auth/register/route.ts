@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs'
 const REGISTRATION_ENABLED_KEY = 'config:registration_enabled'
 
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function POST(request: Request) {

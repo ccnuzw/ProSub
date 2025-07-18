@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET(request: Request) {

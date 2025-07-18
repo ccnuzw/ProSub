@@ -5,11 +5,17 @@ import { Form, Input, Button, message } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+interface RegisterFormValues {
+  name?: string;
+  password?: string;
+  confirm?: string;
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: RegisterFormValues) => {
     setLoading(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -26,6 +32,7 @@ export default function RegisterPage() {
         message.error(errorData.message || '注册失败')
       }
     } catch (error) {
+      console.error('Registration failed:', error)
       message.error('网络错误，请重试')
     } finally {
       setLoading(false)

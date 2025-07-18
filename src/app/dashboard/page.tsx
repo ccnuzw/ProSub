@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card, Col, Row, Statistic, message, Spin, Table, Select } from 'antd'
+import { Card, Col, Row, Statistic, message, Spin, Table, Select, Space } from 'antd'
 import { Node, Subscription, Profile } from '@/types'
 import { ClusterOutlined, FileTextOutlined, UsergroupAddOutlined, LineChartOutlined } from '@ant-design/icons'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -44,9 +44,9 @@ export default function DashboardPage() {
         const rawTrafficRes = await fetch('/api/traffic')
         const rawTrafficRecords: { timestamp: string, profileId: string }[] = await rawTrafficRes.json()
         const twentyFourHoursAgo = new Date()
-        twentyFourFourHoursAgo.setHours(twentyFourFourHoursAgo.getHours() - 24)
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24)
         const recentTraffic = rawTrafficRecords.filter(record => {
-          return new Date(record.timestamp) > twentyFourFourHoursAgo
+          return new Date(record.timestamp) > twentyFourHoursAgo
         })
         setTotalTrafficCount(recentTraffic.length)
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
   const profileTrafficColumns = [
     { title: '配置文件名称', dataIndex: 'name', key: 'name' },
-    { title: '24小时内请求次数', dataIndex: 'count', key: 'count', sorter: (a: any, b: any) => a.count - b.count },
+    { title: '24小时内请求次数', dataIndex: 'count', key: 'count', sorter: (a: ProfileTrafficData, b: ProfileTrafficData) => a.count - b.count },
   ]
 
   if (loading) {

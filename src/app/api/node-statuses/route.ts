@@ -2,14 +2,14 @@
 import { NextResponse } from 'next/server'
 
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET() {
   try {
     const kv = getKVNamespace()
     const statusList = await kv.list({ prefix: 'node-status:' })
-    const nodeStatuses: Record<string, any> = {}
+    const nodeStatuses: Record<string, HealthStatus> = {}
     await Promise.all(
       statusList.keys.map(async ({ name }) => {
         const nodeId = name.replace('node-status:', '')

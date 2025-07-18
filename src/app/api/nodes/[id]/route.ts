@@ -4,7 +4,7 @@ import { Node } from '@/types'
 
 // This is a placeholder for the KV namespace.
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {

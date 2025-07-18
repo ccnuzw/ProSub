@@ -1,6 +1,6 @@
 'use client'
 
-import { Form, Input, Button, Select, InputNumber, message, Tooltip } from 'antd'
+import { Form, Input, Button, Select, InputNumber, message } from 'antd'
 import { useRouter } from 'next/navigation'
 import { Node } from '@/types'
 import { useState, useEffect } from 'react'
@@ -32,7 +32,7 @@ export default function NodeForm({ node }: NodeFormProps) {
     }
   }, [node, form])
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: Node) => {
     setLoading(true)
     const method = node ? 'PUT' : 'POST'
     const url = node ? `/api/nodes/${node.id}` : '/api/nodes'
@@ -42,6 +42,7 @@ export default function NodeForm({ node }: NodeFormProps) {
       try {
         parsedParams = JSON.parse(values.params)
       } catch (e) {
+        console.error('Failed to parse params:', e)
         message.error('协议特定参数格式不正确，请输入有效的 JSON。')
         setLoading(false)
         return
@@ -67,6 +68,7 @@ export default function NodeForm({ node }: NodeFormProps) {
         throw new Error('操作失败')
       }
     } catch (error) {
+      console.error('Node operation failed:', error)
       message.error('操作失败，请重试')
     } finally {
       setLoading(false)

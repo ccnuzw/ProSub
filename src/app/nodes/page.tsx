@@ -9,7 +9,7 @@ import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseC
 export default function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
-  const [nodeStatus, setNodeStatus] = useState<Record<string, { status: 'online' | 'offline', timestamp: string }>>({}) // Updated state for node status
+  const [nodeStatus, setNodeStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking', timestamp: string }>>({}) // Updated state for node status
   const [checkingAll, setCheckingAll] = useState(false)
 
   const fetchNodesAndStatuses = useCallback(async () => {
@@ -25,6 +25,7 @@ export default function NodesPage() {
       setNodes(nodesData)
       setNodeStatus(statusesData)
     } catch (error) {
+      console.error('Failed to fetch nodes or statuses:', error)
       message.error('加载节点列表或状态失败')
     } finally {
       setLoading(false)
@@ -36,12 +37,13 @@ export default function NodesPage() {
   }, [fetchNodesAndStatuses])
 
   const checkNodeHealth = async (node: Node) => {
-    setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } as any }))
+    setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }))
     try {
       const res = await fetch(`/api/node-health-check?server=${node.server}&port=${node.port}&nodeId=${node.id}`)
       const data = await res.json()
       setNodeStatus(prev => ({ ...prev, [node.id]: data }))
     } catch (error) {
+      console.error('Failed to check node health:', error)
       setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'offline', timestamp: new Date().toISOString() } }))
     }
   }
@@ -60,6 +62,7 @@ export default function NodesPage() {
       message.success('节点删除成功')
       fetchNodesAndStatuses() // Re-fetch the list and statuses
     } catch (error) {
+      console.error('Failed to delete node:', error)
       message.error('删除节点失败')
     }
   }
@@ -72,7 +75,7 @@ export default function NodesPage() {
     {
       title: '状态',
       key: 'status',
-      render: (_: any, record: Node) => {
+      render: (_: unknown, record: Node) => {
         const statusInfo = nodeStatus[record.id]
         if (!statusInfo) {
           return <Tag>未知</Tag>

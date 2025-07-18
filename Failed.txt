@@ -1,58 +1,186 @@
-23:53:04.401	Cloning repository...
-23:53:05.049	From https://github.com/imzyb/ProSub
-23:53:05.050	 * branch            4991c59664d4ad59eb8987e1770089c9e89f07a3 -> FETCH_HEAD
-23:53:05.050	
-23:53:05.077	HEAD is now at 4991c59 创建
-23:53:05.077	
-23:53:05.158	
-23:53:05.158	Using v2 root directory strategy
-23:53:05.181	Success: Finished cloning repository files
-23:53:06.930	Checking for configuration in a Wrangler configuration file (BETA)
-23:53:06.931	
-23:53:08.047	No wrangler.toml file found. Continuing.
-23:53:08.112	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
-23:53:08.112	Installing project dependencies: npm clean-install --progress=false
-23:53:22.750	
-23:53:22.751	added 451 packages, and audited 452 packages in 14s
-23:53:22.751	
-23:53:22.751	143 packages are looking for funding
-23:53:22.751	  run `npm fund` for details
-23:53:22.752	
-23:53:22.752	found 0 vulnerabilities
-23:53:22.786	Executing user command: npm install && npm run build
-23:53:24.055	
-23:53:24.056	up to date, audited 452 packages in 948ms
-23:53:24.056	
-23:53:24.056	143 packages are looking for funding
-23:53:24.056	  run `npm fund` for details
-23:53:24.056	
-23:53:24.057	found 0 vulnerabilities
-23:53:24.444	
-23:53:24.444	> prosub@0.1.0 build
-23:53:24.444	> next build
-23:53:24.444	
-23:53:25.384	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
-23:53:25.389	Attention: Next.js now collects completely anonymous telemetry regarding usage.
-23:53:25.389	This information is used to shape Next.js' roadmap and prioritize features.
-23:53:25.389	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-23:53:25.390	https://nextjs.org/telemetry
-23:53:25.390	
-23:53:25.507	   ▲ Next.js 15.4.1
-23:53:25.508	
-23:53:25.529	   Creating an optimized production build ...
-23:53:40.627	Failed to compile.
-23:53:40.627	
-23:53:40.627	src/app/layout.tsx
-23:53:40.627	An error occurred in `next/font`.
-23:53:40.628	
-23:53:40.628	Error: Your custom PostCSS configuration must export a `plugins` key.
-23:53:40.628	    at getPostCssPlugins (/opt/buildhome/repo/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:114:37)
-23:53:40.628	    at async /opt/buildhome/repo/node_modules/next/dist/build/webpack/config/blocks/css/index.js:125:36
-23:53:40.628	    at async /opt/buildhome/repo/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js:94:33
-23:53:40.628	    at async Span.traceAsyncFn (/opt/buildhome/repo/node_modules/next/dist/trace/trace.js:157:20)
-23:53:40.628	
-23:53:40.631	
-23:53:40.632	> Build failed because of webpack errors
-23:53:40.692	Failed: Error while executing user command. Exited with error code: 1
-23:53:40.703	Failed: build command exited with code: 1
-23:53:41.991	Failed: error occurred while running build command
+23:55:35.820	Cloning repository...
+23:55:36.443	From https://github.com/imzyb/ProSub
+23:55:36.443	 * branch            566d4694266b13d66f6326130b08c89e29532d23 -> FETCH_HEAD
+23:55:36.443	
+23:55:36.469	HEAD is now at 566d469 创建
+23:55:36.470	
+23:55:36.547	
+23:55:36.547	Using v2 root directory strategy
+23:55:36.566	Success: Finished cloning repository files
+23:55:38.178	Checking for configuration in a Wrangler configuration file (BETA)
+23:55:38.179	
+23:55:39.286	No wrangler.toml file found. Continuing.
+23:55:39.349	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+23:55:39.349	Installing project dependencies: npm clean-install --progress=false
+23:55:53.237	
+23:55:53.237	added 451 packages, and audited 452 packages in 14s
+23:55:53.238	
+23:55:53.238	143 packages are looking for funding
+23:55:53.238	  run `npm fund` for details
+23:55:53.238	
+23:55:53.239	found 0 vulnerabilities
+23:55:53.269	Executing user command: npm install && npm run build
+23:55:54.491	
+23:55:54.491	up to date, audited 452 packages in 915ms
+23:55:54.492	
+23:55:54.492	143 packages are looking for funding
+23:55:54.492	  run `npm fund` for details
+23:55:54.492	
+23:55:54.492	found 0 vulnerabilities
+23:55:54.887	
+23:55:54.887	> prosub@0.1.0 build
+23:55:54.887	> next build
+23:55:54.888	
+23:55:55.802	⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+23:55:55.807	Attention: Next.js now collects completely anonymous telemetry regarding usage.
+23:55:55.807	This information is used to shape Next.js' roadmap and prioritize features.
+23:55:55.807	You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+23:55:55.807	https://nextjs.org/telemetry
+23:55:55.807	
+23:55:55.928	   ▲ Next.js 15.4.1
+23:55:55.928	
+23:55:55.948	   Creating an optimized production build ...
+23:56:22.826	 ✓ Compiled successfully in 22.0s
+23:56:22.831	   Linting and checking validity of types ...
+23:56:25.920	
+23:56:25.920	Failed to compile.
+23:56:25.920	
+23:56:25.921	./src/app/api/auth/login/route.ts
+23:56:25.921	8:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.921	
+23:56:25.921	./src/app/api/auth/logout/route.ts
+23:56:25.921	2:10  Warning: 'NextResponse' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.922	
+23:56:25.922	./src/app/api/auth/me/route.ts
+23:56:25.922	13:11  Warning: 'password' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+23:56:25.922	
+23:56:25.922	./src/app/api/auth/register/route.ts
+23:56:25.922	9:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.922	47:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+23:56:25.923	
+23:56:25.923	./src/app/api/config/registration-enabled/route.ts
+23:56:25.923	7:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.923	
+23:56:25.923	./src/app/api/node-health-check/route.ts
+23:56:25.923	4:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.923	28:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.923	
+23:56:25.924	./src/app/api/node-statuses/route.ts
+23:56:25.924	5:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.924	12:40  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.924	
+23:56:25.924	./src/app/api/nodes/[id]/route.ts
+23:56:25.924	7:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.924	
+23:56:25.924	./src/app/api/nodes/route.ts
+23:56:25.925	9:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.925	
+23:56:25.925	./src/app/api/profiles/[id]/route.ts
+23:56:25.925	6:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.925	
+23:56:25.925	./src/app/api/profiles/route.ts
+23:56:25.925	6:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.925	
+23:56:25.926	./src/app/api/subscribe/[profile_id]/route.ts
+23:56:25.926	8:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.926	
+23:56:25.926	./src/app/api/subscriptions/[id]/route.ts
+23:56:25.926	6:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.926	
+23:56:25.926	./src/app/api/subscriptions/route.ts
+23:56:25.927	6:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.927	
+23:56:25.927	./src/app/api/traffic/route.ts
+23:56:25.927	4:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.927	
+23:56:25.927	./src/app/api/users/[id]/route.ts
+23:56:25.928	7:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.928	69:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+23:56:25.928	
+23:56:25.928	./src/app/api/users/route.ts
+23:56:25.928	9:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.928	23:9  Error: 'adminUser' is never reassigned. Use 'const' instead.  prefer-const
+23:56:25.929	84:23  Warning: '_' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+23:56:25.929	
+23:56:25.929	./src/app/dashboard/page.tsx
+23:56:25.929	46:15  Warning: 'twentyFourHoursAgo' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+23:56:25.929	87:73  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.929	87:81  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.929	149:16  Error: 'Space' is not defined.  react/jsx-no-undef
+23:56:25.929	
+23:56:25.930	./src/app/layout.tsx
+23:56:25.930	3:15  Warning: 'Metadata' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.930	68:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.930	
+23:56:25.930	./src/app/nodes/page.tsx
+23:56:25.930	27:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.930	39:113  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.930	44:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.930	62:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.930	75:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.930	94:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.930	
+23:56:25.930	./src/app/profiles/page.tsx
+23:56:25.930	7:54  Warning: 'LinkOutlined' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.930	19:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.931	35:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.931	50:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.931	65:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.931	
+23:56:25.931	./src/app/subscriptions/page.tsx
+23:56:25.931	19:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.931	35:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.931	46:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.931	
+23:56:25.931	./src/app/user/change-password/page.tsx
+23:56:25.931	12:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.932	34:21  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.932	
+23:56:25.932	./src/app/user/login/page.tsx
+23:56:25.932	12:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.932	28:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.932	
+23:56:25.932	./src/app/user/page.tsx
+23:56:25.932	24:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.932	37:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.932	82:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.933	92:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.933	103:19  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.933	
+23:56:25.933	./src/app/user/profile/page.tsx
+23:56:25.933	49:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.933	
+23:56:25.933	./src/app/user/register/page.tsx
+23:56:25.933	12:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.933	28:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.933	
+23:56:25.933	./src/components/NodeForm.tsx
+23:56:25.933	3:61  Warning: 'Tooltip' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.933	35:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.934	44:16  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.934	69:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.934	
+23:56:25.934	./src/components/ProfileForm.tsx
+23:56:25.934	32:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.934	41:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.935	59:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.936	
+23:56:25.936	./src/components/SubscriptionForm.tsx
+23:56:25.936	18:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.936	36:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.936	
+23:56:25.936	./src/components/UserForm.tsx
+23:56:25.937	28:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.937	41:35  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.937	60:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+23:56:25.937	
+23:56:25.937	./src/lib/auth.ts
+23:56:25.937	6:26  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.937	
+23:56:25.938	./src/types/index.ts
+23:56:25.938	9:27  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+23:56:25.938	
+23:56:25.938	info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+23:56:25.970	Failed: Error while executing user command. Exited with error code: 1
+23:56:25.979	Failed: build command exited with code: 1
+23:56:27.279	Failed: error occurred while running build command

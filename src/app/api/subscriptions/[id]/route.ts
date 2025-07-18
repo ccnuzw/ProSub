@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { Subscription } from '@/types'
 
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {

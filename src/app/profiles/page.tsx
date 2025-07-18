@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button, Table, Space, Popconfirm, message, Tooltip, Input } from 'antd'
 import Link from 'next/link'
 import { Profile } from '@/types'
-import { EditOutlined, DeleteOutlined, PlusOutlined, LinkOutlined, CopyOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons'
 
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -17,6 +17,7 @@ export default function ProfilesPage() {
       const data = await res.json()
       setProfiles(data)
     } catch (error) {
+      console.error('Failed to fetch profiles:', error)
       message.error('加载配置文件列表失败')
     } finally {
       setLoading(false)
@@ -33,6 +34,7 @@ export default function ProfilesPage() {
       message.success('配置文件删除成功')
       fetchProfiles()
     } catch (error) {
+      console.error('Failed to delete profile:', error)
       message.error('删除配置文件失败')
     }
   }
@@ -47,7 +49,7 @@ export default function ProfilesPage() {
     {
       title: '订阅链接',
       key: 'subscribe_url',
-      render: (_: any, record: Profile) => {
+      render: (_: unknown, record: Profile) => {
         const subscribeUrl = `${window.location.origin}/api/subscribe/${record.id}`
         return (
           <Space.Compact style={{ width: '100%' }}>

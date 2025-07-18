@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 const getKVNamespace = () => {
-  return (process.env as any).PROSUB_KV as KVNamespace
+  return process.env.PROSUB_KV as KVNamespace
 }
 
 export async function GET(request: Request) {
@@ -25,8 +25,12 @@ export async function GET(request: Request) {
     } else {
       errorMessage = `HTTP Status: ${response.status}`
     }
-  } catch (error: any) {
-    errorMessage = error.message
+  } catch (error) {
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else {
+      errorMessage = String(error)
+    }
   }
 
   const healthStatus = {
