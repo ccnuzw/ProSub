@@ -7,7 +7,7 @@ const getKVNamespace = () => {
   return process.env.PROSUB_KV as KVNamespace
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Record<string, string | string[]> }) {
   try {
     const kv = getKVNamespace()
     const nodeJson = await kv.get(`node:${params.id}`)
@@ -21,7 +21,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Record<string, string | string[]> }) {
   try {
     const { name, server, port, password, type } = await request.json()
     const updatedNode: Node = { id: params.id, name, server, port, password, type }
@@ -36,7 +36,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Record<string, string | string[]> }) {
   try {
     const kv = getKVNamespace()
     await kv.delete(`node:${params.id}`)
