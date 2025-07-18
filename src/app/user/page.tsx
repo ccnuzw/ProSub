@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button, Table, Space, Popconfirm, message, Switch } from 'antd'
+import { Button, Table, Space, Popconfirm, message } from 'antd'
 import Link from 'next/link'
 import { User } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
@@ -10,8 +10,6 @@ import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [registrationEnabled, setRegistrationEnabled] = useState(false)
-  const [configLoading, setConfigLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<User | null>(null) // New state for current user
   const [currentUserLoading, setCurrentUserLoading] = useState(true)
 
@@ -26,20 +24,6 @@ export default function UsersPage() {
       message.error('加载用户列表失败')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchRegistrationStatus = async () => {
-    setConfigLoading(true)
-    try {
-      const res = await fetch('/api/config/registration-enabled')
-      const data = (await res.json()) as { enabled: boolean }
-      setRegistrationEnabled(data.enabled)
-    } catch (error) {
-      console.error('Failed to fetch registration status:', error)
-      message.error('加载注册状态失败')
-    } finally {
-      setConfigLoading(false)
     }
   }
 
@@ -63,29 +47,8 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers()
-    fetchRegistrationStatus()
     fetchCurrentUser()
   }, [])
-
-  const handleRegistrationToggle = async (checked: boolean) => {
-    try {
-      const res = await fetch('/api/config/registration-enabled', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: checked }),
-      })
-      if (res.ok) {
-        message.success(`注册功能已${checked ? '开启' : '关闭'}`)
-        setRegistrationEnabled(checked)
-      } else {
-        const errorData = (await res.json()) as { message: string }
-        message.error(errorData.message || '更新注册状态失败')
-      }
-    } catch (error) {
-      console.error('Failed to update registration status:', error)
-      message.error('网络错误，更新注册状态失败')
-    }
-  }
 
   const handleDelete = async (id: string) => {
     try {
@@ -127,15 +90,6 @@ export default function UsersPage() {
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.5rem', margin: 0 }}>用户管理</h1>
         <Space>
-          {!configLoading && !currentUserLoading && currentUser?.name === 'admin' && (
-            <Switch
-              checkedChildren="注册开启"
-              unCheckedChildren="注册关闭"
-              checked={registrationEnabled}
-              onChange={handleRegistrationToggle}
-              loading={configLoading}
-            />
-          )}
           <Link href="/user/new">
             <Button type="primary" icon={<PlusOutlined />}>
               添加用户

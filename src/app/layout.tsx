@@ -82,7 +82,6 @@ export default function RootLayout({
     menuItems.push({ key: 'profile', label: <Link href="/user/profile">我的资料</Link> })
   } else {
     menuItems.push({ key: 'login', label: <Link href="/user/login">登录</Link> })
-    menuItems.push({ key: 'register', label: <Link href="/user/register">注册</Link> })
   }
 
   // Determine selected key based on current path
