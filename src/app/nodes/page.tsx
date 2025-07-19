@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button, Table, Space, Popconfirm, message, Tag, Modal, Input, Card, Empty } from 'antd'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation' // 1. 导入 useRouter
 import { Node, HealthStatus } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
@@ -10,6 +11,7 @@ import type { TableProps } from 'antd';
 const { TextArea, Search } = Input;
 
 export default function NodesPage() {
+  const router = useRouter(); // 2. 初始化 router
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
   const [nodeStatus, setNodeStatus] = useState<Record<string, HealthStatus>>({})
@@ -43,7 +45,6 @@ export default function NodesPage() {
     fetchNodesAndStatuses()
   }, [fetchNodesAndStatuses])
 
-  // ... (所有 handle 函數保持不變)
   const checkNodeHealth = async (node: Node) => {
     setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }))
     try {
@@ -59,12 +60,14 @@ export default function NodesPage() {
       setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'offline', timestamp: new Date().toISOString() } }))
     }
   }
+  
   const handleCheckAllNodes = async () => {
     setCheckingAll(true)
     await Promise.allSettled(nodes.map(node => checkNodeHealth(node)))
     setCheckingAll(false)
     message.success('所有节点健康检查完成')
   }
+
   const handleDelete = async (id: string) => {
     try {
       await fetch(`/api/nodes/${id}`, { method: 'DELETE' })
@@ -75,6 +78,7 @@ export default function NodesPage() {
       message.error('删除节点失败')
     }
   }
+
   const handleBatchDelete = async () => {
     try {
       await fetch(`/api/nodes/batch-delete`, {
@@ -90,6 +94,7 @@ export default function NodesPage() {
       message.error('批量删除失败');
     }
   };
+
   const handleImport = async () => {
     setImporting(true);
     try {
@@ -117,7 +122,6 @@ export default function NodesPage() {
     }
   };
 
-
   const filteredAndSortedNodes = useMemo(() => {
     const filtered = nodes.filter(node => {
         const term = searchTerm.toLowerCase();
@@ -142,7 +146,6 @@ export default function NodesPage() {
       return a.name.localeCompare(b.name);
     });
   }, [nodes, nodeStatus, searchTerm]);
-
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
     setSelectedRowKeys(newSelectedRowKeys);
@@ -201,7 +204,6 @@ export default function NodesPage() {
         </Space>
       </div>
 
-      {/* *** 這是關鍵的修改：僅在有節點時才顯示工具欄和表格 *** */}
       {!loading && nodes.length > 0 ? (
         <>
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
@@ -216,7 +218,6 @@ export default function NodesPage() {
             <Table rowSelection={rowSelection} columns={columns} dataSource={filteredAndSortedNodes} rowKey="id" loading={loading} />
         </>
       ) : (
-        // *** 這是關鍵的修改：顯示 Empty 狀態 ***
         <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={<span>暂无节点，快去添加一个吧！</span>}
