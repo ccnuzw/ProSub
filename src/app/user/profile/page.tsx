@@ -23,7 +23,7 @@ export default function UserProfilePage() {
         if (res.ok) {
           const data = (await res.json()) as User
           setUser(data)
-          form.setFieldsValue(data); // 設置表單初始值
+          form.setFieldsValue(data);
         } else if (res.status === 401) {
           message.warning('请先登录')
           router.push('/user/login')
@@ -72,7 +72,8 @@ export default function UserProfilePage() {
             message.success('资料更新成功！下次登录请使用新密码。');
             setIsModalVisible(false);
         } else {
-            const errorData = await res.json();
+            // *** 这是关键的修复：明确告知 TypeScript errorData 的类型 ***
+            const errorData = (await res.json()) as { message?: string };
             throw new Error(errorData.message || '更新失败');
         }
     } catch (error) {
