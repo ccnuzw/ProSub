@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Form, Input, Button, message, Spin, Card, Typography, List, Tag, Row, Col, Empty } from 'antd'
+// *** 这是关键的修复：在这里导入 Space 组件 ***
+import { Form, Input, Button, message, Spin, Card, Typography, List, Tag, Row, Col, Empty, Space } from 'antd'
 import { useRouter } from 'next/navigation'
 import { Profile, Node, Subscription, HealthStatus } from '@/types'
 import { ArrowRightOutlined, ArrowLeftOutlined, ClusterOutlined, WifiOutlined } from '@ant-design/icons'
@@ -19,16 +20,13 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
 
-  // --- 數據源 ---
   const [allNodes, setAllNodes] = useState<Node[]>([])
   const [allSubscriptions, setAllSubscriptions] = useState<Subscription[]>([])
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, HealthStatus>>({})
 
-  // --- 已選擇項目的 State ---
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>(profile?.nodes || []);
   const [selectedSubIds, setSelectedSubIds] = useState<string[]>(profile?.subscriptions || []);
   
-  // --- 搜索 State ---
   const [nodeSearchTerm, setNodeSearchTerm] = useState('');
   const [subSearchTerm, setSubSearchTerm] = useState('');
 
@@ -53,7 +51,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     fetchData()
   }, [])
 
-  // --- 提交邏輯 ---
   const onFinish = async (values: { name: string }) => {
     setLoading(true)
     const method = profile ? 'PUT' : 'POST'
@@ -74,13 +71,11 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     }
   }
 
-  // --- 核心操作邏輯 ---
   const addNode = (id: string) => setSelectedNodeIds(prev => [...prev, id]);
   const removeNode = (id: string) => setSelectedNodeIds(prev => prev.filter(i => i !== id));
   const addSub = (id: string) => setSelectedSubIds(prev => [...prev, id]);
   const removeSub = (id: string) => setSelectedSubIds(prev => prev.filter(i => i !== id));
 
-  // --- 數據計算 (可選/已選/排序) ---
   const { availableNodes, selectedNodes } = useMemo(() => {
     const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 };
     
@@ -114,7 +109,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
 
   if (dataLoading) return <Spin tip="加载中..." />;
 
-  // 列表項渲染函數
   const renderNodeItem = (node: Node, action: 'add' | 'remove') => {
     const status = nodeStatuses[node.id];
     let statusTag;
