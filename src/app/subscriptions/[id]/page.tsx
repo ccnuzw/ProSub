@@ -1,14 +1,19 @@
 'use client'
+export const runtime = 'edge';
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import SubscriptionForm from '@/components/SubscriptionForm'
 import { Subscription } from '@/types'
 import { Card, Button, Spin } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 
-export const runtime = 'edge';
+// 動態導入 SubscriptionForm 組件
+const SubscriptionForm = dynamic(() => import('@/components/SubscriptionForm'), { 
+    loading: () => <Spin tip="正在加载表单..." />,
+    ssr: false 
+});
 
 export default function EditSubscriptionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null)

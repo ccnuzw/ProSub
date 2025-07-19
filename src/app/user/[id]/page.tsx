@@ -3,9 +3,17 @@ export const runtime = 'edge';
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import UserForm from '@/components/UserForm'
 import { User } from '@/types'
-import { message, Spin } from 'antd'
+import { message, Spin, Card, Button } from 'antd'
+import Link from 'next/link'
+import { ArrowLeftOutlined } from '@ant-design/icons'
+import dynamic from 'next/dynamic'
+
+// 動態導入 UserForm 組件
+const UserForm = dynamic(() => import('@/components/UserForm'), { 
+    loading: () => <Spin tip="正在加载表单..." />,
+    ssr: false 
+});
 
 export default function EditUserPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -27,7 +35,6 @@ export default function EditUserPage() {
           }
         } catch (error) {
           message.error('加载用户数据失败')
-          console.error('Failed to fetch user:', error)
         } finally {
           setLoading(false)
         }
@@ -36,18 +43,16 @@ export default function EditUserPage() {
     }
   }, [id])
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-        <Spin size="large" tip="加载中..."></Spin>
-      </div>
-    )
-  }
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">编辑用户</h1>
-      {user ? <UserForm user={user} /> : <p>用户数据加载失败或不存在。</p>}
-    </div>
+    <Card
+      title="编辑用戶"
+      extra={
+        <Link href="/user">
+          <Button icon={<ArrowLeftOutlined />}>返回列表</Button>
+        </Link>
+      }
+    >
+      {loading ? <Spin /> : (user ? <UserForm user={user} /> : <p>用户数据加载失败或不存在。</p>)}
+    </Card>
   )
 }

@@ -1,14 +1,19 @@
 'use client'
+export const runtime = 'edge';
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import NodeForm from '@/components/NodeForm'
 import { Node } from '@/types'
 import { Card, Button, Spin } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 
-export const runtime = 'edge';
+// 動態導入 NodeForm 組件
+const NodeForm = dynamic(() => import('@/components/NodeForm'), { 
+    loading: () => <Spin tip="正在加载表单..." />,
+    ssr: false 
+});
 
 export default function EditNodePage() {
   const [node, setNode] = useState<Node | null>(null)

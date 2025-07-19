@@ -1,9 +1,15 @@
 'use client'
 
-import ProfileForm from '@/components/ProfileForm'
-import { Card, Button } from 'antd'
+import { Card, Button, Spin } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+// 動態導入 ProfileForm 組件
+const ProfileForm = dynamic(() => import('@/components/ProfileForm'), { 
+    loading: () => <Spin tip="正在加载表单..." />,
+    ssr: false 
+});
 
 export default function NewProfilePage() {
   return (
