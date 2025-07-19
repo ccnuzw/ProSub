@@ -1,13 +1,14 @@
 // src/lib/node-parser.ts
 
 import { Node } from '@/types';
+import { Buffer } from 'buffer'; // 导入 Buffer 以便在 Edge 环境中使用
 
-// 增强的 Base64 解码函数 (适用于 Edge Runtime)
+// *** 这是关键的修复：使用 Buffer 来进行健壮的 Base64 解码 ***
 function base64Decode(str: string): string {
     try {
-        // 替换 URL 安全字符
+        // 替换 URL 安全字符，并使用 Buffer 进行解码，确保 UTF-8 兼容性
         const normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
-        return atob(normalizedStr);
+        return Buffer.from(normalizedStr, 'base64').toString('utf8');
     } catch (e) {
         console.error('Failed to decode base64 string:', str, e);
         return '';
@@ -94,7 +95,6 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 const searchParams = new URLSearchParams(mainParts[1]);
                 searchParams.forEach((value, key) => {
                     if (key === 'remarks') {
-                        // SSR remarks are also base64 encoded
                         params[key] = base64Decode(value);
                     } else {
                         params[key] = value;
@@ -123,12 +123,10 @@ export function parseNodeLink(link: string): Partial<Node> | null {
     }
 
     // 4. VLESS, Trojan, SOCKS5, TUIC, Hysteria, Hysteria2 (Standard URL-based)
-    // 使用 URL constructor 来处理可以大幅简化并原生支持 IPv6
     try {
         const url = new URL(link);
         const protocol = url.protocol.replace(':', '');
         
-        // 检查协议是否在我们支持的范围内
         const supportedUrlProtocols = ['vless', 'trojan', 'socks5', 'tuic', 'hysteria', 'hysteria2'];
         if (supportedUrlProtocols.includes(protocol)) {
             const params: Record<string, any> = {};
@@ -136,7 +134,6 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 params[key] = value;
             });
 
-            // vless-reality 通常在参数中体现
             let nodeType = protocol as Node['type'];
             if(protocol === 'vless' && params.security === 'reality') {
                 nodeType = 'vless-reality';
@@ -155,7 +152,6 @@ export function parseNodeLink(link: string): Partial<Node> | null {
         // 如果 new URL() 失败，说明不是一个有效的 URL 格式，可以忽略错误继续
     }
 
-    // 如果所有解析都失败了，返回 null
     console.warn(`Unsupported or malformed link: ${link}`);
     return null;
 }
