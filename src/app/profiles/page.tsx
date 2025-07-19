@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Button, Table, Space, Popconfirm, message, Tooltip, Input, Card, Typography } from 'antd'
 import Link from 'next/link'
 import { Profile } from '@/types'
-import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined, ClusterOutlined, WifiOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
 
 const { Title } = Typography;
@@ -12,12 +12,9 @@ const { Title } = Typography;
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
-  // *** 这是关键的修复 1: 将 origin 存在顶层 state 中 ***
   const [origin, setOrigin] = useState('');
 
-  // *** 关键修复 2: 在顶层 useEffect 中获取 origin ***
   useEffect(() => {
-    // 确保只在客户端执行
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
     }
@@ -59,10 +56,22 @@ export default function ProfilesPage() {
 
   const columns: TableProps<Profile>['columns'] = [
     { title: '名称', dataIndex: 'name', key: 'name' },
+    // *** 这是关键的修改 1: 新增列来显示数量 ***
+    { 
+      title: '节点数', 
+      dataIndex: 'nodes', 
+      key: 'nodes', 
+      render: (nodes: string[]) => <Space><ClusterOutlined /> {nodes?.length || 0}</Space> 
+    },
+    { 
+      title: '订阅数', 
+      dataIndex: 'subscriptions', 
+      key: 'subscriptions', 
+      render: (subscriptions: string[]) => <Space><WifiOutlined /> {subscriptions?.length || 0}</Space>
+    },
     {
       title: '订阅链接',
       key: 'subscribe_url',
-      // *** 关键修复 3: render 函数现在是一个纯粹的渲染函数，不再调用 hooks ***
       render: (_, record) => {
         const subscribeUrl = `${origin}/api/subscribe/${record.id}`;
         return (
