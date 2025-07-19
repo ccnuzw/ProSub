@@ -12,7 +12,7 @@ const getKV = () => {
   return process.env.KV as KVNamespace;
 };
 
-// --- 核心數據獲取函數 ---
+// --- 核心數據獲取函數 (保持不變) ---
 
 async function getProfile(KV: KVNamespace, profileId: string): Promise<Profile | null> {
   const profileJson = await KV.get(`profile:${profileId}`);
@@ -64,7 +64,7 @@ async function recordTraffic(KV: KVNamespace, profileId: string) {
   }
 }
 
-// --- 各客戶端配置生成器 ---
+// --- 各客戶端配置生成器 (保持不變) ---
 
 function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
@@ -124,13 +124,31 @@ function generateLoonOrQuantumultXSubscription(nodes: Node[]): Response {
     return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
 
+// --- 節點轉換器 (核心修改) ---
+
 function convertNodeToUri(node: Node): string {
     const encodedName = encodeURIComponent(node.name);
     try {
         switch (node.type) {
             case 'vmess':
-                const vmessConfig = { v: "2", ps: node.name, add: node.server, port: node.port, id: node.password, ...node.params };
-                return `vmess://${Buffer.from(JSON.stringify(vmessConfig)).toString('base64')}`;
+                // *** 這是關鍵的修復：確保所有標準字段都存在 ***
+                const vmessConfig = {
+                    v: "2",
+                    ps: node.name, // 包含中文等字符的名稱
+                    add: node.server,
+                    port: node.port,
+                    id: node.password,
+                    aid: node.params?.aid ?? "0",
+                    net: node.params?.net ?? "tcp",
+                    type: node.params?.type ?? "none",
+                    host: node.params?.host ?? "",
+                    path: node.params?.path ?? "",
+                    tls: node.params?.tls ?? ""
+                };
+                const jsonString = JSON.stringify(vmessConfig);
+                // 明確使用 utf8 編碼
+                return `vmess://${Buffer.from(jsonString, 'utf8').toString('base64')}`;
+            
             case 'vless':
             case 'trojan':
             case 'socks5':
@@ -159,7 +177,8 @@ function convertNodeToUri(node: Node): string {
     }
 }
 
-// --- 主路由處理器 ---
+
+// --- 主路由處理器 (保持不變) ---
 
 export async function GET(request: NextRequest, { params }: { params: { profile_id: string } }) {
   try {
