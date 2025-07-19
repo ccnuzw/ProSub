@@ -12,6 +12,16 @@ const { Title } = Typography;
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
+  // *** 这是关键的修复 1: 将 origin 存在顶层 state 中 ***
+  const [origin, setOrigin] = useState('');
+
+  // *** 关键修复 2: 在顶层 useEffect 中获取 origin ***
+  useEffect(() => {
+    // 确保只在客户端执行
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true)
@@ -52,18 +62,14 @@ export default function ProfilesPage() {
     {
       title: '订阅链接',
       key: 'subscribe_url',
+      // *** 关键修复 3: render 函数现在是一个纯粹的渲染函数，不再调用 hooks ***
       render: (_, record) => {
-        // 确保在客户端环境中才访问 window 对象
-        const [subscribeUrl, setSubscribeUrl] = useState('');
-        useEffect(() => {
-            setSubscribeUrl(`${window.location.origin}/api/subscribe/${record.id}`);
-        }, [record.id]);
-        
+        const subscribeUrl = `${origin}/api/subscribe/${record.id}`;
         return (
           <Space.Compact style={{ width: '100%' }}>
             <Input readOnly value={subscribeUrl} />
             <Tooltip title="复制链接">
-              <Button icon={<CopyOutlined />} onClick={() => handleCopy(subscribeUrl)} />
+              <Button icon={<CopyOutlined />} onClick={() => handleCopy(subscribeUrl)} disabled={!origin} />
             </Tooltip>
           </Space.Compact>
         )
