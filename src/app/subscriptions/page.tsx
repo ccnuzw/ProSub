@@ -1,14 +1,16 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+// *** 这是关键的修复: 在这里导入 Spin 和 TextArea 组件 ***
 import { Button, Table, Space, Popconfirm, message, Card, Typography, Tag, Tooltip, Modal, Input, Spin } from 'antd'
 import Link from 'next/link'
-import { Subscription, Node } from '@/types' // 导入 Node 类型
+import { Subscription, Node } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ImportOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
-import { parseNodeLink } from '@/lib/node-parser'; // 导入我们强大的解析器
+import { parseNodeLink } from '@/lib/node-parser';
 
 const { Title } = Typography;
+const { TextArea } = Input; // TextArea 是 Input 的一部分，这样导入是正确的
 
 interface SubscriptionStatus {
   status: 'success' | 'error' | 'updating';
@@ -17,7 +19,6 @@ interface SubscriptionStatus {
   error?: string;
 }
 
-// Partial<Node> 因为解析器返回的可能不是一个完整的 Node 对象
 type ParsedNode = Partial<Node>; 
 
 export default function SubscriptionsPage() {
@@ -26,9 +27,8 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true)
   const [updatingAll, setUpdatingAll] = useState(false);
 
-  // --- 预览功能 state 升级 ---
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
-  const [previewNodes, setPreviewNodes] = useState<ParsedNode[]>([]); // state 类型改为 ParsedNode 数组
+  const [previewNodes, setPreviewNodes] = useState<ParsedNode[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewSubName, setPreviewSubName] = useState('');
 
@@ -93,7 +93,6 @@ export default function SubscriptionsPage() {
     }
   }
 
-  // --- 升级 handlePreview 函数 ---
   const handlePreview = async (sub: Subscription) => {
     setIsPreviewModalVisible(true);
     setPreviewLoading(true);
@@ -103,7 +102,6 @@ export default function SubscriptionsPage() {
         const data = (await res.json()) as { nodes?: string[], error?: string };
         if(!res.ok) throw new Error(data.error || '预览失败');
         
-        // 解析节点链接
         const parsed = (data.nodes || []).map(link => parseNodeLink(link)).filter(Boolean) as ParsedNode[];
         setPreviewNodes(parsed);
 
@@ -151,7 +149,6 @@ export default function SubscriptionsPage() {
     }
   }
   
-  // --- 预览表格的列定义 ---
   const previewColumns: TableProps<ParsedNode>['columns'] = [
     { title: '节点名称', dataIndex: 'name', key: 'name' },
     { title: '服务器', dataIndex: 'server', key: 'server' },
@@ -246,12 +243,11 @@ export default function SubscriptionsPage() {
             width="60%"
         >
             <Spin spinning={previewLoading}>
-                {/* --- 将 TextArea 替换为 Table --- */}
                 <Table
                     size="small"
                     columns={previewColumns}
                     dataSource={previewNodes}
-                    rowKey={(record, index) => `${record.server}-${index}`} // 创建一个唯一的 key
+                    rowKey={(record, index) => `${record.server}-${index}`}
                     pagination={{ pageSize: 10 }}
                 />
             </Spin>
