@@ -74,12 +74,21 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     }
   }
 
-  // --- 數據計算 ---
+  // --- 數據計算與過濾 ---
   const { availableNodes, selectedNodes } = useMemo(() => {
     const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 };
+    
     const available = allNodes
       .filter(node => !selectedNodeIds.includes(node.id))
-      .filter(node => node.name.toLowerCase().includes(nodeSearchTerm.toLowerCase()))
+      // *** 這是關鍵的修改 1: 統一搜索邏輯 ***
+      .filter(node => {
+          const term = nodeSearchTerm.toLowerCase();
+          return (
+            node.name.toLowerCase().includes(term) ||
+            node.server.toLowerCase().includes(term) ||
+            node.type.toLowerCase().includes(term)
+          );
+      })
       .sort((a, b) => {
           const statusA = nodeStatuses[a.id] || { status: 'unknown' };
           const statusB = nodeStatuses[b.id] || { status: 'unknown' };
@@ -91,6 +100,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
           if (latencyA !== latencyB) return latencyA - latencyB;
           return a.name.localeCompare(b.name);
       });
+
     const selected = allNodes.filter(node => selectedNodeIds.includes(node.id));
     return { availableNodes: available, selectedNodes: selected };
   }, [allNodes, selectedNodeIds, nodeStatuses, nodeSearchTerm]);
@@ -98,84 +108,86 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
   const { availableSubs, selectedSubs } = useMemo(() => {
     const available = allSubscriptions
         .filter(sub => !selectedSubIds.includes(sub.id))
-        .filter(sub => sub.name.toLowerCase().includes(subSearchTerm.toLowerCase()));
+        .filter(sub => 
+            sub.name.toLowerCase().includes(subSearchTerm.toLowerCase()) ||
+            sub.url.toLowerCase().includes(subSearchTerm.toLowerCase())
+        );
     const selected = allSubscriptions.filter(sub => selectedSubIds.includes(sub.id));
     return { availableSubs: available, selectedSubs: selected };
   }, [allSubscriptions, selectedSubIds, subSearchTerm]);
 
-  // --- 批量/單個操作邏輯 ---
-  const handleNodeCheckChange = (id: string, checked: boolean) => setCheckedNodeIds(prev => checked ? [...prev, id] : prev.filter(i => i !== id));
-  const handleSubCheckChange = (id: string, checked: boolean) => setCheckedSubIds(prev => checked ? [...prev, id] : prev.filter(i => i !== id));
-  const moveCheckedNodes = () => {
-    const toMove = checkedNodeIds.filter(id => !selectedNodeIds.includes(id));
-    setSelectedNodeIds(prev => [...prev, ...toMove]);
-    setCheckedNodeIds([]);
-  };
-  const removeCheckedNodes = () => {
-    const toKeep = selectedNodeIds.filter(id => !checkedNodeIds.includes(id));
-    setSelectedNodeIds(toKeep);
-    setCheckedNodeIds([]);
-  };
-  const moveCheckedSubs = () => {
-    const toMove = checkedSubIds.filter(id => !selectedSubIds.includes(id));
-    setSelectedSubIds(prev => [...prev, ...toMove]);
-    setCheckedSubIds([]);
-  };
-  const removeCheckedSubs = () => {
-    const toKeep = selectedSubIds.filter(id => !checkedSubIds.includes(id));
-    setSelectedSubIds(toKeep);
-    setCheckedSubIds([]);
-  };
 
-  // --- 列表項渲染函數 ---
-  const renderNodeItem = (node: Node) => {
-    const isSelected = selectedNodeIds.includes(node.id);
-    const status = nodeStatuses[node.id];
-    let statusTag;
-    if (status) {
-        if (status.status === 'offline') statusTag = <Tag color="error">离线</Tag>;
-        else if (status.status === 'online') {
-            const latency = status.latency;
-            let color = 'success';
-            if (latency && latency > 500) color = 'warning';
-            if (latency && latency > 1000) color = 'error';
-            statusTag = <Tag color={color}>{latency ? `${latency}ms` : '在线'}</Tag>;
+  // ... (批量/單個操作邏輯 和 列表項渲染函數 保持不變) ...
+    const handleNodeCheckChange = (id: string, checked: boolean) => setCheckedNodeIds(prev => checked ? [...prev, id] : prev.filter(i => i !== id));
+    const handleSubCheckChange = (id: string, checked: boolean) => setCheckedSubIds(prev => checked ? [...prev, id] : prev.filter(i => i !== id));
+    const moveCheckedNodes = () => {
+        const toMove = checkedNodeIds.filter(id => !selectedNodeIds.includes(id));
+        setSelectedNodeIds(prev => [...prev, ...toMove]);
+        setCheckedNodeIds([]);
+    };
+    const removeCheckedNodes = () => {
+        const toKeep = selectedNodeIds.filter(id => !checkedNodeIds.includes(id));
+        setSelectedNodeIds(toKeep);
+        setCheckedNodeIds([]);
+    };
+    const moveCheckedSubs = () => {
+        const toMove = checkedSubIds.filter(id => !selectedSubIds.includes(id));
+        setSelectedSubIds(prev => [...prev, ...toMove]);
+        setCheckedSubIds([]);
+    };
+    const removeCheckedSubs = () => {
+        const toKeep = selectedSubIds.filter(id => !checkedSubIds.includes(id));
+        setSelectedSubIds(toKeep);
+        setCheckedSubIds([]);
+    };
+    const renderNodeItem = (node: Node) => {
+        const isSelected = selectedNodeIds.includes(node.id);
+        const status = nodeStatuses[node.id];
+        let statusTag;
+        if (status) {
+            if (status.status === 'offline') statusTag = <Tag color="error">离线</Tag>;
+            else if (status.status === 'online') {
+                const latency = status.latency;
+                let color = 'success';
+                if (latency && latency > 500) color = 'warning';
+                if (latency && latency > 1000) color = 'error';
+                statusTag = <Tag color={color}>{latency ? `${latency}ms` : '在线'}</Tag>;
+            }
         }
-    }
-    return (
-        <List.Item
-            actions={[ <Button shape="circle" size="small" icon={isSelected ? <ArrowLeftOutlined /> : <ArrowRightOutlined />} onClick={() => isSelected ? setSelectedNodeIds(p => p.filter(id => id !== node.id)) : setSelectedNodeIds(p => [...p, node.id])} /> ]}
-        >
-            <Checkbox checked={checkedNodeIds.includes(node.id)} onChange={e => handleNodeCheckChange(node.id, e.target.checked)}>
-                <List.Item.Meta
-                    avatar={<ClusterOutlined />}
-                    title={<Text style={{ display: 'inline-block', maxWidth: 250 }} ellipsis={{ tooltip: node.name }}>{node.name}</Text>}
-                    description={<Space>{statusTag}<Tag>{node.type}</Tag></Space>}
-                />
-            </Checkbox>
-        </List.Item>
-    );
-  };
-  const renderSubItem = (sub: Subscription) => {
-    const isSelected = selectedSubIds.includes(sub.id);
-     return (
-        <List.Item
-            actions={[ <Button shape="circle" size="small" icon={isSelected ? <ArrowLeftOutlined /> : <ArrowRightOutlined />} onClick={() => isSelected ? setSelectedSubIds(p => p.filter(id => id !== sub.id)) : setSelectedSubIds(p => [...p, sub.id])} /> ]}
-        >
-            <Checkbox checked={checkedSubIds.includes(sub.id)} onChange={e => handleSubCheckChange(sub.id, e.target.checked)}>
-                <List.Item.Meta
-                    avatar={<WifiOutlined />}
-                    title={<Text style={{ display: 'inline-block', maxWidth: 250 }} ellipsis={{ tooltip: sub.name }}>{sub.name}</Text>}
-                    description={<Text style={{ display: 'inline-block', maxWidth: 250 }} ellipsis={{ tooltip: sub.url }}>{sub.url}</Text>}
-                />
-            </Checkbox>
-        </List.Item>
-    );
-  };
-  
+        return (
+            <List.Item
+                actions={[ <Button shape="circle" size="small" icon={isSelected ? <ArrowLeftOutlined /> : <ArrowRightOutlined />} onClick={() => isSelected ? setSelectedNodeIds(p => p.filter(id => id !== node.id)) : setSelectedNodeIds(p => [...p, node.id])} /> ]}
+            >
+                <Checkbox checked={checkedNodeIds.includes(node.id)} onChange={e => handleNodeCheckChange(node.id, e.target.checked)}>
+                    <List.Item.Meta
+                        avatar={<ClusterOutlined />}
+                        title={<Text style={{ display: 'inline-block', maxWidth: 250 }} ellipsis={{ tooltip: node.name }}>{node.name}</Text>}
+                        description={<Space>{statusTag}<Tag>{node.type}</Tag></Space>}
+                    />
+                </Checkbox>
+            </List.Item>
+        );
+    };
+    const renderSubItem = (sub: Subscription) => {
+        const isSelected = selectedSubIds.includes(sub.id);
+        return (
+            <List.Item
+                actions={[ <Button shape="circle" size="small" icon={isSelected ? <ArrowLeftOutlined /> : <ArrowRightOutlined />} onClick={() => isSelected ? setSelectedSubIds(p => p.filter(id => id !== sub.id)) : setSelectedSubIds(p => [...p, sub.id])} /> ]}
+            >
+                <Checkbox checked={checkedSubIds.includes(sub.id)} onChange={e => handleSubCheckChange(sub.id, e.target.checked)}>
+                    <List.Item.Meta
+                        avatar={<WifiOutlined />}
+                        title={<Text style={{ display: 'inline-block', maxWidth: 250 }} ellipsis={{ tooltip: sub.name }}>{sub.name}</Text>}
+                        description={<Text style={{ display: 'inline-block', maxWidth: 250 }} ellipsis={{ tooltip: sub.url }}>{sub.url}</Text>}
+                    />
+                </Checkbox>
+            </List.Item>
+        );
+    };
+
+
   if (dataLoading) return <Spin tip="加载中..." />;
 
-  // --- 主佈局 ---
   return (
     <Form form={form} layout="vertical" onFinish={onFinish} initialValues={profile}>
       <Form.Item name="name" label={<Title level={5}>配置文件名称</Title>} rules={[{ required: true, message: '请输入配置文件名称' }]}>
@@ -183,11 +195,14 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
       </Form.Item>
 
       <Title level={5} style={{marginTop: '24px'}}>选择节点</Title>
-      {/* *** 這是關鍵的修改：使用 Flexbox 佈局替代 Row/Col *** */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-            <Card title={`可选节点 (${availableNodes.length})`} size="small">
-                <Search placeholder="搜索节点..." onChange={e => setNodeSearchTerm(e.target.value)} style={{ marginBottom: 8 }}/>
+            {/* *** 這是關鍵的修改 2: 調整佈局 *** */}
+            <Card 
+                title={`可选节点 (${availableNodes.length})`} 
+                size="small"
+                extra={<Search placeholder="搜索..." onChange={e => setNodeSearchTerm(e.target.value)} style={{ width: 200 }}/>}
+            >
                 <List style={{ height: 400, overflow: 'auto' }} dataSource={availableNodes} renderItem={renderNodeItem} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="无可用节点" /> }}/>
             </Card>
         </div>
@@ -197,7 +212,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         </Space>
         <div style={{ flex: 1, minWidth: 0 }}>
              <Card title={`已选节点 (${selectedNodes.length})`} size="small">
-                <div style={{ height: 40, marginBottom: 8 }}></div> {/* 占位符，與左側搜索框對齊 */}
+                <div style={{ height: 32, marginBottom: 8 }}></div> {/* 占位符，與左側搜索框對齊 */}
                 <List style={{ height: 400, overflow: 'auto' }} dataSource={selectedNodes} renderItem={renderNodeItem} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请从左侧添加" /> }}/>
             </Card>
         </div>
@@ -206,8 +221,11 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
       <Title level={5} style={{marginTop: '24px'}}>选择订阅</Title>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-            <Card title={`可选订阅 (${availableSubs.length})`} size="small">
-                <Search placeholder="搜索订阅..." onChange={e => setSubSearchTerm(e.target.value)} style={{ marginBottom: 8 }}/>
+            <Card 
+                title={`可选订阅 (${availableSubs.length})`} 
+                size="small"
+                extra={<Search placeholder="搜索..." onChange={e => setSubSearchTerm(e.target.value)} style={{ width: 200 }}/>}
+            >
                 <List style={{ height: 200, overflow: 'auto' }} dataSource={availableSubs} renderItem={renderSubItem} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="无可用订阅" /> }}/>
             </Card>
         </div>
@@ -217,7 +235,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         </Space>
         <div style={{ flex: 1, minWidth: 0 }}>
              <Card title={`已选订阅 (${selectedSubs.length})`} size="small">
-                <div style={{ height: 40, marginBottom: 8 }}></div>
+                <div style={{ height: 32, marginBottom: 8 }}></div>
                 <List style={{ height: 200, overflow: 'auto' }} dataSource={selectedSubs} renderItem={renderSubItem} locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请从左侧添加" /> }}/>
             </Card>
         </div>
