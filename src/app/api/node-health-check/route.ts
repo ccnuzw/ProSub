@@ -1,47 +1,51 @@
+// src/app/api/node-health-check/route.ts
+
 export const runtime = 'edge';
-import { NextResponse, NextRequest } from 'next/server'
+
+import { NextResponse, NextRequest } from 'next/server';
+import { HealthStatus } from '@/types';
 
 const getKV = () => {
-  return process.env.KV as KVNamespace
-}
+  // @ts-ignore
+  return process.env.KV as KVNamespace;
+};
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const server = searchParams.get('server')
-  const port = searchParams.get('port')
-  const nodeId = searchParams.get('nodeId') // New: Pass nodeId to store status
+export async function POST(request: NextRequest) {
+  const { server, port, nodeId } = (await request.json()) as { server: string, port: number, nodeId: string };
 
   if (!server || !port || !nodeId) {
-    return NextResponse.json({ error: 'Server, port, and nodeId are required' }, { status: 400 })
+    return NextResponse.json({ error: 'Server, port, and nodeId are required' }, { status: 400 });
   }
 
-  const KV = getKV()
-  let status = 'offline'
-  let errorMessage = ''
+  const KV = getKV();
+  const healthStatus: HealthStatus = {
+    status: 'offline',
+    timestamp: new Date().toISOString(),
+  };
 
   try {
-    const response = await fetch(`http://${server}:${port}`, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
-    if (response.ok) {
-      status = 'online'
-    } else {
-      errorMessage = `HTTP Status: ${response.status}`
-    }
+    const startTime = Date.now();
+    // 使用 TCP 套接字进行连接测试，这比 HTTP HEAD 更通用
+    // @ts-ignore - connect is a valid API in Cloudflare Workers environment
+    const socket = connect({ hostname: server, port: port });
+    // 我们只需要知道能否建立连接，所以直接关闭它
+    await socket.close();
+    
+    const endTime = Date.now();
+    
+    healthStatus.status = 'online';
+    healthStatus.latency = endTime - startTime; // 记录延迟
+
   } catch (error) {
     if (error instanceof Error) {
-      errorMessage = error.message
+        healthStatus.error = error.message;
     } else {
-      errorMessage = String(error)
+        healthStatus.error = String(error);
     }
   }
 
-  const healthStatus = {
-    status: status,
-    timestamp: new Date().toISOString(),
-    error: errorMessage,
-  }
+  // 将包含延迟的健康状态存入 KV
+  await KV.put(`node-status:${nodeId}`, JSON.stringify(healthStatus));
 
-  // Store the health status in KV
-  await KV.put(`node-status:${nodeId}`, JSON.stringify(healthStatus))
-
-  return NextResponse.json(healthStatus)
+  return NextResponse.json(healthStatus);
 }

@@ -1,3 +1,5 @@
+// src/types/index.ts
+
 // To extend ProcessEnv for Cloudflare Workers KV binding
 // This is a common pattern for adding custom environment variables to TypeScript's ProcessEnv
 /* eslint-disable @typescript-eslint/no-namespace */
@@ -23,10 +25,12 @@ export interface Node {
 }
 
 export interface HealthStatus {
-  status: 'online' | 'offline';
+  status: 'online' | 'offline' | 'checking'; // 'checking' 状态是前端专用的
   timestamp: string;
-  error: string;
+  error?: string;
+  latency?: number; // 新增：用于存储延迟（毫秒）
 }
+
 
 export interface Subscription {
   id: string;

@@ -3,12 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button, Table, Space, Popconfirm, message, Tag, Modal, Input } from 'antd'
 import Link from 'next/link'
-import { Node } from '@/types'
+import { Node, HealthStatus } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
 
 const { TextArea } = Input;
-type HealthStatus = { status: 'online' | 'offline' | 'checking', timestamp: string };
 
 export default function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
@@ -63,8 +62,8 @@ export default function NodesPage() {
   
   const handleCheckAllNodes = async () => {
     setCheckingAll(true)
-    const checkPromises = nodes.map(node => checkNodeHealth(node))
-    await Promise.all(checkPromises)
+    // 使用 Promise.allSettled 来确保即使部分节点检查失败，也不会中断整个流程
+    await Promise.allSettled(nodes.map(node => checkNodeHealth(node)))
     setCheckingAll(false)
     message.success('所有节点健康检查完成')
   }
@@ -104,8 +103,6 @@ export default function NodesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ links: importLinks }),
       });
-      // *** 这是关键的修复 ***
-      // 明确告诉 TypeScript result 的类型
       const result = (await res.json()) as { message: string };
       if (!res.ok) {
         throw new Error(result.message || '导入失败');
@@ -137,19 +134,28 @@ export default function NodesPage() {
   const hasSelected = selectedRowKeys.length > 0;
 
   const columns: TableProps<Node>['columns'] = [
-    { title: '名称', dataIndex: 'name', key: 'name' },
-    { title: '类型', dataIndex: 'type', key: 'type' },
-    { title: '服务器', dataIndex: 'server', key: 'server' },
-    { title: '端口', dataIndex: 'port', key: 'port' },
+    { title: '名称', dataIndex: 'name', key: 'name', width: '25%' },
+    { title: '类型', dataIndex: 'type', key: 'type', width: '10%' },
+    { title: '服务器', dataIndex: 'server', key: 'server', width: '25%' },
+    { title: '端口', dataIndex: 'port', key: 'port', width: '10%' },
     {
       title: '状态',
       key: 'status',
+      width: '15%',
       render: (_, record) => {
         const statusInfo = nodeStatus[record.id]
         if (!statusInfo) return <Tag>未知</Tag>
-        if (statusInfo.status === 'online') return <Tag icon={<CheckCircleOutlined />} color="success">在线</Tag>
-        if (statusInfo.status === 'offline') return <Tag icon={<CloseCircleOutlined />} color="error">离线</Tag>
         if (statusInfo.status === 'checking') return <Tag icon={<SyncOutlined spin />} color="processing">检查中...</Tag>
+        if (statusInfo.status === 'offline') return <Tag icon={<CloseCircleOutlined />} color="error">离线</Tag>
+        
+        // *** 这是关键的修改 ***
+        if (statusInfo.status === 'online') {
+            const latency = statusInfo.latency;
+            let color = 'success';
+            if(latency && latency > 500) color = 'warning';
+            if(latency && latency > 1000) color = 'error';
+            return <Tag icon={<CheckCircleOutlined />} color={color}>{latency ? `${latency} ms` : '在线'}</Tag>
+        }
         return <Tag>未知</Tag>
       },
     },
