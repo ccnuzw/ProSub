@@ -10,6 +10,16 @@ const getKV = () => {
   return process.env.KV as KVNamespace;
 };
 
+// --- Promise-based timeout helper ---
+function promiseWithTimeout<T>(promise: Promise<T>, ms: number, timeoutError = new Error('Connection timed out')): Promise<T> {
+    const timeout = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+            reject(timeoutError);
+        }, ms);
+    });
+    return Promise.race([promise, timeout]);
+}
+
 export async function POST(request: NextRequest) {
   const { server, port, nodeId } = (await request.json()) as { server: string, port: number, nodeId: string };
 
@@ -23,20 +33,41 @@ export async function POST(request: NextRequest) {
     timestamp: new Date().toISOString(),
   };
 
+  let socket: any = null;
   try {
     const startTime = Date.now();
-    // 使用 TCP 套接字进行连接测试，这比 HTTP HEAD 更通用
-    // @ts-ignore - connect is a valid API in Cloudflare Workers environment
-    const socket = connect({ hostname: server, port: port });
-    // 我们只需要知道能否建立连接，所以直接关闭它
+
+    // 创建一个 TCP 连接的 Promise
+    const connectPromise = new Promise<any>((resolve, reject) => {
+        try {
+            // @ts-ignore - connect is a valid API in Cloudflare Workers environment
+            const s = connect({ hostname: server, port: port });
+            resolve(s);
+        } catch (e) {
+            reject(e);
+        }
+    });
+
+    // 使用 5 秒的超时来竞赛连接 Promise
+    socket = await promiseWithTimeout(connectPromise, 5000);
+    
+    // 如果连接成功，立即关闭
     await socket.close();
     
     const endTime = Date.now();
     
     healthStatus.status = 'online';
-    healthStatus.latency = endTime - startTime; // 记录延迟
+    healthStatus.latency = endTime - startTime;
 
   } catch (error) {
+    // 如果 socket 已经创建但后续出错，确保它被关闭
+    if (socket) {
+      try {
+        await socket.close();
+      } catch (closeError) {
+        // Ignore errors on close after a failure
+      }
+    }
     if (error instanceof Error) {
         healthStatus.error = error.message;
     } else {
