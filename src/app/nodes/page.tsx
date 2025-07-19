@@ -7,12 +7,15 @@ import { Node } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
 
+// 定义健康状态的类型，以便复用
+type HealthStatus = { status: 'online' | 'offline' | 'checking', timestamp: string };
+
 export default function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
-  const [nodeStatus, setNodeStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking', timestamp: string }>>({})
+  const [nodeStatus, setNodeStatus] = useState<Record<string, HealthStatus>>({})
   const [checkingAll, setCheckingAll] = useState(false)
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 新增 state 用于存储选中的节点 key
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const fetchNodesAndStatuses = useCallback(async () => {
     setLoading(true)
@@ -22,7 +25,7 @@ export default function NodesPage() {
         fetch('/api/node-statuses'),
       ])
       const nodesData = (await nodesRes.json()) as Node[]
-      const statusesData = (await statusesRes.json()) as Record<string, { status: 'online' | 'offline' | 'checking', timestamp: string }>
+      const statusesData = (await statusesRes.json()) as Record<string, HealthStatus>
 
       setNodes(nodesData)
       setNodeStatus(statusesData)
@@ -41,13 +44,16 @@ export default function NodesPage() {
   const checkNodeHealth = async (node: Node) => {
     setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }))
     try {
-      // 注意：这里的 API 路径是示意，Cloudflare Pages 不支持这样的动态请求，需要改为 POST
       const res = await fetch(`/api/node-health-check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ server: node.server, port: node.port, nodeId: node.id })
       });
-      const data = await res.json()
+
+      // *** 这是关键的修复 ***
+      // 明确告诉 TypeScript `data` 的类型是 HealthStatus
+      const data = (await res.json()) as HealthStatus;
+      
       setNodeStatus(prev => ({ ...prev, [node.id]: data }))
     } catch (error) {
       console.error('Failed to check node health:', error)
@@ -74,24 +80,21 @@ export default function NodesPage() {
     }
   }
 
-  // 新增：批量删除处理函数
   const handleBatchDelete = async () => {
     try {
-      // 取消这段代码的注释
       await fetch(`/api/nodes/batch-delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: selectedRowKeys }),
       });
       message.success(`成功删除 ${selectedRowKeys.length} 个节点`);
-      setSelectedRowKeys([]); // 清空选项
+      setSelectedRowKeys([]);
       fetchNodesAndStatuses();
     } catch (error) {
       console.error('Failed to batch delete nodes:', error);
       message.error('批量删除失败');
     }
   };
-
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
     setSelectedRowKeys(newSelectedRowKeys);
