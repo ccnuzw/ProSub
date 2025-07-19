@@ -1,15 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-// *** 这是关键的修复: 在这里导入 Spin 组件 ***
 import { Button, Table, Space, Popconfirm, message, Card, Typography, Tag, Tooltip, Modal, Input, Spin } from 'antd'
 import Link from 'next/link'
-import { Subscription } from '@/types'
-import { EditOutlined, DeleteOutlined, PlusOutlined, SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons'
+import { Subscription, Node } from '@/types' // 导入 Node 类型
+import { EditOutlined, DeleteOutlined, PlusOutlined, SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ImportOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
+import { parseNodeLink } from '@/lib/node-parser'; // 导入我们强大的解析器
 
 const { Title } = Typography;
-const { TextArea } = Input;
 
 interface SubscriptionStatus {
   status: 'success' | 'error' | 'updating';
@@ -18,16 +17,24 @@ interface SubscriptionStatus {
   error?: string;
 }
 
+// Partial<Node> 因为解析器返回的可能不是一个完整的 Node 对象
+type ParsedNode = Partial<Node>; 
+
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [statuses, setStatuses] = useState<Record<string, SubscriptionStatus>>({})
   const [loading, setLoading] = useState(true)
   const [updatingAll, setUpdatingAll] = useState(false);
 
+  // --- 预览功能 state 升级 ---
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
-  const [previewNodes, setPreviewNodes] = useState<string[]>([]);
+  const [previewNodes, setPreviewNodes] = useState<ParsedNode[]>([]); // state 类型改为 ParsedNode 数组
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewSubName, setPreviewSubName] = useState('');
+
+  const [isImportModalVisible, setIsImportModalVisible] = useState(false);
+  const [importUrls, setImportUrls] = useState('');
+  const [importing, setImporting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -86,6 +93,7 @@ export default function SubscriptionsPage() {
     }
   }
 
+  // --- 升级 handlePreview 函数 ---
   const handlePreview = async (sub: Subscription) => {
     setIsPreviewModalVisible(true);
     setPreviewLoading(true);
@@ -94,14 +102,45 @@ export default function SubscriptionsPage() {
         const res = await fetch(`/api/subscriptions/preview/${sub.id}`);
         const data = (await res.json()) as { nodes?: string[], error?: string };
         if(!res.ok) throw new Error(data.error || '预览失败');
-        setPreviewNodes(data.nodes || []);
+        
+        // 解析节点链接
+        const parsed = (data.nodes || []).map(link => parseNodeLink(link)).filter(Boolean) as ParsedNode[];
+        setPreviewNodes(parsed);
+
     } catch (error) {
         if(error instanceof Error) message.error(error.message);
-        setPreviewNodes(['加载失败']);
+        setPreviewNodes([]);
     } finally {
         setPreviewLoading(false);
     }
   }
+  
+  const handleBatchImport = async () => {
+    setImporting(true);
+    try {
+      const res = await fetch('/api/subscriptions/batch-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: importUrls }),
+      });
+      const result = (await res.json()) as { message: string };
+      if (!res.ok) {
+        throw new Error(result.message || '导入失败');
+      }
+      message.success(result.message);
+      setIsImportModalVisible(false);
+      setImportUrls('');
+      fetchData();
+    } catch (error) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      } else {
+        message.error('导入订阅失败');
+      }
+    } finally {
+      setImporting(false);
+    }
+  };
   
   const formatTime = (isoString?: string) => {
     if (!isoString) return '从未';
@@ -111,6 +150,14 @@ export default function SubscriptionsPage() {
       return '无效日期';
     }
   }
+  
+  // --- 预览表格的列定义 ---
+  const previewColumns: TableProps<ParsedNode>['columns'] = [
+    { title: '节点名称', dataIndex: 'name', key: 'name' },
+    { title: '服务器', dataIndex: 'server', key: 'server' },
+    { title: '端口', dataIndex: 'port', key: 'port' },
+    { title: '类型', dataIndex: 'type', key: 'type', render: (type) => <Tag>{type}</Tag> },
+  ];
 
   const columns: TableProps<Subscription>['columns'] = [
     { title: '名称', dataIndex: 'name', key: 'name' },
@@ -178,6 +225,9 @@ export default function SubscriptionsPage() {
                     >
                         全部更新
                     </Button>
+                    <Button type="default" icon={<ImportOutlined />} onClick={() => setIsImportModalVisible(true)}>
+                        导入订阅
+                    </Button>
                     <Link href="/subscriptions/new">
                         <Button type="primary" icon={<PlusOutlined />}>
                             添加订阅
@@ -196,14 +246,34 @@ export default function SubscriptionsPage() {
             width="60%"
         >
             <Spin spinning={previewLoading}>
-                <TextArea
-                    readOnly
-                    rows={15}
-                    value={previewNodes.join('\n')}
-                    style={{ background: '#f5f5f5', border: 'none', cursor: 'text' }}
+                {/* --- 将 TextArea 替换为 Table --- */}
+                <Table
+                    size="small"
+                    columns={previewColumns}
+                    dataSource={previewNodes}
+                    rowKey={(record, index) => `${record.server}-${index}`} // 创建一个唯一的 key
+                    pagination={{ pageSize: 10 }}
                 />
             </Spin>
         </Modal>
+
+        <Modal
+            title="从剪贴板导入订阅"
+            open={isImportModalVisible}
+            onOk={handleBatchImport}
+            onCancel={() => setIsImportModalVisible(false)}
+            confirmLoading={importing}
+            okText="导入"
+            cancelText="取消"
+        >
+            <p>请粘贴一个或多个订阅链接，每行一个。</p>
+            <TextArea
+                rows={10}
+                value={importUrls}
+                onChange={(e) => setImportUrls(e.target.value)}
+                placeholder="https://example.com/sub1&#10;https://example.com/sub2"
+            />
+      </Modal>
     </>
   )
 }
