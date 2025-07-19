@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button, Table, Space, Popconfirm, message, Tag, Modal, Input } from 'antd'
 import Link from 'next/link'
 import { Node, HealthStatus } from '@/types'
@@ -62,7 +62,6 @@ export default function NodesPage() {
   
   const handleCheckAllNodes = async () => {
     setCheckingAll(true)
-    // 使用 Promise.allSettled 来确保即使部分节点检查失败，也不会中断整个流程
     await Promise.allSettled(nodes.map(node => checkNodeHealth(node)))
     setCheckingAll(false)
     message.success('所有节点健康检查完成')
@@ -110,6 +109,7 @@ export default function NodesPage() {
       message.success(result.message);
       setIsImportModalVisible(false);
       setImportLinks('');
+      // *** 关键修复 1: 导入成功后自动刷新列表 ***
       fetchNodesAndStatuses();
     } catch (error) {
         if(error instanceof Error) {
@@ -121,6 +121,37 @@ export default function NodesPage() {
       setImporting(false);
     }
   };
+
+  // *** 关键修复 2: 节点排序逻辑 ***
+  const sortedNodes = useMemo(() => {
+    const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'offline': 4, 'unknown': 3 };
+    
+    return [...nodes].sort((a, b) => {
+      const statusA = nodeStatus[a.id] || { status: 'unknown' };
+      const statusB = nodeStatus[b.id] || { status: 'unknown' };
+      
+      const orderA = statusOrder[statusA.status] || 99;
+      const orderB = statusOrder[statusB.status] || 99;
+      
+      // 1. 按状态排序
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      
+      // 2. 如果都是 online，按延迟排序 (延迟越低越好)
+      if (statusA.status === 'online' && statusB.status === 'online') {
+        const latencyA = statusA.latency ?? Infinity;
+        const latencyB = statusB.latency ?? Infinity;
+        if (latencyA !== latencyB) {
+          return latencyA - latencyB;
+        }
+      }
+      
+      // 3. 按名称字母排序
+      return a.name.localeCompare(b.name);
+    });
+  }, [nodes, nodeStatus]);
+
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
     setSelectedRowKeys(newSelectedRowKeys);
@@ -148,7 +179,6 @@ export default function NodesPage() {
         if (statusInfo.status === 'checking') return <Tag icon={<SyncOutlined spin />} color="processing">检查中...</Tag>
         if (statusInfo.status === 'offline') return <Tag icon={<CloseCircleOutlined />} color="error">离线</Tag>
         
-        // *** 这是关键的修改 ***
         if (statusInfo.status === 'online') {
             const latency = statusInfo.latency;
             let color = 'success';
@@ -220,7 +250,7 @@ export default function NodesPage() {
       <Table 
         rowSelection={rowSelection} 
         columns={columns} 
-        dataSource={nodes} 
+        dataSource={sortedNodes} // 使用排序后的数据
         rowKey="id" 
         loading={loading} 
       />
