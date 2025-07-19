@@ -14,7 +14,8 @@ function arrayBufferToHex(buffer: ArrayBuffer): string {
 
 // Re-implement password hashing using Web Crypto API (SHA-256)
 async function hashPassword(password: string): Promise<string> {
-  const salt = arrayBufferToHex(crypto.getRandomValues(new Uint8Array(16)));
+  const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+  const salt = arrayBufferToHex(saltBuffer.buffer); // <-- 修正点在这里
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password + salt);
   
