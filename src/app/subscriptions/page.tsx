@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Table, Space, Popconfirm, message, Card, Typography, Tag, Tooltip, Modal, Input } from 'antd'
+// *** 这是关键的修复: 在这里导入 Spin 组件 ***
+import { Button, Table, Space, Popconfirm, message, Card, Typography, Tag, Tooltip, Modal, Input, Spin } from 'antd'
 import Link from 'next/link'
 import { Subscription } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, SyncOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons'
@@ -56,15 +57,13 @@ export default function SubscriptionsPage() {
     setStatuses(prev => ({ ...prev, [id]: { status: 'updating' } }));
     try {
       const res = await fetch(`/api/subscriptions/update/${id}`, { method: 'POST' });
-      // *** 这是关键的修复 ***
-      // 明确告诉 TypeScript data 的类型
       const data = await res.json() as SubscriptionStatus & { error?: string };
       if (!res.ok) throw new Error(data.error || '更新失败');
       setStatuses(prev => ({ ...prev, [id]: data }));
       message.success(`订阅 "${subscriptions.find(s=>s.id===id)?.name}" 更新成功!`);
     } catch (error) {
       if(error instanceof Error) message.error(error.message);
-      fetchData(); // 失败时刷新以获取旧状态
+      fetchData();
     }
   }
 
