@@ -1,73 +1,76 @@
-export const runtime = 'edge';
-import { NextResponse, NextRequest } from 'next/server'
-import { User } from '@/types'
-import { authenticateUser } from '@/lib/auth'
-import { scrypt, randomBytes } from 'crypto'
-import { promisify } from 'util'
+// src/app/api/users/[id]/route.ts
 
-interface UserUpdateRequest {
-  name: string;
-  password?: string;
-  profiles: string[];
+export const runtime = 'edge';
+
+import { NextResponse, NextRequest } from 'next/server';
+import { User } from '@/types';
+import { authenticateUser } from '@/lib/auth';
+
+// Helper function to convert ArrayBuffer to hex string
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  return Array.prototype.map.call(new Uint8Array(buffer), (x: number) => ('00' + x.toString(16)).slice(-2)).join('');
 }
 
-const scryptPromise = promisify(scrypt)
+// Re-implement password hashing using Web Crypto API (SHA-256)
+async function hashPassword(password: string): Promise<string> {
+  const salt = arrayBufferToHex(crypto.getRandomValues(new Uint8Array(16)));
+  const encoder = new TextEncoder();
+  const passwordBuffer = encoder.encode(password + salt);
+  
+  const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
+  const hashHex = arrayBufferToHex(hashBuffer);
+  
+  return `${salt}:${hashHex}`;
+}
 
 const getKV = () => {
-  return process.env.KV as KVNamespace
-}
+  // @ts-ignore
+  return process.env.KV as KVNamespace;
+};
 
-export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any
-}) {
-  const authenticatedUser = await authenticateUser(request)
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const authenticatedUser = await authenticateUser(request);
   if (!authenticatedUser) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 })
+    return NextResponse.json({ message: '未授权' }, { status: 401 });
   }
 
   try {
-    const KV = getKV()
-    const userJson = await KV.get(`user:${params.id}`)
+    const KV = getKV();
+    const userJson = await KV.get(`user:${params.id}`);
     if (!userJson) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    const user = JSON.parse(userJson)
-    // Do not return password hash
-    delete user.password
-    return NextResponse.json(user)
+    const user = JSON.parse(userJson);
+    delete user.password;
+    return NextResponse.json(user);
   } catch (error) {
-    console.error(`Failed to fetch user ${params.id}:`, error)
-    return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 })
+    console.error(`Failed to fetch user ${params.id}:`, error);
+    return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any
-}) {
-  const authenticatedUser = await authenticateUser(request)
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  const authenticatedUser = await authenticateUser(request);
   if (!authenticatedUser) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 })
+    return NextResponse.json({ message: '未授权' }, { status: 401 });
   }
 
   try {
-    const { name, password, profiles } = (await request.json()) as UserUpdateRequest
-    const KV = getKV()
-    const userJson = await KV.get(`user:${params.id}`)
+    const { name, password, profiles } = (await request.json()) as { name: string; password?: string; profiles: string[] };
+    const KV = getKV();
+    const userJson = await KV.get(`user:${params.id}`);
     if (!userJson) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    const existingUser: User = JSON.parse(userJson)
+    const existingUser: User = JSON.parse(userJson);
 
-    let hashedPassword = existingUser.password
-    let defaultPasswordChanged = existingUser.defaultPasswordChanged
+    let hashedPassword = existingUser.password;
+    let defaultPasswordChanged = existingUser.defaultPasswordChanged;
 
     if (password) {
-      const salt = randomBytes(16).toString('hex')
-      const derivedKey = (await scryptPromise(password, salt, 64)) as Buffer
-      hashedPassword = `${salt}:${derivedKey.toString('hex')}`
-      // If admin user is changing password, mark defaultPasswordChanged as true
+      hashedPassword = await hashPassword(password);
       if (existingUser.name === 'admin' && existingUser.defaultPasswordChanged === false) {
-        defaultPasswordChanged = true
+        defaultPasswordChanged = true;
       }
     }
 
@@ -77,35 +80,31 @@ export async function PUT(request: NextRequest, { params }: { // eslint-disable-
       password: hashedPassword, 
       profiles: profiles || [],
       defaultPasswordChanged: defaultPasswordChanged
-    }
+    };
     
-    await KV.put(`user:${params.id}`, JSON.stringify(updatedUser))
+    await KV.put(`user:${params.id}`, JSON.stringify(updatedUser));
     
-    // Do not return password hash
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...userWithoutPassword } = updatedUser
-    return NextResponse.json(userWithoutPassword)
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    return NextResponse.json(userWithoutPassword);
   } catch (error) {
-    console.error(`Failed to update user ${params.id}:`, error)
-    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
+    console.error(`Failed to update user ${params.id}:`, error);
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any
-}) {
-  const authenticatedUser = await authenticateUser(request)
-  if (!authenticatedUser) {
-    return NextResponse.json({ message: '未授权' }, { status: 401 })
-  }
-
-  try {
-    const KV = getKV()
-    await KV.delete(`user:${params.id}`)
-    
-    return new Response(null, { status: 204 })
-  } catch (error) {
-    console.error(`Failed to delete user ${params.id}:`, error)
-    return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 })
-  }
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+    const authenticatedUser = await authenticateUser(request);
+    if (!authenticatedUser) {
+      return NextResponse.json({ message: '未授权' }, { status: 401 });
+    }
+  
+    try {
+      const KV = getKV();
+      await KV.delete(`user:${params.id}`);
+      
+      return new Response(null, { status: 204 });
+    } catch (error) {
+      console.error(`Failed to delete user ${params.id}:`, error);
+      return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+    }
 }
