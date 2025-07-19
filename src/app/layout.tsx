@@ -13,12 +13,6 @@ const { Header, Content, Footer } = Layout
 
 const inter = Inter({ subsets: ['latin'] })
 
-// Metadata is not directly used in client components, but kept for consistency
-// export const metadata: Metadata = {
-//   title: 'ProSub - 节点订阅管理',
-//   description: '轻量级机场订阅和自建节点管理分享项目',
-// }
-
 export default function RootLayout({
   children,
 }: {
@@ -26,8 +20,14 @@ export default function RootLayout({
 }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [loadingUser, setLoadingUser] = useState(true)
+  const [isClient, setIsClient] = useState(false) // 1. 新增 state
   const router = useRouter()
   const pathname = usePathname()
+
+  // 2. 新增 useEffect，用于在组件挂载后将 isClient 设为 true
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -36,13 +36,15 @@ export default function RootLayout({
         if (res.ok) {
           const user = await res.json() as User
           setCurrentUser(user)
-          // If admin user and default password not changed, redirect to change password page
           if (user.name === 'admin' && user.defaultPasswordChanged === false && pathname !== '/user/change-password') {
             message.warning('请修改默认密码')
             router.push('/user/change-password')
           }
         } else {
           setCurrentUser(null)
+          if (pathname !== '/user/login') {
+            router.push('/user/login');
+          }
         }
       } catch (error) {
         console.error('Failed to fetch current user:', error)
@@ -84,7 +86,6 @@ export default function RootLayout({
     menuItems.push({ key: 'login', label: <Link href="/user/login">登录</Link> })
   }
 
-  // Determine selected key based on current path
   const selectedKey = menuItems.find(item => pathname.startsWith(item.key === 'dashboard' ? '/dashboard' : `/${item.key}`))?.key || 'dashboard'
 
   return (
@@ -102,7 +103,8 @@ export default function RootLayout({
                 style={{ flex: 1, minWidth: 0 }}
               />
               <div style={{ float: 'right' }}>
-                {!loadingUser && currentUser && (
+                {/* 3. 修改渲染条件 */}
+                {isClient && !loadingUser && currentUser && (
                   <Button type="primary" onClick={handleLogout}>
                     登出 ({currentUser.name})
                   </Button>
