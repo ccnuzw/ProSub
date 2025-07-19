@@ -14,7 +14,7 @@ function arrayBufferToHex(buffer: ArrayBuffer): string {
 // Re-implement password hashing using Web Crypto API (SHA-256)
 async function hashPassword(password: string): Promise<string> {
   const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
-  const salt = arrayBufferToHex(saltBuffer.buffer); // <-- 修正点在这里
+  const salt = arrayBufferToHex(saltBuffer.buffer);
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password + salt);
   
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 
   try {
-    const { name, password, profiles } = (await request.json()) as { name: string; password?: string; profiles: string[] };
+    const { name, password, profiles } = (await request.json()) as { name?: string; password?: string; profiles?: string[] };
     const KV = getKV();
     const userJson = await KV.get(`user:${params.id}`);
     if (!userJson) {
@@ -75,11 +75,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
+    // *** 这是关键的修复 ***
+    // 先继承所有旧数据，再用新数据覆盖
     const updatedUser: User = { 
+      ...existingUser,
       id: params.id, 
-      name, 
+      name: name || existingUser.name, // 如果请求中没有提供 name，则保留旧的 name
       password: hashedPassword, 
-      profiles: profiles || [],
+      profiles: profiles || existingUser.profiles, // 如果请求中没有提供 profiles，则保留旧的
       defaultPasswordChanged: defaultPasswordChanged
     };
     
