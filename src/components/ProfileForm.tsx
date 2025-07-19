@@ -4,11 +4,10 @@ import { useState, useEffect, useMemo } from 'react'
 import { Form, Input, Button, message, Spin, Card, Transfer, Typography, Tag } from 'antd'
 import { useRouter } from 'next/navigation'
 import { Profile, Node, Subscription, HealthStatus } from '@/types'
-import type { TransferDirection } from 'antd/es/transfer';
+import type { TransferProps } from 'antd'; // 导入 TransferProps
 
 const { Title, Text } = Typography;
 
-// *** 这是关键的修复 1: 重新添加丢失的接口定义 ***
 interface ProfileFormProps {
   profile?: Profile
 }
@@ -129,12 +128,13 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
       description: sub.url,
   }));
 
-  const handleNodeChange = (newTargetKeys: string[]) => {
-    setTargetNodeKeys(newTargetKeys);
+  // *** 这是关键的修复：修正函数签名 ***
+  const handleNodeChange: TransferProps['onChange'] = (newTargetKeys) => {
+    setTargetNodeKeys(newTargetKeys as string[]);
   };
   
-  const handleSubChange = (newTargetKeys: string[]) => {
-    setTargetSubKeys(newTargetKeys);
+  const handleSubChange: TransferProps['onChange'] = (newTargetKeys) => {
+    setTargetSubKeys(newTargetKeys as string[]);
   };
   
   const renderNodeItem = (item: RecordType) => {
