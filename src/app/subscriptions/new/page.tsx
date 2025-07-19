@@ -1,11 +1,21 @@
+'use client'
 
 import SubscriptionForm from '@/components/SubscriptionForm'
+import { Card, Button } from 'antd'
+import { ArrowLeftOutlined } from '@ant-design/icons'
+import Link from 'next/link'
 
 export default function NewSubscriptionPage() {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Add New Subscription</h1>
+    <Card
+      title="添加新订阅"
+      extra={
+        <Link href="/subscriptions">
+          <Button icon={<ArrowLeftOutlined />}>返回列表</Button>
+        </Link>
+      }
+    >
       <SubscriptionForm />
-    </div>
+    </Card>
   )
 }

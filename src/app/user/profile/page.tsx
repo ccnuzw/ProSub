@@ -1,10 +1,12 @@
-
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button, Card, message, Spin } from 'antd'
+import { Button, Card, message, Spin, Row, Col, Descriptions, Typography, Space } from 'antd'
 import { useRouter } from 'next/navigation'
 import { User } from '@/types'
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
+
+const { Title } = Typography;
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<User | null>(null)
@@ -15,9 +17,7 @@ export default function UserProfilePage() {
     const fetchUserProfile = async () => {
       setLoading(true)
       try {
-        // Fetch current user info (assuming an API endpoint for current user)
-        // For simplicity, we'll try to get user from /api/users/[id] using the token's ID
-        const res = await fetch('/api/auth/me') // We need to create this endpoint
+        const res = await fetch('/api/auth/me')
         if (res.ok) {
           const data = (await res.json()) as User
           setUser(data)
@@ -43,6 +43,7 @@ export default function UserProfilePage() {
       if (res.ok) {
         message.success('登出成功')
         router.push('/user/login')
+        router.refresh();
       } else {
         throw new Error('登出失败')
       }
@@ -52,28 +53,34 @@ export default function UserProfilePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-        <Spin size="large" tip="加载中..."></Spin>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return <p>无法加载用户资料。</p>
-  }
-
   return (
-    <div style={{ maxWidth: '600px', margin: '50px auto', padding: '20px' }}>
-      <Card title="用户资料">
-        <p><strong>用户名:</strong> {user.name}</p>
-        <p><strong>用户ID:</strong> {user.id}</p>
-        <p><strong>关联配置文件数量:</strong> {user.profiles.length}</p>
-        <Button type="primary" danger onClick={handleLogout} style={{ marginTop: '20px' }}>
-          登出
-        </Button>
-      </Card>
-    </div>
+    <Row justify="center" align="middle" style={{ minHeight: '60vh' }}>
+      <Col xs={24} sm={20} md={16} lg={12}>
+        <Spin spinning={loading} tip="加载中...">
+          <Card>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <UserOutlined style={{ fontSize: '32px', color: '#1677ff' }}/>
+                <Title level={3}>用户资料</Title>
+            </div>
+            {user ? (
+              <>
+                <Descriptions bordered column={1}>
+                  <Descriptions.Item label="用户名">{user.name}</Descriptions.Item>
+                  <Descriptions.Item label="用户ID">{user.id}</Descriptions.Item>
+                  <Descriptions.Item label="关联配置文件数量">{user.profiles.length}</Descriptions.Item>
+                </Descriptions>
+                <Space style={{ marginTop: '24px', width: '100%', justifyContent: 'flex-end' }}>
+                    <Button type="primary" danger icon={<LogoutOutlined />} onClick={handleLogout}>
+                        登出
+                    </Button>
+                </Space>
+              </>
+            ) : (
+              !loading && <p>无法加载用户资料。</p>
+            )}
+          </Card>
+        </Spin>
+      </Col>
+    </Row>
   )
 }

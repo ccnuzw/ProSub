@@ -1,19 +1,19 @@
-
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button, Table, Space, Popconfirm, message } from 'antd'
+import { useState, useEffect, useCallback } from 'react'
+import { Button, Table, Space, Popconfirm, message, Card, Typography } from 'antd'
 import Link from 'next/link'
 import { User } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import type { TableProps } from 'antd';
+
+const { Title } = Typography;
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<User | null>(null) // New state for current user
-  const [currentUserLoading, setCurrentUserLoading] = useState(true)
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch('/api/users')
@@ -25,32 +25,18 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const fetchCurrentUser = async () => {
-    setCurrentUserLoading(true)
-    try {
-      const res = await fetch('/api/auth/me')
-      if (res.ok) {
-        const user = (await res.json()) as User
-        setCurrentUser(user)
-      } else {
-        setCurrentUser(null)
-      }
-    } catch (error) {
-      console.error('Failed to fetch current user:', error)
-      setCurrentUser(null)
-    } finally {
-      setCurrentUserLoading(false)
-    }
-  }
+  }, [])
 
   useEffect(() => {
     fetchUsers()
-    fetchCurrentUser()
-  }, [])
+  }, [fetchUsers])
 
   const handleDelete = async (id: string) => {
+    // 禁止删除 admin 用户
+    if (id === 'admin') {
+      message.error('不能删除默认的 admin 用户');
+      return;
+    }
     try {
       await fetch(`/api/users/${id}`, { method: 'DELETE' })
       message.success('用户删除成功')
@@ -61,13 +47,13 @@ export default function UsersPage() {
     }
   }
 
-  const columns = [
+  const columns: TableProps<User>['columns'] = [
     { title: '用户名', dataIndex: 'name', key: 'name' },
-    { title: '关联配置文件数量', dataIndex: 'profiles', key: 'profiles', render: (profiles: string[]) => profiles.length },
+    { title: '关联配置文件数量', dataIndex: 'profiles', key: 'profiles', render: (profiles: string[]) => profiles?.length || 0 },
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: User) => (
+      render: (_, record: User) => (
         <Space size="middle">
           <Link href={`/user/${record.id}`}>
             <Button icon={<EditOutlined />}>编辑</Button>
@@ -77,8 +63,10 @@ export default function UsersPage() {
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
+            // 禁止删除 admin 用户的按钮
+            disabled={record.id === 'admin'}
           >
-            <Button icon={<DeleteOutlined />} danger>删除</Button>
+            <Button icon={<DeleteOutlined />} danger disabled={record.id === 'admin'}>删除</Button>
           </Popconfirm>
         </Space>
       ),
@@ -86,18 +74,16 @@ export default function UsersPage() {
   ]
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>用户管理</h1>
-        <Space>
-          <Link href="/user/new">
-            <Button type="primary" icon={<PlusOutlined />}>
-              添加用户
-            </Button>
-          </Link>
-        </Space>
-      </div>
-      <Table columns={columns} dataSource={users} rowKey="id" loading={loading} />
-    </div>
+    <Card>
+        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={3} style={{ margin: 0 }}>用户管理</Title>
+            <Link href="/user/new">
+                <Button type="primary" icon={<PlusOutlined />}>
+                添加用户
+                </Button>
+            </Link>
+        </div>
+        <Table columns={columns} dataSource={users} rowKey="id" loading={loading} />
+    </Card>
   )
 }

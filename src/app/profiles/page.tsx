@@ -1,16 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button, Table, Space, Popconfirm, message, Tooltip, Input } from 'antd'
+import { useState, useEffect, useCallback } from 'react'
+import { Button, Table, Space, Popconfirm, message, Tooltip, Input, Card, Typography } from 'antd'
 import Link from 'next/link'
 import { Profile } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons'
+import type { TableProps } from 'antd';
+
+const { Title } = Typography;
 
 export default function ProfilesPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchProfiles = async () => {
+  const fetchProfiles = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch('/api/profiles')
@@ -22,11 +25,11 @@ export default function ProfilesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchProfiles()
-  }, [])
+  }, [fetchProfiles])
 
   const handleDelete = async (id: string) => {
     try {
@@ -44,13 +47,18 @@ export default function ProfilesPage() {
     message.success('订阅链接已复制到剪贴板')
   }
 
-  const columns = [
+  const columns: TableProps<Profile>['columns'] = [
     { title: '名称', dataIndex: 'name', key: 'name' },
     {
       title: '订阅链接',
       key: 'subscribe_url',
-      render: (_: unknown, record: Profile) => {
-        const subscribeUrl = `${window.location.origin}/api/subscribe/${record.id}`
+      render: (_, record) => {
+        // 确保在客户端环境中才访问 window 对象
+        const [subscribeUrl, setSubscribeUrl] = useState('');
+        useEffect(() => {
+            setSubscribeUrl(`${window.location.origin}/api/subscribe/${record.id}`);
+        }, [record.id]);
+        
         return (
           <Space.Compact style={{ width: '100%' }}>
             <Input readOnly value={subscribeUrl} />
@@ -64,7 +72,7 @@ export default function ProfilesPage() {
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Profile) => (
+      render: (_, record) => (
         <Space size="middle">
           <Link href={`/profiles/${record.id}`}>
             <Button icon={<EditOutlined />}>编辑</Button>
@@ -83,9 +91,9 @@ export default function ProfilesPage() {
   ]
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>配置文件管理</h1>
+    <Card>
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Title level={3} style={{ margin: 0 }}>配置文件管理</Title>
         <Link href="/profiles/new">
           <Button type="primary" icon={<PlusOutlined />}>
             添加配置文件
@@ -93,6 +101,6 @@ export default function ProfilesPage() {
         </Link>
       </div>
       <Table columns={columns} dataSource={profiles} rowKey="id" loading={loading} />
-    </div>
+    </Card>
   )
 }

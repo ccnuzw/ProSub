@@ -1,10 +1,12 @@
-
 'use client'
 
-import { Form, Input, Button, message } from 'antd'
+import { Form, Input, Button, message, Card, Row, Col, Typography } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { User } from '@/types'
+import { LockOutlined } from '@ant-design/icons'
+
+const { Title } = Typography;
 
 interface ChangePasswordFormValues {
   newPassword?: string;
@@ -18,7 +20,7 @@ export default function ChangePasswordPage() {
   const onFinish = async (values: ChangePasswordFormValues) => {
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/me') // Get current user info
+      const res = await fetch('/api/auth/me') 
       if (!res.ok) {
         throw new Error('无法获取当前用户信息')
       }
@@ -31,8 +33,11 @@ export default function ChangePasswordPage() {
       })
 
       if (updateRes.ok) {
-        message.success('密码修改成功')
-        router.push('/dashboard') // Redirect to dashboard after password change
+        message.success('密码修改成功，请重新登录')
+        // 登出以使用户会话失效
+        await fetch('/api/auth/logout', { method: 'POST' });
+        router.push('/user/login')
+        router.refresh();
       } else {
         const errorData = (await updateRes.json()) as { message: string }
         message.error(errorData.message || '密码修改失败')
@@ -49,47 +54,55 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #eee', borderRadius: '8px' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '24px' }}>修改密码</h1>
-      <Form
-        name="change_password"
-        onFinish={onFinish}
-        autoComplete="off"
-      >
-        <Form.Item
-          label="新密码"
-          name="newPassword"
-          rules={[{ required: true, message: '请输入新密码!' }]}
-        >
-          <Input.Password />
-        </Form.Item>
+    <Row justify="center" align="middle" style={{ minHeight: '60vh' }}>
+        <Col xs={24} sm={16} md={12} lg={8}>
+            <Card>
+                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                    <LockOutlined style={{ fontSize: '32px', color: '#1677ff' }}/>
+                    <Title level={3}>修改密码</Title>
+                </div>
+                <Form
+                    name="change_password"
+                    layout="vertical"
+                    onFinish={onFinish}
+                    autoComplete="off"
+                >
+                    <Form.Item
+                        label="新密码"
+                        name="newPassword"
+                        rules={[{ required: true, message: '请输入新密码!' }]}
+                    >
+                    <Input.Password />
+                    </Form.Item>
 
-        <Form.Item
-          label="确认新密码"
-          name="confirmNewPassword"
-          dependencies={['newPassword']}
-          hasFeedback
-          rules={[
-            { required: true, message: '请确认新密码!' },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('newPassword') === value) {
-                  return Promise.resolve()
-                }
-                return Promise.reject(new Error('两次输入的密码不一致!'))
-              },
-            }),
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
+                    <Form.Item
+                        label="确认新密码"
+                        name="confirmNewPassword"
+                        dependencies={['newPassword']}
+                        hasFeedback
+                        rules={[
+                            { required: true, message: '请确认新密码!' },
+                            ({ getFieldValue }) => ({
+                            validator(_, value) {
+                                if (!value || getFieldValue('newPassword') === value) {
+                                return Promise.resolve()
+                                }
+                                return Promise.reject(new Error('两次输入的密码不一致!'))
+                            },
+                            }),
+                        ]}
+                    >
+                    <Input.Password />
+                    </Form.Item>
 
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>
-            修改密码
-          </Button>
-        </Form.Item>
-      </Form>
-    </div>
+                    <Form.Item>
+                    <Button type="primary" htmlType="submit" loading={loading} style={{ width: '100%' }}>
+                        确认修改
+                    </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
+        </Col>
+    </Row>
   )
 }

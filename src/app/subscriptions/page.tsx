@@ -1,16 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button, Table, Space, Popconfirm, message } from 'antd'
+import { useState, useEffect, useCallback } from 'react'
+import { Button, Table, Space, Popconfirm, message, Card, Typography } from 'antd'
 import Link from 'next/link'
 import { Subscription } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import type { TableProps } from 'antd';
+
+const { Title } = Typography;
 
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchSubscriptions = async () => {
+  const fetchSubscriptions = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch('/api/subscriptions')
@@ -22,11 +25,11 @@ export default function SubscriptionsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchSubscriptions()
-  }, [])
+  }, [fetchSubscriptions])
 
   const handleDelete = async (id: string) => {
     try {
@@ -39,13 +42,13 @@ export default function SubscriptionsPage() {
     }
   }
 
-  const columns = [
+  const columns: TableProps<Subscription>['columns'] = [
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: 'URL', dataIndex: 'url', key: 'url', render: (url: string) => <a href={url} target="_blank" rel="noopener noreferrer">{url}</a> },
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Subscription) => (
+      render: (_, record) => (
         <Space size="middle">
           <Link href={`/subscriptions/${record.id}`}>
             <Button icon={<EditOutlined />}>编辑</Button>
@@ -64,16 +67,16 @@ export default function SubscriptionsPage() {
   ]
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>订阅管理</h1>
-        <Link href="/subscriptions/new">
-          <Button type="primary" icon={<PlusOutlined />}>
-            添加订阅
-          </Button>
-        </Link>
-      </div>
-      <Table columns={columns} dataSource={subscriptions} rowKey="id" loading={loading} />
-    </div>
+    <Card>
+        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={3} style={{ margin: 0 }}>订阅管理</Title>
+            <Link href="/subscriptions/new">
+            <Button type="primary" icon={<PlusOutlined />}>
+                添加订阅
+            </Button>
+            </Link>
+        </div>
+        <Table columns={columns} dataSource={subscriptions} rowKey="id" loading={loading} />
+    </Card>
   )
 }
