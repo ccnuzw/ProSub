@@ -2,7 +2,7 @@
 
 import './globals.css'
 import AntdRegistry from '@/components/AntdRegistry'
-import ClientLayout from '@/components/ClientLayout' // 导入新的客户端组件
+import ClientLayout from '@/components/ClientLayout'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -17,6 +17,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
+      {/* --- 这是关键的修改 --- */}
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+      </head>
+      {/* --- 修改结束 --- */}
       <body>
         <AntdRegistry>
           <ClientLayout>{children}</ClientLayout>

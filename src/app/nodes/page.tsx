@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Button, Table, Space, Popconfirm, message, Tag, Modal, Input } from 'antd'
+import { Button, Table, Space, Popconfirm, message, Tag, Modal, Input, Card, Empty } from 'antd'
 import Link from 'next/link'
 import { Node, HealthStatus } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
@@ -19,8 +19,6 @@ export default function NodesPage() {
   const [isImportModalVisible, setIsImportModalVisible] = useState(false);
   const [importLinks, setImportLinks] = useState('');
   const [importing, setImporting] = useState(false);
-
-  // 新增 state 用于搜索功能
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchNodesAndStatuses = useCallback(async () => {
@@ -32,11 +30,9 @@ export default function NodesPage() {
       ])
       const nodesData = (await nodesRes.json()) as Node[]
       const statusesData = (await statusesRes.json()) as Record<string, HealthStatus>
-
       setNodes(nodesData)
       setNodeStatus(statusesData)
     } catch (error) {
-      console.error('Failed to fetch nodes or statuses:', error)
       message.error('加载节点列表或状态失败')
     } finally {
       setLoading(false)
@@ -47,6 +43,7 @@ export default function NodesPage() {
     fetchNodesAndStatuses()
   }, [fetchNodesAndStatuses])
 
+  // ... (所有 handle 函數保持不變)
   const checkNodeHealth = async (node: Node) => {
     setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }))
     try {
@@ -62,14 +59,12 @@ export default function NodesPage() {
       setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'offline', timestamp: new Date().toISOString() } }))
     }
   }
-  
   const handleCheckAllNodes = async () => {
     setCheckingAll(true)
     await Promise.allSettled(nodes.map(node => checkNodeHealth(node)))
     setCheckingAll(false)
     message.success('所有节点健康检查完成')
   }
-
   const handleDelete = async (id: string) => {
     try {
       await fetch(`/api/nodes/${id}`, { method: 'DELETE' })
@@ -80,7 +75,6 @@ export default function NodesPage() {
       message.error('删除节点失败')
     }
   }
-
   const handleBatchDelete = async () => {
     try {
       await fetch(`/api/nodes/batch-delete`, {
@@ -96,7 +90,6 @@ export default function NodesPage() {
       message.error('批量删除失败');
     }
   };
-
   const handleImport = async () => {
     setImporting(true);
     try {
@@ -124,9 +117,8 @@ export default function NodesPage() {
     }
   };
 
-  // 升级：在排序前先进行过滤
+
   const filteredAndSortedNodes = useMemo(() => {
-    // 1. 过滤
     const filtered = nodes.filter(node => {
         const term = searchTerm.toLowerCase();
         return (
@@ -135,23 +127,18 @@ export default function NodesPage() {
             node.type.toLowerCase().includes(term)
         );
     });
-
-    // 2. 排序
     const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 };
     return filtered.sort((a, b) => {
       const statusA = nodeStatus[a.id] || { status: 'unknown' };
       const statusB = nodeStatus[b.id] || { status: 'unknown' };
       const orderA = statusOrder[statusA.status] || 99;
       const orderB = statusOrder[statusB.status] || 99;
-      
       if (orderA !== orderB) return orderA - orderB;
-      
       if (statusA.status === 'online' && statusB.status === 'online') {
         const latencyA = statusA.latency ?? Infinity;
         const latencyB = statusB.latency ?? Infinity;
         if (latencyA !== latencyB) return latencyA - latencyB;
       }
-      
       return a.name.localeCompare(b.name);
     });
   }, [nodes, nodeStatus, searchTerm]);
@@ -161,11 +148,7 @@ export default function NodesPage() {
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: onSelectChange,
-  };
-
+  const rowSelection = { selectedRowKeys, onChange: onSelectChange };
   const hasSelected = selectedRowKeys.length > 0;
 
   const columns: TableProps<Node>['columns'] = [
@@ -198,15 +181,8 @@ export default function NodesPage() {
       render: (_, record) => (
         <Space size="middle">
           <Button icon={<ReloadOutlined />} onClick={() => checkNodeHealth(record)} loading={nodeStatus[record.id]?.status === 'checking'}>检查</Button>
-          <Link href={`/nodes/${record.id}`}>
-            <Button icon={<EditOutlined />}>编辑</Button>
-          </Link>
-          <Popconfirm
-            title="确定要删除这个节点吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
+          <Link href={`/nodes/${record.id}`}><Button icon={<EditOutlined />}>编辑</Button></Link>
+          <Popconfirm title="确定要删除这个节点吗？" onConfirm={() => handleDelete(record.id)} okText="确定" cancelText="取消">
             <Button icon={<DeleteOutlined />} danger>删除</Button>
           </Popconfirm>
         </Space>
@@ -215,75 +191,47 @@ export default function NodesPage() {
   ];
 
   return (
-    <div>
+    <Card>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.5rem', margin: 0 }}>节点管理</h1>
         <Space>
-          <Button type="default" icon={<ReloadOutlined />} onClick={handleCheckAllNodes} loading={checkingAll}>
-            检查所有节点
-          </Button>
-          <Button type="default" icon={<ImportOutlined />} onClick={() => setIsImportModalVisible(true)}>
-            导入节点
-          </Button>
-          <Link href="/nodes/new">
-            <Button type="primary" icon={<PlusOutlined />}>
-              添加节点
-            </Button>
-          </Link>
+          <Button type="default" icon={<ReloadOutlined />} onClick={handleCheckAllNodes} loading={checkingAll}>检查所有节点</Button>
+          <Button type="default" icon={<ImportOutlined />} onClick={() => setIsImportModalVisible(true)}>导入节点</Button>
+          <Link href="/nodes/new"><Button type="primary" icon={<PlusOutlined />}>添加节点</Button></Link>
         </Space>
       </div>
 
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <Space>
-            <Popconfirm
-                title={`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`}
-                onConfirm={handleBatchDelete}
-                okText="确定"
-                cancelText="取消"
-                disabled={!hasSelected}
-            >
-                <Button type="primary" danger disabled={!hasSelected}>
-                    删除选中
-                </Button>
-            </Popconfirm>
-            <span style={{ marginLeft: 8 }}>
-            {hasSelected ? `已选择 ${selectedRowKeys.length} 项` : ''}
-            </span>
-        </Space>
-        <Search
-            placeholder="搜索节点名称、服务器或类型"
-            onSearch={value => setSearchTerm(value)}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: 300 }}
-            allowClear
-        />
-      </div>
+      {/* *** 這是關鍵的修改：僅在有節點時才顯示工具欄和表格 *** */}
+      {!loading && nodes.length > 0 ? (
+        <>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+                <Space>
+                    <Popconfirm title={`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`} onConfirm={handleBatchDelete} okText="确定" cancelText="取消" disabled={!hasSelected}>
+                        <Button type="primary" danger disabled={!hasSelected}>删除选中</Button>
+                    </Popconfirm>
+                    <span style={{ marginLeft: 8 }}>{hasSelected ? `已选择 ${selectedRowKeys.length} 项` : ''}</span>
+                </Space>
+                <Search placeholder="搜索节点名称、服务器或类型" onChange={e => setSearchTerm(e.target.value)} style={{ width: 300 }} allowClear />
+            </div>
+            <Table rowSelection={rowSelection} columns={columns} dataSource={filteredAndSortedNodes} rowKey="id" loading={loading} />
+        </>
+      ) : (
+        // *** 這是關鍵的修改：顯示 Empty 狀態 ***
+        <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={<span>暂无节点，快去添加一个吧！</span>}
+        >
+            <Space>
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/nodes/new')}>手动添加</Button>
+                <Button icon={<ImportOutlined />} onClick={() => setIsImportModalVisible(true)}>从剪贴板导入</Button>
+            </Space>
+        </Empty>
+      )}
 
-      <Table 
-        rowSelection={rowSelection} 
-        columns={columns} 
-        dataSource={filteredAndSortedNodes} // 使用过滤和排序后的数据
-        rowKey="id" 
-        loading={loading} 
-      />
-
-      <Modal
-        title="从剪贴板导入节点"
-        open={isImportModalVisible}
-        onOk={handleImport}
-        onCancel={() => setIsImportModalVisible(false)}
-        confirmLoading={importing}
-        okText="导入"
-        cancelText="取消"
-      >
+      <Modal title="从剪贴板导入节点" open={isImportModalVisible} onOk={handleImport} onCancel={() => setIsImportModalVisible(false)} confirmLoading={importing} okText="导入" cancelText="取消">
         <p>请粘贴一个或多个节点链接，每行一个。</p>
-        <TextArea
-          rows={10}
-          value={importLinks}
-          onChange={(e) => setImportLinks(e.target.value)}
-          placeholder="vmess://...&#10;vless://...&#10;ss://..."
-        />
+        <TextArea rows={10} value={importLinks} onChange={(e) => setImportLinks(e.target.value)} placeholder="vmess://...&#10;vless://...&#10;ss://..."/>
       </Modal>
-    </div>
+    </Card>
   )
 }
