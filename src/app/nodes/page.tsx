@@ -17,7 +17,6 @@ export default function NodesPage() {
   const [checkingAll, setCheckingAll] = useState(false)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   
-  // 新增 state 用于导入功能
   const [isImportModalVisible, setIsImportModalVisible] = useState(false);
   const [importLinks, setImportLinks] = useState('');
   const [importing, setImporting] = useState(false);
@@ -97,7 +96,6 @@ export default function NodesPage() {
     }
   };
 
-  // 新增：处理导入逻辑
   const handleImport = async () => {
     setImporting(true);
     try {
@@ -106,7 +104,9 @@ export default function NodesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ links: importLinks }),
       });
-      const result = await res.json();
+      // *** 这是关键的修复 ***
+      // 明确告诉 TypeScript result 的类型
+      const result = (await res.json()) as { message: string };
       if (!res.ok) {
         throw new Error(result.message || '导入失败');
       }
@@ -124,7 +124,6 @@ export default function NodesPage() {
       setImporting(false);
     }
   };
-
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
     setSelectedRowKeys(newSelectedRowKeys);
