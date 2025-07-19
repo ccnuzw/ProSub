@@ -23,7 +23,6 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true)
   const [updatingAll, setUpdatingAll] = useState(false);
 
-  // 新增 state 用于预览功能
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
   const [previewNodes, setPreviewNodes] = useState<string[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -57,13 +56,15 @@ export default function SubscriptionsPage() {
     setStatuses(prev => ({ ...prev, [id]: { status: 'updating' } }));
     try {
       const res = await fetch(`/api/subscriptions/update/${id}`, { method: 'POST' });
-      const data = await res.json();
+      // *** 这是关键的修复 ***
+      // 明确告诉 TypeScript data 的类型
+      const data = await res.json() as SubscriptionStatus & { error?: string };
       if (!res.ok) throw new Error(data.error || '更新失败');
       setStatuses(prev => ({ ...prev, [id]: data }));
       message.success(`订阅 "${subscriptions.find(s=>s.id===id)?.name}" 更新成功!`);
     } catch (error) {
       if(error instanceof Error) message.error(error.message);
-      fetchData();
+      fetchData(); // 失败时刷新以获取旧状态
     }
   }
 
@@ -86,16 +87,15 @@ export default function SubscriptionsPage() {
     }
   }
 
-  // 新增：处理预览逻辑
   const handlePreview = async (sub: Subscription) => {
     setIsPreviewModalVisible(true);
     setPreviewLoading(true);
     setPreviewSubName(sub.name);
     try {
         const res = await fetch(`/api/subscriptions/preview/${sub.id}`);
-        const data = await res.json();
+        const data = (await res.json()) as { nodes?: string[], error?: string };
         if(!res.ok) throw new Error(data.error || '预览失败');
-        setPreviewNodes(data.nodes);
+        setPreviewNodes(data.nodes || []);
     } catch (error) {
         if(error instanceof Error) message.error(error.message);
         setPreviewNodes(['加载失败']);
@@ -193,7 +193,7 @@ export default function SubscriptionsPage() {
             title={`预览订阅: ${previewSubName}`}
             open={isPreviewModalVisible}
             onCancel={() => setIsPreviewModalVisible(false)}
-            footer={null} // 我们不需要默认的 OK/Cancel 按钮
+            footer={null}
             width="60%"
         >
             <Spin spinning={previewLoading}>
