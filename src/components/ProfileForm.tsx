@@ -1,23 +1,16 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Form, Input, Button, message, Spin, Card, Transfer, Typography, Tag } from 'antd'
+import { Form, Input, Button, message, Spin, Card, Typography, List, Tag, Row, Col, Empty } from 'antd'
 import { useRouter } from 'next/navigation'
 import { Profile, Node, Subscription, HealthStatus } from '@/types'
-import type { TransferProps } from 'antd'; // 导入 TransferProps
+import { ArrowRightOutlined, ArrowLeftOutlined, ClusterOutlined, WifiOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography;
+const { Search } = Input;
 
 interface ProfileFormProps {
   profile?: Profile
-}
-
-interface RecordType {
-    key: string;
-    title: string;
-    description: string;
-    type?: string;
-    status?: HealthStatus;
 }
 
 export default function ProfileForm({ profile }: ProfileFormProps) {
@@ -26,12 +19,18 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
 
+  // --- 數據源 ---
   const [allNodes, setAllNodes] = useState<Node[]>([])
   const [allSubscriptions, setAllSubscriptions] = useState<Subscription[]>([])
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, HealthStatus>>({})
 
-  const [targetNodeKeys, setTargetNodeKeys] = useState<string[]>(profile?.nodes || []);
-  const [targetSubKeys, setTargetSubKeys] = useState<string[]>(profile?.subscriptions || []);
+  // --- 已選擇項目的 State ---
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>(profile?.nodes || []);
+  const [selectedSubIds, setSelectedSubIds] = useState<string[]>(profile?.subscriptions || []);
+  
+  // --- 搜索 State ---
+  const [nodeSearchTerm, setNodeSearchTerm] = useState('');
+  const [subSearchTerm, setSubSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,8 +45,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         setAllSubscriptions(await subsRes.json())
         setNodeStatuses(await statusesRes.json())
       } catch (error) {
-        console.error('Failed to fetch data:', error)
-        message.error('加载节点、订阅或状态数据失败')
+        message.error('加载资源数据失败')
       } finally {
         setDataLoading(false)
       }
@@ -55,156 +53,173 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     fetchData()
   }, [])
 
+  // --- 提交邏輯 ---
   const onFinish = async (values: { name: string }) => {
     setLoading(true)
     const method = profile ? 'PUT' : 'POST'
     const url = profile ? `/api/profiles/${profile.id}` : '/api/profiles'
-
-    const dataToSend = {
-        name: values.name,
-        nodes: targetNodeKeys,
-        subscriptions: targetSubKeys
-    }
+    const dataToSend = { name: values.name, nodes: selectedNodeIds, subscriptions: selectedSubIds };
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend),
-      })
-
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSend) })
       if (res.ok) {
         message.success(profile ? '配置文件更新成功' : '配置文件创建成功')
-        router.push('/profiles')
-        router.refresh()
-      } else {
-        throw new Error('操作失败')
-      }
+        router.push('/profiles');
+        router.refresh();
+      } else { throw new Error('操作失败') }
     } catch (error) {
-      console.error('Profile operation failed:', error)
       message.error('操作失败，请重试')
     } finally {
       setLoading(false)
     }
   }
-  
-  const sortedNodeData = useMemo(() => {
+
+  // --- 核心操作邏輯 ---
+  const addNode = (id: string) => setSelectedNodeIds(prev => [...prev, id]);
+  const removeNode = (id: string) => setSelectedNodeIds(prev => prev.filter(i => i !== id));
+  const addSub = (id: string) => setSelectedSubIds(prev => [...prev, id]);
+  const removeSub = (id: string) => setSelectedSubIds(prev => prev.filter(i => i !== id));
+
+  // --- 數據計算 (可選/已選/排序) ---
+  const { availableNodes, selectedNodes } = useMemo(() => {
     const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 };
     
-    const mappedNodes: RecordType[] = allNodes.map(node => ({
-        key: node.id,
-        title: node.name,
-        description: `${node.server}:${node.port}`,
-        type: node.type,
-        status: nodeStatuses[node.id] || { status: 'unknown', timestamp: '' },
-    }));
+    const available = allNodes
+      .filter(node => !selectedNodeIds.includes(node.id))
+      .filter(node => node.name.toLowerCase().includes(nodeSearchTerm.toLowerCase()))
+      .sort((a, b) => {
+          const statusA = nodeStatuses[a.id] || { status: 'unknown' };
+          const statusB = nodeStatuses[b.id] || { status: 'unknown' };
+          const orderA = statusOrder[statusA.status] || 99;
+          const orderB = statusOrder[statusB.status] || 99;
+          if (orderA !== orderB) return orderA - orderB;
+          const latencyA = statusA.latency ?? Infinity;
+          const latencyB = statusB.latency ?? Infinity;
+          if (latencyA !== latencyB) return latencyA - latencyB;
+          return a.name.localeCompare(b.name);
+      });
 
-    return mappedNodes.sort((a, b) => {
-      const statusA = a.status!;
-      const statusB = b.status!;
-      const orderA = statusOrder[statusA.status] || 99;
-      const orderB = statusOrder[statusB.status] || 99;
-      
-      if (orderA !== orderB) return orderA - orderB;
-      
-      if (statusA.status === 'online' && statusB.status === 'online') {
-        const latencyA = statusA.latency ?? Infinity;
-        const latencyB = statusB.latency ?? Infinity;
-        if (latencyA !== latencyB) return latencyA - latencyB;
-      }
-      
-      return a.title.localeCompare(b.title);
-    });
-  }, [allNodes, nodeStatuses]);
+    const selected = allNodes.filter(node => selectedNodeIds.includes(node.id));
+    return { availableNodes: available, selectedNodes: selected };
+  }, [allNodes, selectedNodeIds, nodeStatuses, nodeSearchTerm]);
+
+  const { availableSubs, selectedSubs } = useMemo(() => {
+    const available = allSubscriptions
+        .filter(sub => !selectedSubIds.includes(sub.id))
+        .filter(sub => sub.name.toLowerCase().includes(subSearchTerm.toLowerCase()));
+    const selected = allSubscriptions.filter(sub => selectedSubIds.includes(sub.id));
+    return { availableSubs: available, selectedSubs: selected };
+  }, [allSubscriptions, selectedSubIds, subSearchTerm]);
 
 
-  if (dataLoading) {
-    return <Spin tip="加载中..."></Spin>
-  }
+  if (dataLoading) return <Spin tip="加载中..." />;
 
-  const subData: RecordType[] = allSubscriptions.map(sub => ({
-      key: sub.id,
-      title: sub.name,
-      description: sub.url,
-  }));
-
-  // *** 这是关键的修复：修正函数签名 ***
-  const handleNodeChange: TransferProps['onChange'] = (newTargetKeys) => {
-    setTargetNodeKeys(newTargetKeys as string[]);
-  };
-  
-  const handleSubChange: TransferProps['onChange'] = (newTargetKeys) => {
-    setTargetSubKeys(newTargetKeys as string[]);
-  };
-  
-  const renderNodeItem = (item: RecordType) => {
-    let statusTag = <Tag>未知</Tag>;
-    if (item.status) {
-        if (item.status.status === 'offline') {
-            statusTag = <Tag color="error">离线</Tag>;
-        } else if (item.status.status === 'online') {
-            const latency = item.status.latency;
+  // 列表項渲染函數
+  const renderNodeItem = (node: Node, action: 'add' | 'remove') => {
+    const status = nodeStatuses[node.id];
+    let statusTag;
+    if (status) {
+        if (status.status === 'offline') statusTag = <Tag color="error">离线</Tag>;
+        else if (status.status === 'online') {
+            const latency = status.latency;
             let color = 'success';
             if (latency && latency > 500) color = 'warning';
             if (latency && latency > 1000) color = 'error';
             statusTag = <Tag color={color}>{latency ? `${latency}ms` : '在线'}</Tag>;
         }
     }
-
     return (
-      <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <span>{item.title}</span>
-        <span>
-            <Tag>{item.type}</Tag>
-            {statusTag}
-        </span>
-      </span>
+        <List.Item
+            actions={[
+                <Button 
+                    shape="circle" 
+                    icon={action === 'add' ? <ArrowRightOutlined /> : <ArrowLeftOutlined />} 
+                    onClick={() => action === 'add' ? addNode(node.id) : removeNode(node.id)}
+                />
+            ]}
+        >
+            <List.Item.Meta
+                avatar={<ClusterOutlined />}
+                title={node.name}
+                description={<Space>{statusTag}<Tag>{node.type}</Tag></Space>}
+            />
+        </List.Item>
     );
   };
-
+  
+  const renderSubItem = (sub: Subscription, action: 'add' | 'remove') => (
+    <List.Item
+        actions={[
+            <Button 
+                shape="circle" 
+                icon={action === 'add' ? <ArrowRightOutlined /> : <ArrowLeftOutlined />} 
+                onClick={() => action === 'add' ? addSub(sub.id) : removeSub(sub.id)}
+            />
+        ]}
+    >
+        <List.Item.Meta
+            avatar={<WifiOutlined />}
+            title={sub.name}
+            description={sub.url}
+        />
+    </List.Item>
+  );
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={onFinish}
-      initialValues={profile}
-    >
-      <Form.Item
-        name="name"
-        label={<Title level={5}>配置文件名称</Title>}
-        rules={[{ required: true, message: '请输入配置文件名称' }]}
-      >
+    <Form form={form} layout="vertical" onFinish={onFinish} initialValues={profile}>
+      <Form.Item name="name" label={<Title level={5}>配置文件名称</Title>} rules={[{ required: true, message: '请输入配置文件名称' }]}>
         <Input placeholder="例如：主力配置" />
       </Form.Item>
 
-      <Card title="选择节点" style={{ marginBottom: 24 }}>
-        <Text type="secondary">从左侧选择你需要手动添加的节点，移到右侧。列表已按状态和延迟自动排序。</Text>
-        <Transfer
-            dataSource={sortedNodeData}
-            targetKeys={targetNodeKeys}
-            onChange={handleNodeChange}
-            render={renderNodeItem}
-            listStyle={{ width: '100%', height: 300 }}
-            showSearch
-            showSelectAll 
-            pagination
-        />
-      </Card>
+      <Title level={5} style={{marginTop: '24px'}}>选择节点</Title>
+      <Row gutter={[16,16]}>
+        <Col xs={24} md={12}>
+            <Card title={`可选节点 (${availableNodes.length})`} size="small">
+                <Search placeholder="搜索节点..." onChange={e => setNodeSearchTerm(e.target.value)} style={{ marginBottom: 16 }}/>
+                <List
+                    style={{ height: 400, overflow: 'auto' }}
+                    dataSource={availableNodes}
+                    renderItem={(item) => renderNodeItem(item, 'add')}
+                    locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="所有节点都已选择或无可用节点" /> }}
+                />
+            </Card>
+        </Col>
+        <Col xs={24} md={12}>
+            <Card title={`已选节点 (${selectedNodes.length})`} size="small">
+                <List
+                    style={{ height: 400, overflow: 'auto' }}
+                    dataSource={selectedNodes}
+                    renderItem={(item) => renderNodeItem(item, 'remove')}
+                    locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请从左侧添加节点" /> }}
+                />
+            </Card>
+        </Col>
+      </Row>
 
-      <Card title="选择订阅">
-        <Text type="secondary">从左侧选择你需要聚合的订阅链接，移到右侧。</Text>
-        <Transfer
-            dataSource={subData}
-            targetKeys={targetSubKeys}
-            onChange={handleSubChange}
-            render={item => item.title}
-            listStyle={{ width: '100%', height: 300 }}
-            showSearch
-            showSelectAll
-            pagination
-        />
-      </Card>
+      <Title level={5} style={{marginTop: '24px'}}>选择订阅</Title>
+      <Row gutter={[16,16]}>
+        <Col xs={24} md={12}>
+            <Card title={`可选订阅 (${availableSubs.length})`} size="small">
+                <Search placeholder="搜索订阅..." onChange={e => setSubSearchTerm(e.target.value)} style={{ marginBottom: 16 }}/>
+                <List
+                    style={{ height: 200, overflow: 'auto' }}
+                    dataSource={availableSubs}
+                    renderItem={(item) => renderSubItem(item, 'add')}
+                    locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="所有订阅都已选择或无可用订阅" /> }}
+                />
+            </Card>
+        </Col>
+        <Col xs={24} md={12}>
+            <Card title={`已选订阅 (${selectedSubs.length})`} size="small">
+                <List
+                    style={{ height: 200, overflow: 'auto' }}
+                    dataSource={selectedSubs}
+                    renderItem={(item) => renderSubItem(item, 'remove')}
+                    locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请从左侧添加订阅" /> }}
+                />
+            </Card>
+        </Col>
+      </Row>
 
       <Form.Item style={{ marginTop: 24 }}>
         <Button type="primary" htmlType="submit" loading={loading} size="large">
