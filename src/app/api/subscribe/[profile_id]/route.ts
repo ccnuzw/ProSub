@@ -1,273 +1,316 @@
+// src/app/api/subscribe/[profile_id]/route.ts
+
 export const runtime = 'edge';
 
-import { NextResponse, NextRequest } from 'next/server'
-import { Profile, Node, Subscription } from '@/types'
-import { Buffer } from 'buffer'
+import { NextResponse, NextRequest } from 'next/server';
+import { Profile, Node, Subscription } from '@/types';
+import { Buffer } from 'buffer';
+import { parseNodeLink } from '@/lib/node-parser';
 
 const getKV = () => {
-  return process.env.KV as KVNamespace
-}
+  // @ts-ignore
+  return process.env.KV as KVNamespace;
+};
+
+// --- 核心數據獲取函數 ---
 
 async function getProfile(KV: KVNamespace, profileId: string): Promise<Profile | null> {
-  const profileJson = await KV.get(`profile:${profileId}`)
-  return profileJson ? JSON.parse(profileJson) : null
+  const profileJson = await KV.get(`profile:${profileId}`);
+  return profileJson ? JSON.parse(profileJson) : null;
 }
 
-async function getNodes(KV: KVNamespace, nodeIds: string[]): Promise<Node[]> {
-  const nodes = await Promise.all(
-    nodeIds.map(async (id) => {
-      const nodeJson = await KV.get(`node:${id}`)
-      return nodeJson ? JSON.parse(nodeJson) : null
-    })
-  )
-  return nodes.filter(Boolean)
+async function getNodesFromKV(KV: KVNamespace, nodeIds: string[]): Promise<Node[]> {
+  if (!nodeIds || nodeIds.length === 0) return [];
+  const nodesJson = await Promise.all(nodeIds.map(id => KV.get(`node:${id}`)));
+  return nodesJson.filter(Boolean).map(json => JSON.parse(json as string));
 }
 
 async function getSubscriptions(KV: KVNamespace, subIds: string[]): Promise<Subscription[]> {
-  const subs = await Promise.all(
-    subIds.map(async (id) => {
-      const subJson = await KV.get(`subscription:${id}`)
-      return subJson ? JSON.parse(subJson) : null
-    })
-  )
-  return subs.filter(Boolean)
+  if (!subIds || subIds.length === 0) return [];
+  const subsJson = await Promise.all(subIds.map(id => KV.get(`subscription:${id}`)));
+  return subsJson.filter(Boolean).map(json => JSON.parse(json as string));
 }
 
-// Fetches raw Base64 encoded content from the original subscription URL
-async function fetchRawSubscriptionContent(url: string): Promise<string> {
+async function fetchAllNodes(KV: KVNamespace, profile: Profile): Promise<Node[]> {
+    // 1. 獲取手動添加的節點
+    const manualNodes = await getNodesFromKV(KV, profile.nodes);
+
+    // 2. 獲取並解析訂閱中的節點
+    const subscriptions = await getSubscriptions(KV, profile.subscriptions);
+    const subLinksPromises = subscriptions.map(sub => fetchNodesFromSubscription(sub.url));
+    const subLinksArrays = await Promise.all(subLinksPromises);
+    const allSubLinks = subLinksArrays.flat();
+    
+    const parsedSubNodes = allSubLinks.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
+
+    // 3. 合併所有節點
+    return [...manualNodes, ...parsedSubNodes];
+}
+
+async function fetchNodesFromSubscription(url: string): Promise<string[]> {
   try {
-    const response = await fetch(url)
-    if (!response.ok) {
-      console.error(`Failed to fetch raw subscription from ${url}: ${response.statusText}`)
-      return ''
-    }
-    const content = await response.text()
-    // Assuming the raw subscription content is Base64 encoded
-    return content
+    const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
+    if (!response.ok) return [];
+    const content = await response.text();
+    const decodedContent = Buffer.from(content, 'base64').toString('utf8');
+    return decodedContent.split(/[\r\n]+/).filter(Boolean);
   } catch (error) {
-    console.error(`Failed to fetch raw subscription from ${url}:`, error)
-    return ''
+    console.error(`Failed to fetch subscription from ${url}:`, error);
+    return [];
   }
 }
 
-// Converts a Node object to a standard proxy URI scheme
-function convertNodeToUri(node: Node): string {
-  const encodedName = encodeURIComponent(node.name)
-  const commonParams = node.params || {}
-
-  switch (node.type) {
-    case 'ss':
-      // For SS, the method and password are often base64 encoded together.
-      // For simplicity, we'll just use password directly, and rely on url.v1.mk for full SS link generation.
-      return `ss://${node.password}@${node.server}:${node.port}#${encodedName}`
-
-    case 'ssr':
-      // SSR links are complex. This is a simplified conversion.
-      // A full SSR link requires protocol, method, obfs, and their parameters.
-      const ssrPasswordBase64 = Buffer.from(node.password || '').toString('base64url') // Base64url encoding
-      const ssrParams = new URLSearchParams()
-      if (commonParams.protocol) ssrParams.append('protocol', commonParams.protocol)
-      if (commonParams.method) ssrParams.append('method', commonParams.method)
-      if (commonParams.obfs) ssrParams.append('obfs', commonParams.obfs)
-      if (commonParams.protocolparam) ssrParams.append('protocolparam', Buffer.from(commonParams.protocolparam).toString('base64url'))
-      if (commonParams.obfsparam) ssrParams.append('obfsparam', Buffer.from(commonParams.obfsparam).toString('base64url'))
-
-      const ssrLink = `ssr://${node.server}:${node.port}:${commonParams.protocol || 'origin'}:${commonParams.method || 'aes-256-cfb'}:${commonParams.obfs || 'plain'}:${ssrPasswordBase64}/?${ssrParams.toString()}#${Buffer.from(node.name).toString('base64url')}`
-      return ssrLink
-
-    case 'vmess':
-      const vmessConfig = {
-        v: "2",
-        ps: node.name,
-        add: node.server,
-        port: node.port,
-        id: node.password, // Assuming password is the UUID
-        aid: commonParams.aid || "0", // AlterId
-        net: commonParams.net || "tcp",
-        type: commonParams.type || "none", // e.g., "http", "ws"
-        host: commonParams.host || "",
-        path: commonParams.path || "",
-        tls: commonParams.tls || "", // "tls" or ""
-        sni: commonParams.sni || "",
-        fp: commonParams.fp || "", // Fingerprint
-        alpn: commonParams.alpn || "",
-        scy: commonParams.scy || "auto", // Security
-        ...commonParams, // Merge any other params
-      }
-      return `vmess://${Buffer.from(JSON.stringify(vmessConfig)).toString('base64')}`
-
-    case 'vless':
-      const vlessParams = new URLSearchParams()
-      vlessParams.append('type', commonParams.net || 'tcp') // network type
-      if (commonParams.security) vlessParams.append('security', commonParams.security) // tls
-      if (commonParams.flow) vlessParams.append('flow', commonParams.flow)
-      if (commonParams.sni) vlessParams.append('sni', commonParams.sni)
-      if (commonParams.fp) vlessParams.append('fp', commonParams.fp)
-      if (commonParams.pbk) vlessParams.append('pbk', commonParams.pbk)
-      if (commonParams.sid) vlessParams.append('sid', commonParams.sid)
-      if (commonParams.spx) vlessParams.append('spx', commonParams.spx)
-      if (commonParams.host) vlessParams.append('host', commonParams.host)
-      if (commonParams.path) vlessParams.append('path', commonParams.path)
-      if (commonParams.encryption) vlessParams.append('encryption', commonParams.encryption) // none/zero
-
-      return `vless://${node.password}@${node.server}:${node.port}?${vlessParams.toString()}#${encodedName}`
-
-    case 'vless-reality':
-      const vlessRealityParams = new URLSearchParams()
-      vlessRealityParams.append('type', commonParams.net || 'tcp')
-      vlessRealityParams.append('security', 'reality') // Always reality
-      if (commonParams.flow) vlessRealityParams.append('flow', commonParams.flow)
-      if (commonParams.sni) vlessRealityParams.append('sni', commonParams.sni)
-      if (commonParams.fp) vlessRealityParams.append('fp', commonParams.fp)
-      if (commonParams.pbk) vlessRealityParams.append('pbk', commonParams.pbk)
-      if (commonParams.sid) vlessRealityParams.append('sid', commonParams.sid)
-      if (commonParams.spx) vlessRealityParams.append('spx', commonParams.spx)
-      if (commonParams.host) vlessRealityParams.append('host', commonParams.host)
-      if (commonParams.path) vlessRealityParams.append('path', commonParams.path)
-      if (commonParams.encryption) vlessRealityParams.append('encryption', commonParams.encryption)
-
-      return `vless://${node.password}@${node.server}:${node.port}?${vlessRealityParams.toString()}#${encodedName}`
-
-    case 'trojan':
-      const trojanParams = new URLSearchParams()
-      if (commonParams.sni) trojanParams.append('sni', commonParams.sni)
-      if (commonParams.allowInsecure) trojanParams.append('allowInsecure', commonParams.allowInsecure.toString())
-      if (commonParams.peer) trojanParams.append('peer', commonParams.peer)
-      // Add other Trojan specific params from commonParams
-      return `trojan://${node.password}@${node.server}:${node.port}?${trojanParams.toString()}#${encodedName}`
-
-    case 'socks5':
-      // SOCKS5 can have username/password. Assuming password field is for password.
-      // If username is needed, it should be in params.
-      if (node.password) {
-        return `socks5://${node.password}@${node.server}:${node.port}#${encodedName}`
-      }
-      return `socks5://${node.server}:${node.port}#${encodedName}`
-
-    case 'tuic':
-      const tuicParams = new URLSearchParams()
-      if (commonParams.congestion_control) tuicParams.append('congestion_control', commonParams.congestion_control)
-      if (commonParams.udp_relay_mode) tuicParams.append('udp_relay_mode', commonParams.udp_relay_mode)
-      if (commonParams.zero_rtt_handshake) tuicParams.append('zero_rtt_handshake', commonParams.zero_rtt_handshake.toString())
-      if (commonParams.disable_sni) tuicParams.append('disable_sni', commonParams.disable_sni.toString())
-      if (commonParams.sni) tuicParams.append('sni', commonParams.sni)
-      if (commonParams.alpn) tuicParams.append('alpn', commonParams.alpn)
-      if (commonParams.token) tuicParams.append('token', commonParams.token)
-      if (commonParams.fingerprint) tuicParams.append('fingerprint', commonParams.fingerprint)
-      if (commonParams.reduce_rtt) tuicParams.append('reduce_rtt', commonParams.reduce_rtt.toString())
-      if (commonParams.max_udp_relay_packet_size) tuicParams.append('max_udp_relay_packet_size', commonParams.max_udp_relay_packet_size.toString())
-
-      return `tuic://${node.password}@${node.server}:${node.port}?${tuicParams.toString()}#${encodedName}`
-
-    case 'hysteria':
-    case 'hysteria2':
-      const hysteriaParams = new URLSearchParams()
-      if (commonParams.auth) hysteriaParams.append('auth', commonParams.auth)
-      if (commonParams.up_mbps) hysteriaParams.append('up_mbps', commonParams.up_mbps.toString())
-      if (commonParams.down_mbps) hysteriaParams.append('down_mbps', commonParams.down_mbps.toString())
-      if (commonParams.alpn) hysteriaParams.append('alpn', commonParams.alpn)
-      if (commonParams.obfs) hysteriaParams.append('obfs', commonParams.obfs)
-      if (commonParams.obfs_password) hysteriaParams.append('obfs_password', commonParams.obfs_password)
-      if (commonParams.fast_open) hysteriaParams.append('fast_open', commonParams.fast_open.toString())
-      if (commonParams.mptcp) hysteriaParams.append('mptcp', commonParams.mptcp.toString())
-      if (commonParams.quic_mode) hysteriaParams.append('quic_mode', commonParams.quic_mode)
-      if (commonParams.recv_window) hysteriaParams.append('recv_window', commonParams.recv_window.toString())
-      if (commonParams.recv_window_conn) hysteriaParams.append('recv_window_conn', commonParams.recv_window_conn.toString())
-      if (commonParams.recv_window_client) hysteriaParams.append('recv_window_client', commonParams.recv_window_client.toString())
-      if (commonParams.tls) hysteriaParams.append('tls', commonParams.tls.toString())
-      if (commonParams.tls_cert) hysteriaParams.append('tls_cert', commonParams.tls_cert)
-      if (commonParams.tls_sni) hysteriaParams.append('tls_sni', commonParams.tls_sni)
-      if (commonParams.tls_insecure) hysteriaParams.append('tls_insecure', commonParams.tls_insecure.toString())
-      if (commonParams.tls_fingerprint) hysteriaParams.append('tls_fingerprint', commonParams.tls_fingerprint)
-
-      return `${node.type}://${node.server}:${node.port}?${hysteriaParams.toString()}#${encodedName}`
-
-    case 'anytls':
-      // AnyTLS is a transport layer. It needs to encapsulate another protocol.
-      // For now, we'll just pass through its parameters.
-      // A full implementation would require knowing the inner protocol.
-      const anytlsParams = new URLSearchParams()
-      for (const key in commonParams) {
-        anytlsParams.append(key, commonParams[key].toString())
-      }
-      return `anytls://${node.server}:${node.port}?${anytlsParams.toString()}#${encodedName}`
-
-    default:
-      console.warn(`Unsupported node type for direct URI conversion: ${node.type}`)
-      return ''
-  }
-}
-
-// Records a traffic event in KV
 async function recordTraffic(KV: KVNamespace, profileId: string) {
   try {
-    const timestamp = new Date().toISOString()
-    const key = `traffic:${profileId}:${timestamp}`
-    await KV.put(key, JSON.stringify({ timestamp, profileId }))
+    const timestamp = new Date().toISOString();
+    const key = `traffic:${profileId}:${timestamp}`;
+    await KV.put(key, JSON.stringify({ timestamp, profileId }));
   } catch (error) {
-    console.error('Failed to record traffic:', error)
+    console.error('Failed to record traffic:', error);
   }
 }
+// --- 各客戶端配置生成器 ---
 
-export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  params: any
-}) {
+/**
+ * 通用格式 (Base64) - 適用於 V2RayN, NekoBox 等
+ */
+function generateBase64Subscription(nodes: Node[]): Response {
+    const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
+    if (nodeLinks.length === 0) return new Response('', { status: 200 });
+    const combinedContent = nodeLinks.join('\n');
+    const base64Content = Buffer.from(combinedContent).toString('base64');
+    return new Response(base64Content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+/**
+ * Clash / Mihomo 格式 (YAML)
+ */
+function generateClashSubscription(nodes: Node[]): Response {
+    const proxies = nodes.map(node => {
+        const proxy: any = {
+            name: node.name,
+            type: node.type,
+            server: node.server,
+            port: node.port,
+            ...(node.params || {})
+        };
+        if (node.password) {
+            if (proxy.type === 'vmess' || proxy.type === 'vless') {
+                proxy.uuid = node.password;
+            } else {
+                proxy.password = node.password;
+            }
+        }
+        if (proxy.type === 'ss' && proxy.method) {
+            proxy.cipher = proxy.method;
+        }
+        return proxy;
+    });
+
+    let yaml = 'proxies:\n';
+    proxies.forEach(p => {
+        yaml += `  - ${JSON.stringify(p)}\n`;
+    });
+    return new Response(yaml, { headers: { 'Content-Type': 'text/yaml; charset=utf-8' } });
+}
+
+/**
+ * Surge 格式 (INI)
+ */
+function generateSurgeSubscription(nodes: Node[]): Response {
+    const lines = nodes.map(node => {
+        const params = new URLSearchParams(node.params as any);
+        let line = `${node.name} = ${node.type}, ${node.server}, ${node.port}`;
+        if (node.password) params.set('password', node.password);
+        if (node.type === 'ss' && node.params?.method) params.set('encrypt-method', node.params.method);
+        // ... 可根據 Surge 文檔添加更多參數轉換
+        const paramString = params.toString();
+        if (paramString) line += `, ${paramString.replace(/&/g, ', ')}`;
+        return line;
+    });
+    const content = `[Proxy]\n${lines.join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+/**
+ * Loon / Quantumult X 格式 (通用鏈接列表)
+ */
+function generateLoonOrQuantumultXSubscription(nodes: Node[]): Response {
+    const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
+    if (nodeLinks.length === 0) return new Response('', { status: 200 });
+    const content = nodeLinks.join('\n');
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+/**
+ * 節點對象到分享鏈接的轉換器
+ */
+function convertNodeToUri(node: Node): string {
+    const encodedName = encodeURIComponent(node.name);
+    try {
+        switch (node.type) {
+            case 'vmess':
+                const vmessConfig = { v: "2", ps: node.name, add: node.server, port: node.port, id: node.password, ...node.params };
+                return `vmess://${Buffer.from(JSON.stringify(vmessConfig)).toString('base64')}`;
+            case 'vless':
+            case 'trojan':
+            case 'socks5':
+            case 'tuic':
+            case 'hysteria':
+            case 'hysteria2':
+                const url = new URL(`${node.type}://${node.server}:${node.port}`);
+                if (node.password) url.username = node.password;
+                url.hash = encodedName;
+                if (node.params) {
+                    for (const key in node.params) {
+                        url.searchParams.set(key, node.params[key]);
+                    }
+                }
+                return url.toString();
+            case 'ss':
+                const creds = `${node.params?.method}:${node.password}`;
+                const encodedCreds = Buffer.from(creds).toString('base64').replace(/=+$/, '');
+                return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
+            default:
+                return '';
+        }
+    } catch (e) {
+        console.error(`Failed to convert node to URI: ${node.name}`, e);
+        return '';
+    }
+}
+
+/**
+ * 為 V2RayN, NekoBox 等客戶端生成通用的 Base64 編碼訂閱
+ */
+function generateBase64Subscription(nodes: Node[], subLinks: string[]): Response {
+    const manualNodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
+    const allNodeLinks = [...manualNodeLinks, ...subLinks];
+    if (allNodeLinks.length === 0) return new Response('', { status: 200 });
+
+    const combinedContent = allNodeLinks.join('\n');
+    const base64Content = Buffer.from(combinedContent).toString('base64');
+    return new Response(base64Content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+/**
+ * 為 Clash 等客戶端生成 YAML 格式的配置文件
+ */
+function generateClashSubscription(nodes: Node[], profileName: string): Response {
+    const proxies = nodes.map(node => {
+        const proxy: any = {
+            name: node.name,
+            type: node.type,
+            server: node.server,
+            port: node.port,
+            password: node.password,
+            ...node.params
+        };
+        // Clash vmess/vless 的 password 字段名為 uuid
+        if(proxy.type === 'vmess' || proxy.type === 'vless'){
+            proxy.uuid = proxy.password;
+            delete proxy.password;
+        }
+        // Clash ss 的 password 字段名為 password
+        if(proxy.type === 'ss' && proxy.params?.method){
+            proxy.cipher = proxy.params.method;
+        }
+        return proxy;
+    });
+
+    const config = {
+        'port': 7890,
+        'socks-port': 7891,
+        'allow-lan': false,
+        'mode': 'Rule',
+        'log-level': 'info',
+        'external-controller': '127.0.0.1:9090',
+        'proxies': proxies,
+        'proxy-groups': [
+            {
+                'name': 'PROXY',
+                'type': 'select',
+                'proxies': proxies.map(p => p.name)
+            }
+        ],
+        'rules': ['MATCH,PROXY']
+    };
+    
+    // 簡易的 YAML 轉換
+    let yamlString = '';
+    const toYaml = (obj: any, indent = 0) => {
+        const space = ' '.repeat(indent);
+        if (Array.isArray(obj)) {
+            obj.forEach(item => {
+                yamlString += `${space}- ${JSON.stringify(item)}\n`;
+            });
+        } else {
+            for (const key in obj) {
+                if (typeof obj[key] === 'object' && obj[key] !== null) {
+                    yamlString += `${space}${key}:\n`;
+                    toYaml(obj[key], indent + 2);
+                } else {
+                    yamlString += `${space}${key}: ${JSON.stringify(obj[key])}\n`;
+                }
+            }
+        }
+    };
+    
+    // 更手動和精確的 YAML 格式化
+    yamlString += `port: 7890\n`;
+    yamlString += `socks-port: 7891\n`;
+    yamlString += `allow-lan: false\n`;
+    yamlString += `mode: Rule\n`;
+    yamlString += `log-level: info\n`;
+    yamlString += `external-controller: '127.0.0.1:9090'\n`;
+    yamlString += `proxies:\n`;
+    proxies.forEach(p => {
+        yamlString += `  - ${JSON.stringify(p)}\n`;
+    });
+    yamlString += `proxy-groups:\n`;
+    yamlString += `  - name: PROXY\n`;
+    yamlString += `    type: select\n`;
+    yamlString += `    proxies:\n`;
+    proxies.forEach(p => {
+        yamlString += `      - ${p.name}\n`;
+    });
+    yamlString += `rules:\n  - MATCH,PROXY\n`;
+
+
+    return new Response(yamlString, { headers: { 'Content-Type': 'text/yaml; charset=utf-8' } });
+}
+
+
+// --- 主路由處理器 ---
+
+export async function GET(request: NextRequest, { params }: { params: { profile_id: string } }) {
   try {
-    const KV = getKV()
-    const profile = await getProfile(KV, params.profile_id)
+    const KV = getKV();
+    const profile = await getProfile(KV, params.profile_id);
+    if (!profile) return new Response('Profile not found', { status: 404 });
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    await recordTraffic(KV, params.profile_id);
+    const url = new URL(request.url);
+    const targetClient = url.searchParams.get('target')?.toLowerCase();
+
+    const allNodes = await fetchAllNodes(KV, profile);
+
+    switch (targetClient) {
+        case 'clash':
+        case 'mihomo':
+            return generateClashSubscription(allNodes);
+        case 'surge':
+            return generateSurgeSubscription(allNodes);
+        case 'loon':
+        case 'quantumultx': // Quantumult X 和 Loon 都可以直接使用原始鏈接列表
+            return generateLoonOrQuantumultXSubscription(allNodes);
+        default:
+            // 默認返回通用 Base64 格式
+            return generateBase64Subscription(allNodes);
     }
-
-    // Record traffic before generating the subscription
-    await recordTraffic(KV, params.profile_id)
-
-    const target = request.nextUrl.searchParams.get('target') || 'clash' // Default to clash
-
-    const [manualNodes, subscriptions] = await Promise.all([
-      getNodes(KV, profile.nodes || []),
-      getSubscriptions(KV, profile.subscriptions || []),
-    ])
-
-    // 1. Generate raw node links from manual nodes
-    const manualNodeLinks = manualNodes.map(convertNodeToUri).filter(Boolean)
-
-    // 2. Fetch raw Base64 encoded content from subscription URLs
-    const rawSubscriptionContentsPromises = subscriptions.map(sub => fetchRawSubscriptionContent(sub.url))
-    const rawSubscriptionContents = await Promise.all(rawSubscriptionContentsPromises)
-
-    // Decode and combine all raw node links
-    let allRawNodeLinks: string[] = [...manualNodeLinks]
-    rawSubscriptionContents.forEach(base64Content => {
-      try {
-        const decodedContent = Buffer.from(base64Content, 'base64').toString('utf8')
-        allRawNodeLinks = allRawNodeLinks.concat(decodedContent.split(/\r?\n/).filter(Boolean))
-      } catch (e) {
-        console.error('Failed to decode subscription content:', e)
-      }
-    })
-
-    const combinedRawContent = allRawNodeLinks.join('\n')
-    const combinedRawContentBase64 = Buffer.from(combinedRawContent).toString('base64')
-
-    // 3. Use url.v1.mk for final conversion
-    const converterUrl = `https://url.v1.mk/sub?target=${target}&url=${encodeURIComponent(`data:text/plain;base64,${combinedRawContentBase64}`)}`
-
-    const converterResponse = await fetch(converterUrl)
-    if (!converterResponse.ok) {
-      console.error(`Failed to fetch from converter service: ${converterResponse.statusText}`)
-      return NextResponse.json({ error: 'Failed to generate subscription from converter service' }, { status: 500 })
-    }
-
-    const finalContent = await converterResponse.text()
-
-    return new Response(finalContent, {
-      headers: { 'Content-Type': converterResponse.headers.get('Content-Type') || 'text/plain' },
-    })
 
   } catch (error) {
-    console.error(`Failed to generate subscription for profile ${params.profile_id}:`, error)
-    return NextResponse.json({ error: 'Failed to generate subscription' }, { status: 500 })
+    console.error(`Failed to generate subscription for profile ${params.profile_id}:`, error);
+    return new Response('Failed to generate subscription', { status: 500 });
   }
 }
