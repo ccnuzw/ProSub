@@ -7,21 +7,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { User } from '@/types';
 import { authenticateUser } from '@/lib/auth';
 
-// Helper function to convert ArrayBuffer to hex string
+// --- Helper Functions (Web Crypto API) ---
 function arrayBufferToHex(buffer: ArrayBuffer): string {
   return Array.prototype.map.call(new Uint8Array(buffer), (x: number) => ('00' + x.toString(16)).slice(-2)).join('');
 }
 
-// Re-implement password hashing using Web Crypto API (SHA-256)
 async function hashPassword(password: string): Promise<string> {
   const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
-  const salt = arrayBufferToHex(saltBuffer.buffer); // <-- 修正点在这里
+  const salt = arrayBufferToHex(saltBuffer.buffer);
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password + salt);
-  
   const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
   const hashHex = arrayBufferToHex(hashBuffer);
-  
   return `${salt}:${hashHex}`;
 }
 
@@ -38,16 +35,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const KV = getKV();
-    const adminUserKey = 'user:admin';
-    const adminUser = await KV.get(adminUserKey);
-
-    if (!adminUser) {
-      const hashedPassword = await hashPassword('admin');
-      const newAdmin: User = { id: 'admin', name: 'admin', password: hashedPassword, profiles: [], defaultPasswordChanged: false };
-      await KV.put(adminUserKey, JSON.stringify(newAdmin));
-      console.log('Default admin user created.');
-    }
-
+    // *** 创建 admin 的逻辑已从此移除 ***
     const userList = await KV.list({ prefix: 'user:' });
     const users = await Promise.all(
       userList.keys.map(async ({ name: keyName }) => {

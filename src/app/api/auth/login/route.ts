@@ -6,32 +6,29 @@ import { NextResponse } from 'next/server';
 import { serialize } from 'cookie';
 import { User } from '@/types';
 
-// Helper function to convert hex string to ArrayBuffer
-function hexToArrayBuffer(hex: string): ArrayBuffer {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes.buffer;
-}
-
-// Helper function to convert ArrayBuffer to hex string
+// --- Helper Functions (Web Crypto API) ---
 function arrayBufferToHex(buffer: ArrayBuffer): string {
   return Array.prototype.map.call(new Uint8Array(buffer), (x: number) => ('00' + x.toString(16)).slice(-2)).join('');
 }
 
-// Re-implement password comparison using Web Crypto API (SHA-256)
+async function hashPassword(password: string): Promise<string> {
+  const saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+  const salt = arrayBufferToHex(saltBuffer.buffer);
+  const encoder = new TextEncoder();
+  const passwordBuffer = encoder.encode(password + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
+  const hashHex = arrayBufferToHex(hashBuffer);
+  return `${salt}:${hashHex}`;
+}
+
 async function comparePassword(password: string, hash: string): Promise<boolean> {
   try {
     const [salt, key] = hash.split(':');
     if (!salt || !key) return false;
-
     const encoder = new TextEncoder();
     const passwordBuffer = encoder.encode(password + salt);
-    
     const derivedKeyBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
     const derivedKeyHex = arrayBufferToHex(derivedKeyBuffer);
-    
     return derivedKeyHex === key;
   } catch (e) {
     console.error("Password comparison failed", e);
@@ -44,6 +41,18 @@ const getKV = () => {
   return process.env.KV as KVNamespace;
 };
 
+// --- Admin User Creation Logic ---
+async function ensureAdminUserExists(KV: KVNamespace) {
+  const adminUserKey = 'user:admin';
+  const adminUser = await KV.get(adminUserKey);
+  if (!adminUser) {
+    const hashedPassword = await hashPassword('admin');
+    const newAdmin: User = { id: 'admin', name: 'admin', password: hashedPassword, profiles: [], defaultPasswordChanged: false };
+    await KV.put(adminUserKey, JSON.stringify(newAdmin));
+    console.log('Default admin user created.');
+  }
+}
+
 export async function POST(request: Request) {
   const { name, password } = (await request.json()) as { name: string; password: string };
 
@@ -52,6 +61,10 @@ export async function POST(request: Request) {
   }
 
   const KV = getKV();
+  
+  // *** 新增逻辑: 在登录前确保 admin 用户存在 ***
+  await ensureAdminUserExists(KV);
+
   const userList = await KV.list({ prefix: 'user:' });
   const users = await Promise.all(
     userList.keys.map(async ({ name: keyName }: { name: string }) => {
@@ -72,7 +85,6 @@ export async function POST(request: Request) {
   }
 
   const token = user.id;
-
   const cookie = serialize('auth_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
