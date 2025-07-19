@@ -3,17 +3,22 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Form, Input, Button, message, Spin, Card, Transfer, Typography, Tag } from 'antd'
 import { useRouter } from 'next/navigation'
-import { Profile, Node, Subscription, HealthStatus } from '@/types' // 导入 HealthStatus
+import { Profile, Node, Subscription, HealthStatus } from '@/types'
 import type { TransferDirection } from 'antd/es/transfer';
 
 const { Title, Text } = Typography;
+
+// *** 这是关键的修复 1: 重新添加丢失的接口定义 ***
+interface ProfileFormProps {
+  profile?: Profile
+}
 
 interface RecordType {
     key: string;
     title: string;
     description: string;
     type?: string;
-    status?: HealthStatus; // 新增：用于存储节点状态
+    status?: HealthStatus;
 }
 
 export default function ProfileForm({ profile }: ProfileFormProps) {
@@ -24,7 +29,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
 
   const [allNodes, setAllNodes] = useState<Node[]>([])
   const [allSubscriptions, setAllSubscriptions] = useState<Subscription[]>([])
-  const [nodeStatuses, setNodeStatuses] = useState<Record<string, HealthStatus>>({}) // 新增 state
+  const [nodeStatuses, setNodeStatuses] = useState<Record<string, HealthStatus>>({})
 
   const [targetNodeKeys, setTargetNodeKeys] = useState<string[]>(profile?.nodes || []);
   const [targetSubKeys, setTargetSubKeys] = useState<string[]>(profile?.subscriptions || []);
@@ -33,7 +38,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     const fetchData = async () => {
       setDataLoading(true)
       try {
-        // *** 这是关键的修改 1: 同时获取节点状态 ***
         const [nodesRes, subsRes, statusesRes] = await Promise.all([
           fetch('/api/nodes'),
           fetch('/api/subscriptions'),
@@ -85,7 +89,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     }
   }
   
-  // *** 这是关键的修改 2: 创建排序后的节点数据源 ***
   const sortedNodeData = useMemo(() => {
     const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 };
     
@@ -134,7 +137,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     setTargetSubKeys(newTargetKeys);
   };
   
-  // *** 这是关键的修改 3: 定义新的渲染函数 ***
   const renderNodeItem = (item: RecordType) => {
     let statusTag = <Tag>未知</Tag>;
     if (item.status) {
@@ -179,10 +181,10 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
       <Card title="选择节点" style={{ marginBottom: 24 }}>
         <Text type="secondary">从左侧选择你需要手动添加的节点，移到右侧。列表已按状态和延迟自动排序。</Text>
         <Transfer
-            dataSource={sortedNodeData} // 使用排序后的数据
+            dataSource={sortedNodeData}
             targetKeys={targetNodeKeys}
             onChange={handleNodeChange}
-            render={renderNodeItem} // 使用新的渲染函数
+            render={renderNodeItem}
             listStyle={{ width: '100%', height: 300 }}
             showSearch
             showSelectAll 
