@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Table, Space, Popconfirm, message, Card, Typography } from 'antd'
+import { Button, Table, Space, Popconfirm, message, Card, Typography, Tooltip } from 'antd'
 import Link from 'next/link'
 import { User } from '@/types'
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
 
 const { Title } = Typography;
@@ -32,7 +32,6 @@ export default function UsersPage() {
   }, [fetchUsers])
 
   const handleDelete = async (id: string) => {
-    // 禁止删除 admin 用户
     if (id === 'admin') {
       message.error('不能删除默认的 admin 用户');
       return;
@@ -47,9 +46,28 @@ export default function UsersPage() {
     }
   }
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    message.success('用户ID已复制');
+  };
+
   const columns: TableProps<User>['columns'] = [
     { title: '用户名', dataIndex: 'name', key: 'name' },
-    { title: '关联配置文件数量', dataIndex: 'profiles', key: 'profiles', render: (profiles: string[]) => profiles?.length || 0 },
+    // *** 這是關鍵的修改：新增 User ID 列 ***
+    { 
+      title: '用户ID', 
+      dataIndex: 'id', 
+      key: 'id',
+      render: (id: string) => (
+        <Space>
+          <span>{id.substring(0, 8)}...</span>
+          <Tooltip title="复制完整ID">
+            <Button shape="circle" icon={<CopyOutlined />} size="small" onClick={() => handleCopy(id)} />
+          </Tooltip>
+        </Space>
+      )
+    },
+    { title: '关联配置文件数', dataIndex: 'profiles', key: 'profiles', render: (profiles: string[]) => profiles?.length || 0 },
     {
       title: '操作',
       key: 'action',
@@ -63,7 +81,6 @@ export default function UsersPage() {
             onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
-            // 禁止删除 admin 用户的按钮
             disabled={record.id === 'admin'}
           >
             <Button icon={<DeleteOutlined />} danger disabled={record.id === 'admin'}>删除</Button>
