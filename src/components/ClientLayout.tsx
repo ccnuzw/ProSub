@@ -7,6 +7,17 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { User } from '@/types'
+// *** 这是关键的修改 1: 导入所需的图标 ***
+import { 
+    DashboardOutlined, 
+    CloudServerOutlined, 
+    WifiOutlined, 
+    SolutionOutlined, 
+    TeamOutlined, 
+    UserOutlined,
+    LoginOutlined
+} from '@ant-design/icons'
+
 
 const { Header, Content, Footer } = Layout
 
@@ -38,7 +49,6 @@ export default function ClientLayout({
           }
         } else {
           setCurrentUser(null)
-          // 增加对注册页面的排除，防止重定向循环
           if (pathname !== '/user/login' && pathname !== '/user/register') {
             router.push('/user/login');
           }
@@ -60,6 +70,7 @@ export default function ClientLayout({
         message.success('登出成功')
         setCurrentUser(null)
         router.push('/user/login')
+        router.refresh()
       } else {
         throw new Error('登出失败')
       }
@@ -69,18 +80,19 @@ export default function ClientLayout({
     }
   }
 
+  // *** 这是关键的修改 2: 为每个菜单项添加 icon 属性 ***
   const menuItems = [
-    { key: 'dashboard', label: <Link href="/dashboard">仪表盘</Link> },
-    { key: 'nodes', label: <Link href="/nodes">节点管理</Link> },
-    { key: 'subscriptions', label: <Link href="/subscriptions">订阅管理</Link> },
-    { key: 'profiles', label: <Link href="/profiles">配置文件</Link> },
+    { key: 'dashboard', label: <Link href="/dashboard">仪表盘</Link>, icon: <DashboardOutlined /> },
+    { key: 'nodes', label: <Link href="/nodes">节点管理</Link>, icon: <CloudServerOutlined /> },
+    { key: 'subscriptions', label: <Link href="/subscriptions">订阅管理</Link>, icon: <WifiOutlined /> },
+    { key: 'profiles', label: <Link href="/profiles">配置文件</Link>, icon: <SolutionOutlined /> },
   ]
 
   if (isClient && currentUser) {
-    menuItems.push({ key: 'user', label: <Link href="/user">用户管理</Link> })
-    menuItems.push({ key: 'profile', label: <Link href="/user/profile">我的资料</Link> })
+    menuItems.push({ key: 'user', label: <Link href="/user">用户管理</Link>, icon: <TeamOutlined /> })
+    menuItems.push({ key: 'profile', label: <Link href="/user/profile">我的资料</Link>, icon: <UserOutlined /> })
   } else if (isClient && !currentUser) {
-    menuItems.push({ key: 'login', label: <Link href="/user/login">登录</Link> })
+    menuItems.push({ key: 'login', label: <Link href="/user/login">登录</Link>, icon: <LoginOutlined /> })
   }
 
   const selectedKey = menuItems.find(item => pathname.startsWith(item.key === 'dashboard' ? '/dashboard' : `/${item.key}`))?.key || 'dashboard'
