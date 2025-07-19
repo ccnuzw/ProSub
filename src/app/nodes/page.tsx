@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Table, Space, Popconfirm, message, Tag } from 'antd'
+import { Button, Table, Space, Popconfirm, message, Tag, Modal, Input } from 'antd'
 import Link from 'next/link'
 import { Node } from '@/types'
-import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
 
-// 定义健康状态的类型，以便复用
+const { TextArea } = Input;
 type HealthStatus = { status: 'online' | 'offline' | 'checking', timestamp: string };
 
 export default function NodesPage() {
@@ -16,6 +16,11 @@ export default function NodesPage() {
   const [nodeStatus, setNodeStatus] = useState<Record<string, HealthStatus>>({})
   const [checkingAll, setCheckingAll] = useState(false)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  
+  // 新增 state 用于导入功能
+  const [isImportModalVisible, setIsImportModalVisible] = useState(false);
+  const [importLinks, setImportLinks] = useState('');
+  const [importing, setImporting] = useState(false);
 
   const fetchNodesAndStatuses = useCallback(async () => {
     setLoading(true)
@@ -49,11 +54,7 @@ export default function NodesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ server: node.server, port: node.port, nodeId: node.id })
       });
-
-      // *** 这是关键的修复 ***
-      // 明确告诉 TypeScript `data` 的类型是 HealthStatus
       const data = (await res.json()) as HealthStatus;
-      
       setNodeStatus(prev => ({ ...prev, [node.id]: data }))
     } catch (error) {
       console.error('Failed to check node health:', error)
@@ -95,6 +96,35 @@ export default function NodesPage() {
       message.error('批量删除失败');
     }
   };
+
+  // 新增：处理导入逻辑
+  const handleImport = async () => {
+    setImporting(true);
+    try {
+      const res = await fetch('/api/nodes/batch-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ links: importLinks }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.message || '导入失败');
+      }
+      message.success(result.message);
+      setIsImportModalVisible(false);
+      setImportLinks('');
+      fetchNodesAndStatuses();
+    } catch (error) {
+        if(error instanceof Error) {
+            message.error(error.message);
+        } else {
+            message.error('导入节点失败');
+        }
+    } finally {
+      setImporting(false);
+    }
+  };
+
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
     setSelectedRowKeys(newSelectedRowKeys);
@@ -154,6 +184,9 @@ export default function NodesPage() {
           <Button type="default" icon={<ReloadOutlined />} onClick={handleCheckAllNodes} loading={checkingAll}>
             检查所有节点
           </Button>
+          <Button type="default" icon={<ImportOutlined />} onClick={() => setIsImportModalVisible(true)}>
+            导入节点
+          </Button>
           <Link href="/nodes/new">
             <Button type="primary" icon={<PlusOutlined />}>
               添加节点
@@ -186,6 +219,24 @@ export default function NodesPage() {
         rowKey="id" 
         loading={loading} 
       />
+
+      <Modal
+        title="从剪贴板导入节点"
+        open={isImportModalVisible}
+        onOk={handleImport}
+        onCancel={() => setIsImportModalVisible(false)}
+        confirmLoading={importing}
+        okText="导入"
+        cancelText="取消"
+      >
+        <p>请粘贴一个或多个节点链接，每行一个。</p>
+        <TextArea
+          rows={10}
+          value={importLinks}
+          onChange={(e) => setImportLinks(e.target.value)}
+          placeholder="vmess://...&#10;vless://...&#10;ss://..."
+        />
+      </Modal>
     </div>
   )
 }
