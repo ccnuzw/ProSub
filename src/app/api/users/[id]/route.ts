@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { NextResponse, NextRequest } from 'next/server'
 import { User } from '@/types'
 import { authenticateUser } from '@/lib/auth'

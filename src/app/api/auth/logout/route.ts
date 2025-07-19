@@ -1,4 +1,4 @@
-
+export const runtime = 'edge';
 import { serialize } from 'cookie'
 
 export async function POST() {

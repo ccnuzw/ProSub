@@ -1,4 +1,4 @@
-
+export const runtime = 'edge';
 import { NextResponse, NextRequest } from 'next/server'
 import { Node } from '@/types'
 
