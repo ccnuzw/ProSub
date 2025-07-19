@@ -7,7 +7,7 @@ import { Node, HealthStatus } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
 
-const { TextArea } = Input;
+const { TextArea, Search } = Input;
 
 export default function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
@@ -19,6 +19,9 @@ export default function NodesPage() {
   const [isImportModalVisible, setIsImportModalVisible] = useState(false);
   const [importLinks, setImportLinks] = useState('');
   const [importing, setImporting] = useState(false);
+
+  // 新增 state 用于搜索功能
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchNodesAndStatuses = useCallback(async () => {
     setLoading(true)
@@ -109,7 +112,6 @@ export default function NodesPage() {
       message.success(result.message);
       setIsImportModalVisible(false);
       setImportLinks('');
-      // *** 关键修复 1: 导入成功后自动刷新列表 ***
       fetchNodesAndStatuses();
     } catch (error) {
         if(error instanceof Error) {
@@ -122,35 +124,37 @@ export default function NodesPage() {
     }
   };
 
-  // *** 关键修复 2: 节点排序逻辑 ***
-  const sortedNodes = useMemo(() => {
-    const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'offline': 4, 'unknown': 3 };
-    
-    return [...nodes].sort((a, b) => {
+  // 升级：在排序前先进行过滤
+  const filteredAndSortedNodes = useMemo(() => {
+    // 1. 过滤
+    const filtered = nodes.filter(node => {
+        const term = searchTerm.toLowerCase();
+        return (
+            node.name.toLowerCase().includes(term) ||
+            node.server.toLowerCase().includes(term) ||
+            node.type.toLowerCase().includes(term)
+        );
+    });
+
+    // 2. 排序
+    const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 };
+    return filtered.sort((a, b) => {
       const statusA = nodeStatus[a.id] || { status: 'unknown' };
       const statusB = nodeStatus[b.id] || { status: 'unknown' };
-      
       const orderA = statusOrder[statusA.status] || 99;
       const orderB = statusOrder[statusB.status] || 99;
       
-      // 1. 按状态排序
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
+      if (orderA !== orderB) return orderA - orderB;
       
-      // 2. 如果都是 online，按延迟排序 (延迟越低越好)
       if (statusA.status === 'online' && statusB.status === 'online') {
         const latencyA = statusA.latency ?? Infinity;
         const latencyB = statusB.latency ?? Infinity;
-        if (latencyA !== latencyB) {
-          return latencyA - latencyB;
-        }
+        if (latencyA !== latencyB) return latencyA - latencyB;
       }
       
-      // 3. 按名称字母排序
       return a.name.localeCompare(b.name);
     });
-  }, [nodes, nodeStatus]);
+  }, [nodes, nodeStatus, searchTerm]);
 
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
@@ -178,7 +182,6 @@ export default function NodesPage() {
         if (!statusInfo) return <Tag>未知</Tag>
         if (statusInfo.status === 'checking') return <Tag icon={<SyncOutlined spin />} color="processing">检查中...</Tag>
         if (statusInfo.status === 'offline') return <Tag icon={<CloseCircleOutlined />} color="error">离线</Tag>
-        
         if (statusInfo.status === 'online') {
             const latency = statusInfo.latency;
             let color = 'success';
@@ -230,27 +233,36 @@ export default function NodesPage() {
         </Space>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <Popconfirm
-            title={`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`}
-            onConfirm={handleBatchDelete}
-            okText="确定"
-            cancelText="取消"
-            disabled={!hasSelected}
-        >
-            <Button type="primary" danger disabled={!hasSelected}>
-                删除选中
-            </Button>
-        </Popconfirm>
-        <span style={{ marginLeft: 8 }}>
-          {hasSelected ? `已选择 ${selectedRowKeys.length} 项` : ''}
-        </span>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+        <Space>
+            <Popconfirm
+                title={`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`}
+                onConfirm={handleBatchDelete}
+                okText="确定"
+                cancelText="取消"
+                disabled={!hasSelected}
+            >
+                <Button type="primary" danger disabled={!hasSelected}>
+                    删除选中
+                </Button>
+            </Popconfirm>
+            <span style={{ marginLeft: 8 }}>
+            {hasSelected ? `已选择 ${selectedRowKeys.length} 项` : ''}
+            </span>
+        </Space>
+        <Search
+            placeholder="搜索节点名称、服务器或类型"
+            onSearch={value => setSearchTerm(value)}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ width: 300 }}
+            allowClear
+        />
       </div>
 
       <Table 
         rowSelection={rowSelection} 
         columns={columns} 
-        dataSource={sortedNodes} // 使用排序后的数据
+        dataSource={filteredAndSortedNodes} // 使用过滤和排序后的数据
         rowKey="id" 
         loading={loading} 
       />
