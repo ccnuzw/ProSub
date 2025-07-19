@@ -10,16 +10,6 @@ const getKV = () => {
   return process.env.KV as KVNamespace;
 };
 
-// --- Promise-based timeout helper ---
-function promiseWithTimeout<T>(promise: Promise<T>, ms: number, timeoutError = new Error('Connection timed out')): Promise<T> {
-    const timeout = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-            reject(timeoutError);
-        }, ms);
-    });
-    return Promise.race([promise, timeout]);
-}
-
 export async function POST(request: NextRequest) {
   const { server, port, nodeId } = (await request.json()) as { server: string, port: number, nodeId: string };
 
@@ -33,49 +23,42 @@ export async function POST(request: NextRequest) {
     timestamp: new Date().toISOString(),
   };
 
-  let socket: any = null;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+
   try {
     const startTime = Date.now();
-
-    // 创建一个 TCP 连接的 Promise
-    const connectPromise = new Promise<any>((resolve, reject) => {
-        try {
-            // @ts-ignore - connect is a valid API in Cloudflare Workers environment
-            const s = connect({ hostname: server, port: port });
-            resolve(s);
-        } catch (e) {
-            reject(e);
-        }
+    
+    // 我们尝试访问一个虚构的 HTTP 端点，仅为测试端口连通性
+    // 注意：即使是 vless/trojan 等非 http 协议，只要端口开放，fetch 就能建立 TCP 连接
+    // 即使 fetch 最终因协议不匹配而失败（例如收到非HTTP响应），它也不会抛出网络层错误
+    // 只有在端口不通或网络超时时，才会抛出 TypeError
+    await fetch(`http://${server}:${port}`, {
+      method: 'HEAD', // 使用 HEAD 请求，我们不关心响应体，只关心能否连接
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'ProSub Health Check/1.0'
+      }
     });
 
-    // 使用 5 秒的超时来竞赛连接 Promise
-    socket = await promiseWithTimeout(connectPromise, 5000);
-    
-    // 如果连接成功，立即关闭
-    await socket.close();
-    
     const endTime = Date.now();
     
     healthStatus.status = 'online';
     healthStatus.latency = endTime - startTime;
 
   } catch (error) {
-    // 如果 socket 已经创建但后续出错，确保它被关闭
-    if (socket) {
-      try {
-        await socket.close();
-      } catch (closeError) {
-        // Ignore errors on close after a failure
-      }
-    }
+    // 只有在网络层面彻底失败（例如，连接被拒绝、超时、DNS解析失败）时，fetch才会抛出异常
+    healthStatus.status = 'offline';
     if (error instanceof Error) {
         healthStatus.error = error.message;
     } else {
         healthStatus.error = String(error);
     }
+  } finally {
+    clearTimeout(timeoutId);
   }
 
-  // 将包含延迟的健康状态存入 KV
+  // 将健康状态存入 KV
   await KV.put(`node-status:${nodeId}`, JSON.stringify(healthStatus));
 
   return NextResponse.json(healthStatus);
