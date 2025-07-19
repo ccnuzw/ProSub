@@ -5,12 +5,14 @@ import { Button, Table, Space, Popconfirm, message, Tag } from 'antd'
 import Link from 'next/link'
 import { Node } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined, ReloadOutlined } from '@ant-design/icons'
+import type { TableProps } from 'antd';
 
 export default function NodesPage() {
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
-  const [nodeStatus, setNodeStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking', timestamp: string }>>({}) // Updated state for node status
+  const [nodeStatus, setNodeStatus] = useState<Record<string, { status: 'online' | 'offline' | 'checking', timestamp: string }>>({})
   const [checkingAll, setCheckingAll] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 新增 state 用于存储选中的节点 key
 
   const fetchNodesAndStatuses = useCallback(async () => {
     setLoading(true)
@@ -39,15 +41,20 @@ export default function NodesPage() {
   const checkNodeHealth = async (node: Node) => {
     setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }))
     try {
-      const res = await fetch(`/api/node-health-check?server=${node.server}&port=${node.port}&nodeId=${node.id}`)
-      const data = (await res.json()) as { status: 'online' | 'offline' | 'checking', timestamp: string }
+      // 注意：这里的 API 路径是示意，Cloudflare Pages 不支持这样的动态请求，需要改为 POST
+      const res = await fetch(`/api/node-health-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ server: node.server, port: node.port, nodeId: node.id })
+      });
+      const data = await res.json()
       setNodeStatus(prev => ({ ...prev, [node.id]: data }))
     } catch (error) {
       console.error('Failed to check node health:', error)
       setNodeStatus(prev => ({ ...prev, [node.id]: { status: 'offline', timestamp: new Date().toISOString() } }))
     }
   }
-
+  
   const handleCheckAllNodes = async () => {
     setCheckingAll(true)
     const checkPromises = nodes.map(node => checkNodeHealth(node))
@@ -60,14 +67,44 @@ export default function NodesPage() {
     try {
       await fetch(`/api/nodes/${id}`, { method: 'DELETE' })
       message.success('节点删除成功')
-      fetchNodesAndStatuses() // Re-fetch the list and statuses
+      fetchNodesAndStatuses()
     } catch (error) {
       console.error('Failed to delete node:', error)
       message.error('删除节点失败')
     }
   }
 
-  const columns = [
+  // 新增：批量删除处理函数
+  const handleBatchDelete = async () => {
+    try {
+      // 取消这段代码的注释
+      await fetch(`/api/nodes/batch-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedRowKeys }),
+      });
+      message.success(`成功删除 ${selectedRowKeys.length} 个节点`);
+      setSelectedRowKeys([]); // 清空选项
+      fetchNodesAndStatuses();
+    } catch (error) {
+      console.error('Failed to batch delete nodes:', error);
+      message.error('批量删除失败');
+    }
+  };
+
+
+  const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+  };
+
+  const hasSelected = selectedRowKeys.length > 0;
+
+  const columns: TableProps<Node>['columns'] = [
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '类型', dataIndex: 'type', key: 'type' },
     { title: '服务器', dataIndex: 'server', key: 'server' },
@@ -75,26 +112,19 @@ export default function NodesPage() {
     {
       title: '状态',
       key: 'status',
-      render: (_: unknown, record: Node) => {
+      render: (_, record) => {
         const statusInfo = nodeStatus[record.id]
-        if (!statusInfo) {
-          return <Tag>未知</Tag>
-        }
-        if (statusInfo.status === 'online') {
-          return <Tag icon={<CheckCircleOutlined />} color="success">在线</Tag>
-        } else if (statusInfo.status === 'offline') {
-          return <Tag icon={<CloseCircleOutlined />} color="error">离线</Tag>
-        } else if (statusInfo.status === 'checking') {
-          return <Tag icon={<SyncOutlined spin />} color="processing">检查中...</Tag>
-        } else {
-          return <Tag>未知</Tag>
-        }
+        if (!statusInfo) return <Tag>未知</Tag>
+        if (statusInfo.status === 'online') return <Tag icon={<CheckCircleOutlined />} color="success">在线</Tag>
+        if (statusInfo.status === 'offline') return <Tag icon={<CloseCircleOutlined />} color="error">离线</Tag>
+        if (statusInfo.status === 'checking') return <Tag icon={<SyncOutlined spin />} color="processing">检查中...</Tag>
+        return <Tag>未知</Tag>
       },
     },
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Node) => (
+      render: (_, record) => (
         <Space size="middle">
           <Button icon={<ReloadOutlined />} onClick={() => checkNodeHealth(record)} loading={nodeStatus[record.id]?.status === 'checking'}>检查</Button>
           <Link href={`/nodes/${record.id}`}>
@@ -111,7 +141,7 @@ export default function NodesPage() {
         </Space>
       ),
     },
-  ]
+  ];
 
   return (
     <div>
@@ -128,7 +158,31 @@ export default function NodesPage() {
           </Link>
         </Space>
       </div>
-      <Table columns={columns} dataSource={nodes} rowKey="id" loading={loading} />
+
+      <div style={{ marginBottom: 16 }}>
+        <Popconfirm
+            title={`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`}
+            onConfirm={handleBatchDelete}
+            okText="确定"
+            cancelText="取消"
+            disabled={!hasSelected}
+        >
+            <Button type="primary" danger disabled={!hasSelected}>
+                删除选中
+            </Button>
+        </Popconfirm>
+        <span style={{ marginLeft: 8 }}>
+          {hasSelected ? `已选择 ${selectedRowKeys.length} 项` : ''}
+        </span>
+      </div>
+
+      <Table 
+        rowSelection={rowSelection} 
+        columns={columns} 
+        dataSource={nodes} 
+        rowKey="id" 
+        loading={loading} 
+      />
     </div>
   )
 }
