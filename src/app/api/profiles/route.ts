@@ -1,16 +1,16 @@
 export const runtime = 'edge';
-import { NextResponse, NextRequest } from 'next/server'
-import { v4 as uuidv4 } from 'uuid'
+import { type NextRequest, NextResponse } from 'next/server'
 import { Profile } from '@/types'
 
 interface ProfileRequest {
   name: string;
   nodes: string[];
   subscriptions: string[];
+  alias?: string;
 }
 
 const getKV = () => {
-  return process.env.KV as KVNamespace
+  return (globalThis as unknown as { KV: KVNamespace }).KV
 }
 
 export async function GET() {
@@ -32,11 +32,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, nodes = [], subscriptions = [], alias } = body;
+    const { name, nodes = [], subscriptions = [], alias } = (await request.json()) as ProfileRequest
 
     if (!name) {
-      return new Response('Profile name is required', { status: 400 });
+      return new Response('Profile name is required', { status: 400 })
     }
 
     const KV = getKV();
