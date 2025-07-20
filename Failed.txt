@@ -1,133 +1,235 @@
-21:17:58.566	Cloning repository...
-21:17:59.224	From https://github.com/imzyb/ProSub
-21:17:59.224	 * branch            6457ddd7fd5cad0e1fb7ea2641f5965d8c33b55e -> FETCH_HEAD
-21:17:59.224	
-21:17:59.253	HEAD is now at 6457ddd 优化订阅逻辑
-21:17:59.254	
-21:17:59.334	
-21:17:59.335	Using v2 root directory strategy
-21:17:59.356	Success: Finished cloning repository files
-21:17:59.984	Restoring from dependencies cache
-21:18:00.001	Restoring from build output cache
-21:18:01.202	Checking for configuration in a Wrangler configuration file (BETA)
-21:18:01.202	
-21:18:02.310	No wrangler.toml file found. Continuing.
-21:18:02.397	Detected the following tools from environment: nodejs@18.18.0, npm@10.9.2
-21:18:02.397	Installing nodejs 18.18.0
-21:18:03.467	Trying to update node-build... ok
-21:18:03.567	To follow progress, use 'tail -f /tmp/node-build.20250720131803.492.log' or pass --verbose
-21:18:03.670	Downloading node-v18.18.0-linux-x64.tar.gz...
-21:18:03.892	-> https://nodejs.org/dist/v18.18.0/node-v18.18.0-linux-x64.tar.gz
-21:18:05.448	
-21:18:05.448	WARNING: node-v18.18.0-linux-x64 is in LTS Maintenance mode and nearing its end of life.
-21:18:05.448	It only receives *critical* security updates, *critical* bug fixes and documentation updates.
-21:18:05.448	
-21:18:05.448	Installing node-v18.18.0-linux-x64...
-21:18:05.847	Installed node-v18.18.0-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/18.18.0
-21:18:05.847	
-21:18:06.872	Installing project dependencies: npm clean-install --progress=false
-21:18:22.014	
-21:18:22.015	added 426 packages, and audited 427 packages in 15s
-21:18:22.015	
-21:18:22.015	138 packages are looking for funding
-21:18:22.015	  run `npm fund` for details
-21:18:22.017	
-21:18:22.017	found 0 vulnerabilities
-21:18:22.034	Executing user command: npx @cloudflare/next-on-pages@1
-21:18:23.129	npm WARN exec The following package was not found and will be installed: @cloudflare/next-on-pages@1.13.12
-21:18:29.320	npm WARN EBADENGINE Unsupported engine {
-21:18:29.320	npm WARN EBADENGINE   package: 'undici@7.12.0',
-21:18:29.321	npm WARN EBADENGINE   required: { node: '>=20.18.1' },
-21:18:29.321	npm WARN EBADENGINE   current: { node: 'v18.18.0', npm: '9.8.1' }
-21:18:29.321	npm WARN EBADENGINE }
-21:18:31.670	npm WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
-21:18:36.588	⚡️ @cloudflare/next-on-pages CLI v.1.13.12
-21:18:36.980	⚡️ Detected Package Manager: npm (9.8.1)
-21:18:36.980	⚡️ Preparing project...
-21:18:36.983	⚡️ Project is ready
-21:18:36.983	⚡️ Building project...
-21:18:37.925	▲  npm
-21:18:37.926	▲  WARN exec The following package was not found and will be installed: vercel@44.5.0
-21:18:40.014	▲  npm
-21:18:40.015	▲  WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
-21:18:41.625	▲  Vercel CLI 44.5.0
-21:18:41.634	▲  > NOTE: The Vercel CLI now collects telemetry regarding usage of the CLI.
-21:18:41.634	▲  > This information is used to shape the CLI roadmap and prioritize features.
-21:18:41.634	▲  > You can learn more, including how to opt-out if you'd not like to participate in this program, by visiting the following URL:
-21:18:41.634	▲  > https://vercel.com/docs/cli/about-telemetry
-21:18:41.758	▲  WARN! Build not running on Vercel. System environment variables will not be available.
-21:18:41.937	▲  Installing dependencies...
-21:18:42.964	▲  up to date in 712ms
-21:18:42.965	▲  138 packages are looking for funding
-21:18:42.965	▲  run `npm fund` for details
-21:18:42.975	▲  Detected Next.js version: 14.2.30
-21:18:42.982	▲  Running "npm run build"
-21:18:43.385	▲  > prosub@0.1.0 build
-21:18:43.385	▲  > next build && rm -rf ./.next/cache
-21:18:44.031	▲  Attention: Next.js now collects completely anonymous telemetry regarding usage.
-21:18:44.031	▲  This information is used to shape Next.js' roadmap and prioritize features.
-21:18:44.031	▲  You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-21:18:44.031	▲  https://nextjs.org/telemetry
-21:18:44.099	▲  ▲ Next.js 14.2.30
-21:18:44.100	▲  
-21:18:44.166	▲  Creating an optimized production build ...
-21:18:58.359	▲  Failed to compile.
-21:18:58.359	▲  ./src/app/api/subscribe/[profile_id]/route.ts
-21:18:58.360	▲  Error: 
-21:18:58.360	▲   x Unterminated string constant
-21:18:58.360	▲    ,-[/opt/buildhome/repo/src/app/api/subscribe/[profile_id]/route.ts:1:1]
-21:18:58.360	▲  1 | """// src/app/api/subscribe/[profile_id]/route.ts
-21:18:58.360	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-21:18:58.361	▲  2 | 
-21:18:58.361	▲  3 | export const runtime = 'edge';
-21:18:58.361	▲    `----
-21:18:58.361	▲  
-21:18:58.361	▲   x Expected ';', '}' or <eof>
-21:18:58.361	▲    ,-[/opt/buildhome/repo/src/app/api/subscribe/[profile_id]/route.ts:1:1]
-21:18:58.362	▲  1 | """// src/app/api/subscribe/[profile_id]/route.ts
-21:18:58.362	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-21:18:58.362	▲    :  `-- This is the expression part of an expression statement
-21:18:58.363	▲  2 | 
-21:18:58.363	▲  3 | export const runtime = 'edge';
-21:18:58.363	▲    `----
-21:18:58.363	▲  
-21:18:58.363	▲  Caused by:
-21:18:58.363	▲     Syntax Error
-21:18:58.363	▲  
-21:18:58.363	▲  Import trace for requested module:
-21:18:58.363	▲  ./src/app/api/subscribe/[profile_id]/route.ts
-21:18:58.364	▲  
-21:18:58.364	▲  ./src/app/sub/[alias]/route.ts
-21:18:58.364	▲  Error: 
-21:18:58.364	▲   x Unterminated string constant
-21:18:58.364	▲    ,-[/opt/buildhome/repo/src/app/sub/[alias]/route.ts:1:1]
-21:18:58.364	▲  1 | """// src/app/sub/[alias]/route.ts
-21:18:58.364	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-21:18:58.364	▲  2 | 
-21:18:58.364	▲  3 | export const runtime = 'edge';
-21:18:58.365	▲    `----
-21:18:58.365	▲  
-21:18:58.365	▲   x Expected ';', '}' or <eof>
-21:18:58.365	▲    ,-[/opt/buildhome/repo/src/app/sub/[alias]/route.ts:1:1]
-21:18:58.365	▲  1 | """// src/app/sub/[alias]/route.ts
-21:18:58.365	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-21:18:58.365	▲    :  `-- This is the expression part of an expression statement
-21:18:58.365	▲  2 | 
-21:18:58.366	▲  3 | export const runtime = 'edge';
-21:18:58.366	▲    `----
-21:18:58.366	▲  
-21:18:58.366	▲  Caused by:
-21:18:58.366	▲     Syntax Error
-21:18:58.366	▲  
-21:18:58.366	▲  Import trace for requested module:
-21:18:58.367	▲  ./src/app/sub/[alias]/route.ts
-21:18:58.385	▲  
-21:18:58.385	▲  > Build failed because of webpack errors
-21:18:58.437	▲  Error: Command "npm run build" exited with 1
-21:18:58.526	
-21:18:58.526	⚡️ The Vercel build (`npx vercel build`) command failed. For more details see the Vercel logs above.
-21:18:58.526	⚡️ If you need help solving the issue, refer to the Vercel or Next.js documentation or their repositories.
-21:18:58.526	
-21:18:58.557	Failed: Error while executing user command. Exited with error code: 1
-21:18:58.565	Failed: build command exited with code: 1
-21:18:59.530	Failed: error occurred while running build command
+21:21:14.214	Cloning repository...
+21:21:14.910	From https://github.com/imzyb/ProSub
+21:21:14.911	 * branch            efde7b1e1090f9ecc92327fb0308eaf548439a0b -> FETCH_HEAD
+21:21:14.911	
+21:21:14.939	HEAD is now at efde7b1 优化订阅逻辑
+21:21:14.939	
+21:21:15.013	
+21:21:15.014	Using v2 root directory strategy
+21:21:15.034	Success: Finished cloning repository files
+21:21:15.711	Restoring from dependencies cache
+21:21:15.727	Restoring from build output cache
+21:21:16.886	Checking for configuration in a Wrangler configuration file (BETA)
+21:21:16.886	
+21:21:17.990	No wrangler.toml file found. Continuing.
+21:21:18.068	Detected the following tools from environment: nodejs@18.18.0, npm@10.9.2
+21:21:18.068	Installing nodejs 18.18.0
+21:21:19.154	Trying to update node-build... ok
+21:21:19.248	To follow progress, use 'tail -f /tmp/node-build.20250720132119.492.log' or pass --verbose
+21:21:19.343	Downloading node-v18.18.0-linux-x64.tar.gz...
+21:21:19.559	-> https://nodejs.org/dist/v18.18.0/node-v18.18.0-linux-x64.tar.gz
+21:21:21.163	
+21:21:21.163	WARNING: node-v18.18.0-linux-x64 is in LTS Maintenance mode and nearing its end of life.
+21:21:21.163	It only receives *critical* security updates, *critical* bug fixes and documentation updates.
+21:21:21.163	
+21:21:21.163	Installing node-v18.18.0-linux-x64...
+21:21:21.562	Installed node-v18.18.0-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/18.18.0
+21:21:21.563	
+21:21:22.551	Installing project dependencies: npm clean-install --progress=false
+21:21:37.308	
+21:21:37.308	added 426 packages, and audited 427 packages in 14s
+21:21:37.308	
+21:21:37.309	138 packages are looking for funding
+21:21:37.309	  run `npm fund` for details
+21:21:37.310	
+21:21:37.310	found 0 vulnerabilities
+21:21:37.330	Executing user command: npx @cloudflare/next-on-pages@1
+21:21:38.437	npm WARN exec The following package was not found and will be installed: @cloudflare/next-on-pages@1.13.12
+21:21:43.706	npm WARN EBADENGINE Unsupported engine {
+21:21:43.707	npm WARN EBADENGINE   package: 'undici@7.12.0',
+21:21:43.707	npm WARN EBADENGINE   required: { node: '>=20.18.1' },
+21:21:43.707	npm WARN EBADENGINE   current: { node: 'v18.18.0', npm: '9.8.1' }
+21:21:43.707	npm WARN EBADENGINE }
+21:21:45.920	npm WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
+21:21:51.418	⚡️ @cloudflare/next-on-pages CLI v.1.13.12
+21:21:51.769	⚡️ Detected Package Manager: npm (9.8.1)
+21:21:51.769	⚡️ Preparing project...
+21:21:51.773	⚡️ Project is ready
+21:21:51.773	⚡️ Building project...
+21:21:52.717	▲  npm
+21:21:52.718	▲  WARN exec The following package was not found and will be installed: vercel@44.5.0
+21:21:54.770	▲  npm
+21:21:54.770	▲  WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
+21:21:56.344	▲  Vercel CLI 44.5.0
+21:21:56.353	▲  > NOTE: The Vercel CLI now collects telemetry regarding usage of the CLI.
+21:21:56.353	▲  > This information is used to shape the CLI roadmap and prioritize features.
+21:21:56.353	▲  > You can learn more, including how to opt-out if you'd not like to participate in this program, by visiting the following URL:
+21:21:56.353	▲  > https://vercel.com/docs/cli/about-telemetry
+21:21:56.474	▲  WARN! Build not running on Vercel. System environment variables will not be available.
+21:21:56.475	▲  
+21:21:56.639	▲  Installing dependencies...
+21:21:57.671	▲  up to date in 710ms
+21:21:57.672	▲  
+21:21:57.672	▲  138 packages are looking for funding
+21:21:57.672	▲  run `npm fund` for details
+21:21:57.682	▲  Detected Next.js version: 14.2.30
+21:21:57.688	▲  Running "npm run build"
+21:21:58.077	▲  > prosub@0.1.0 build
+21:21:58.077	▲  > next build && rm -rf ./.next/cache
+21:21:58.700	▲  Attention: Next.js now collects completely anonymous telemetry regarding usage.
+21:21:58.701	▲  This information is used to shape Next.js' roadmap and prioritize features.
+21:21:58.701	▲  You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+21:21:58.701	▲  https://nextjs.org/telemetry
+21:21:58.766	▲  ▲ Next.js 14.2.30
+21:21:58.766	▲  
+21:21:58.832	▲  Creating an optimized production build ...
+21:22:25.401	▲  Failed to compile.
+21:22:25.401	▲  
+21:22:25.401	▲  ./src/lib/clash-proxy-groups.ts
+21:22:25.401	▲  Error: 
+21:22:25.401	▲   x Unterminated string constant
+21:22:25.402	▲    ,-[/opt/buildhome/repo/src/lib/clash-proxy-groups.ts:1:1]
+21:22:25.402	▲  1 | """// src/lib/clash-proxy-groups.ts
+21:22:25.402	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.402	▲  2 | import { Node } from '@/types';
+21:22:25.402	▲  3 | 
+21:22:25.402	▲  4 | // Helper function to filter nodes by keyword
+21:22:25.402	▲    `----
+21:22:25.402	▲  
+21:22:25.403	▲   x Expected ';', '}' or <eof>
+21:22:25.403	▲    ,-[/opt/buildhome/repo/src/lib/clash-proxy-groups.ts:1:1]
+21:22:25.403	▲  1 | """// src/lib/clash-proxy-groups.ts
+21:22:25.403	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.403	▲    :  `-- This is the expression part of an expression statement
+21:22:25.403	▲  2 | import { Node } from '@/types';
+21:22:25.403	▲  3 | 
+21:22:25.404	▲  4 | // Helper function to filter nodes by keyword
+21:22:25.404	▲    `----
+21:22:25.404	▲  
+21:22:25.404	▲  Caused by:
+21:22:25.404	▲     Syntax Error
+21:22:25.404	▲  
+21:22:25.404	▲  Import trace for requested module:
+21:22:25.405	▲  ./src/lib/clash-proxy-groups.ts
+21:22:25.405	▲  ./src/lib/subscription-generator.ts
+21:22:25.405	▲  ./src/app/api/subscribe/[profile_id]/route.ts
+21:22:25.405	▲  ./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&page=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute.ts&appDir=%2Fopt%2Fbuildhome%2Frepo%2Fsrc%2Fapp&appPaths=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!./src/app/api/subscribe/[profile_id]/route.ts?__next_edge_ssr_entry__
+21:22:25.405	▲  
+21:22:25.405	▲  ./src/lib/clash-rules.ts
+21:22:25.406	▲  Error: 
+21:22:25.406	▲   x Unterminated string constant
+21:22:25.406	▲    ,-[/opt/buildhome/repo/src/lib/clash-rules.ts:1:1]
+21:22:25.406	▲  1 | """// src/lib/clash-rules.ts
+21:22:25.406	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.406	▲  2 | 
+21:22:25.406	▲  3 | // These are rule providers, which allow the client to fetch and update rulesets independently.
+21:22:25.406	▲  4 | export const ruleProviders = {
+21:22:25.406	▲    `----
+21:22:25.407	▲  
+21:22:25.407	▲   x Expected ';', '}' or <eof>
+21:22:25.407	▲    ,-[/opt/buildhome/repo/src/lib/clash-rules.ts:1:1]
+21:22:25.407	▲  1 | """// src/lib/clash-rules.ts
+21:22:25.407	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.407	▲    :  `-- This is the expression part of an expression statement
+21:22:25.407	▲  2 | 
+21:22:25.407	▲  3 | // These are rule providers, which allow the client to fetch and update rulesets independently.
+21:22:25.407	▲  4 | export const ruleProviders = {
+21:22:25.407	▲    `----
+21:22:25.408	▲  
+21:22:25.408	▲  Caused by:
+21:22:25.408	▲     Syntax Error
+21:22:25.408	▲  
+21:22:25.408	▲  Import trace for requested module:
+21:22:25.408	▲  ./src/lib/clash-rules.ts
+21:22:25.408	▲  ./src/lib/subscription-generator.ts
+21:22:25.408	▲  ./src/app/api/subscribe/[profile_id]/route.ts
+21:22:25.408	▲  ./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&page=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute.ts&appDir=%2Fopt%2Fbuildhome%2Frepo%2Fsrc%2Fapp&appPaths=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!./src/app/api/subscribe/[profile_id]/route.ts?__next_edge_ssr_entry__
+21:22:25.408	▲  
+21:22:25.409	▲  ./src/lib/loon-proxy-groups.ts
+21:22:25.409	▲  Error: 
+21:22:25.409	▲   x Unterminated string constant
+21:22:25.409	▲    ,-[/opt/buildhome/repo/src/lib/loon-proxy-groups.ts:1:1]
+21:22:25.409	▲  1 | """// src/lib/loon-proxy-groups.ts
+21:22:25.409	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.409	▲  2 | import { Node } from '@/types';
+21:22:25.409	▲  3 | 
+21:22:25.409	▲  4 | // Helper function to filter nodes by keyword for Loon
+21:22:25.409	▲    `----
+21:22:25.409	▲  
+21:22:25.409	▲   x Expected ';', '}' or <eof>
+21:22:25.410	▲    ,-[/opt/buildhome/repo/src/lib/loon-proxy-groups.ts:1:1]
+21:22:25.410	▲  1 | """// src/lib/loon-proxy-groups.ts
+21:22:25.410	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.410	▲    :  `-- This is the expression part of an expression statement
+21:22:25.410	▲  2 | import { Node } from '@/types';
+21:22:25.410	▲  3 | 
+21:22:25.410	▲  4 | // Helper function to filter nodes by keyword for Loon
+21:22:25.410	▲    `----
+21:22:25.410	▲  
+21:22:25.410	▲  Caused by:
+21:22:25.410	▲     Syntax Error
+21:22:25.410	▲  
+21:22:25.411	▲  Import trace for requested module:
+21:22:25.411	▲  ./src/lib/loon-proxy-groups.ts
+21:22:25.411	▲  ./src/lib/subscription-generator.ts
+21:22:25.411	▲  ./src/app/api/subscribe/[profile_id]/route.ts
+21:22:25.411	▲  ./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&page=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute.ts&appDir=%2Fopt%2Fbuildhome%2Frepo%2Fsrc%2Fapp&appPaths=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!./src/app/api/subscribe/[profile_id]/route.ts?__next_edge_ssr_entry__
+21:22:25.412	▲  
+21:22:25.412	▲  ./src/lib/loon-rules.ts
+21:22:25.412	▲  Error: 
+21:22:25.412	▲   x Unterminated string constant
+21:22:25.412	▲    ,-[/opt/buildhome/repo/src/lib/loon-rules.ts:1:1]
+21:22:25.413	▲  1 | """// src/lib/loon-rules.ts
+21:22:25.413	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.413	▲  2 | 
+21:22:25.413	▲  3 | // Loon rules. It supports remote rule sets.
+21:22:25.413	▲    `----
+21:22:25.413	▲  
+21:22:25.413	▲   x Expected ';', '}' or <eof>
+21:22:25.413	▲    ,-[/opt/buildhome/repo/src/lib/loon-rules.ts:1:1]
+21:22:25.414	▲  1 | """// src/lib/loon-rules.ts
+21:22:25.414	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.414	▲    :  `-- This is the expression part of an expression statement
+21:22:25.414	▲  2 | 
+21:22:25.414	▲  3 | // Loon rules. It supports remote rule sets.
+21:22:25.414	▲    `----
+21:22:25.414	▲  
+21:22:25.414	▲  Caused by:
+21:22:25.414	▲     Syntax Error
+21:22:25.415	▲  
+21:22:25.415	▲  Import trace for requested module:
+21:22:25.415	▲  ./src/lib/loon-rules.ts
+21:22:25.415	▲  ./src/lib/subscription-generator.ts
+21:22:25.415	▲  ./src/app/api/subscribe/[profile_id]/route.ts
+21:22:25.415	▲  ./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&page=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute.ts&appDir=%2Fopt%2Fbuildhome%2Frepo%2Fsrc%2Fapp&appPaths=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!./src/app/api/subscribe/[profile_id]/route.ts?__next_edge_ssr_entry__
+21:22:25.415	▲  
+21:22:25.416	▲  ./src/lib/quantumult-x-rules.ts
+21:22:25.416	▲  Error: 
+21:22:25.416	▲   x Unterminated string constant
+21:22:25.416	▲    ,-[/opt/buildhome/repo/src/lib/quantumult-x-rules.ts:1:1]
+21:22:25.416	▲  1 | """// src/lib/quantumult-x-rules.ts
+21:22:25.416	▲    :   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.416	▲  2 | 
+21:22:25.416	▲  3 | // Quantumult X uses [filter_remote] to subscribe to rule sets.
+21:22:25.417	▲  4 | // We will provide a list of these remote filters.
+21:22:25.417	▲    `----
+21:22:25.417	▲  
+21:22:25.417	▲   x Expected ';', '}' or <eof>
+21:22:25.417	▲    ,-[/opt/buildhome/repo/src/lib/quantumult-x-rules.ts:1:1]
+21:22:25.418	▲  1 | """// src/lib/quantumult-x-rules.ts
+21:22:25.418	▲    : ^|^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21:22:25.418	▲    :  `-- This is the expression part of an expression statement
+21:22:25.418	▲  2 | 
+21:22:25.418	▲  3 | // Quantumult X uses [filter_remote] to subscribe to rule sets.
+21:22:25.418	▲  4 | // We will provide a list of these remote filters.
+21:22:25.419	▲    `----
+21:22:25.419	▲  
+21:22:25.419	▲  Caused by:
+21:22:25.419	▲     Syntax Error
+21:22:25.419	▲  
+21:22:25.419	▲  Import trace for requested module:
+21:22:25.419	▲  ./src/lib/quantumult-x-rules.ts
+21:22:25.419	▲  ./src/lib/subscription-generator.ts
+21:22:25.419	▲  ./src/app/api/subscribe/[profile_id]/route.ts
+21:22:25.420	▲  ./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&page=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute.ts&appDir=%2Fopt%2Fbuildhome%2Frepo%2Fsrc%2Fapp&appPaths=%2Fapi%2Fsubscribe%2F%5Bprofile_id%5D%2Froute&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!./src/app/api/subscribe/[profile_id]/route.ts?__next_edge_ssr_entry__
+21:22:25.420	▲  
+21:22:25.426	▲  
+21:22:25.426	▲  > Build failed because of webpack errors
+21:22:25.481	▲  Error: Command "npm run build" exited with 1
+21:22:25.529	
+21:22:25.530	⚡️ The Vercel build (`npx vercel build`) command failed. For more details see the Vercel logs above.
+21:22:25.530	⚡️ If you need help solving the issue, refer to the Vercel or Next.js documentation or their repositories.
+21:22:25.530	
+21:22:25.568	Failed: Error while executing user command. Exited with error code: 1
+21:22:25.578	Failed: build command exited with code: 1
+21:22:26.679	Failed: error occurred while running build command

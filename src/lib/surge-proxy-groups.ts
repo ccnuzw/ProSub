@@ -1,4 +1,4 @@
-"""// src/lib/surge-proxy-groups.ts
+// src/lib/surge-proxy-groups.ts
 import { Node } from '@/types';
 
 // Helper function to filter nodes by keyword for Surge
@@ -28,8 +28,8 @@ export const getSurgeProxyGroups = (nodes: Node[]) => {
     `🛑 广告拦截 = select, REJECT, DIRECT`,
     `🌏 国内媒体 = select, DIRECT, 🚀 节点选择`,
     `🌍 国外媒体 = select, 🚀 节点选择, ♻️ 自动选择, ${[...hkNodes, ...twNodes, ...usNodes].join(', ')}`,
-    `📹 油管视频 = select, 🚀 节点选择, ♻️ 自动选择, ${[...hkNodes, ...twNodes, ...usNodes].join(', ')}`,
-    `🎥 奈飞视频 = select, 🚀 节点选择, ♻️ 自动选择, ${[...hkNodes, ...twNodes, ...usNodes].join(', ')}`,
+    `📹 油管视频 = select, 🌍 国外媒体`,
+    `🎥 奈飞视频 = select, 🌍 国外媒体`,
     `🤖 OpenAi = select, 🚀 节点选择, ♻️ 自动选择, ${[...usNodes, ...jpNodes].join(', ')}`,
     `📲 电报消息 = select, 🚀 节点选择, ♻️ 自动选择`,
     `🍎 苹果服务 = select, DIRECT, 🚀 节点选择`,
@@ -46,4 +46,3 @@ export const getSurgeProxyGroups = (nodes: Node[]) => {
 
   return groups;
 };
-"""

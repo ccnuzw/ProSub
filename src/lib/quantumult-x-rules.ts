@@ -1,4 +1,4 @@
-"""// src/lib/quantumult-x-rules.ts
+// src/lib/quantumult-x-rules.ts
 
 // Quantumult X uses [filter_remote] to subscribe to rule sets.
 // We will provide a list of these remote filters.
@@ -39,4 +39,3 @@ export const quantumultXRules = [
   '# > Final',
   'final=🐟 漏网之鱼'
 ];
-"""

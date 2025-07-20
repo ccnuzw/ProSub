@@ -1,4 +1,4 @@
-"""// src/lib/loon-proxy-groups.ts
+// src/lib/loon-proxy-groups.ts
 import { Node } from '@/types';
 
 // Helper function to filter nodes by keyword for Loon
@@ -46,4 +46,3 @@ export const getLoonProxyGroups = (nodes: Node[]) => {
 
   return groups;
 };
-"""

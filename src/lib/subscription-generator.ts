@@ -107,7 +107,7 @@ function generateClashSubscription(nodes: Node[]): Response {
         'allow-lan': false,
         'mode': 'rule',
         'log-level': 'info',
-        'external-controller': '127.0.0.1:9090',
+        'external-controller': '127.0.0.0.1:9090',
         'proxies': proxies,
         'proxy-groups': proxyGroups,
         'rule-providers': ruleProviders,
@@ -169,7 +169,7 @@ function generateQuantumultXSubscription(nodes: Node[]): Response {
                 break;
             case 'vmess':
                 const tls = (node.params?.tls === 'tls' || node.params?.tls === true) ? ', obfs=wss' : '';
-                line = `vmess=${node.server}:${node.port}, method=aes-128-gcm, password=${node.password}, obfs=ws, obfs-uri=${node.params?.path}, obfs-header=\"Host: ${node.params?.host}[Rr][Nn]User-Agent: okhttp/3.12.1\"${tls}, ${remark}`;
+                line = `vmess=${node.server}:${node.port}, method=aes-128-gcm, password=${node.password}, obfs=ws, obfs-uri=${node.params?.path}, obfs-header="Host: ${node.params?.host}[Rr][Nn]User-Agent: okhttp/3.12.1"${tls}, ${remark}`;
                 break;
             case 'trojan':
                 line = `trojan=${node.server}:${node.port}, password=${node.password}, ${remark}`;

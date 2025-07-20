@@ -1,4 +1,4 @@
-"""// src/lib/clash-proxy-groups.ts
+// src/lib/clash-proxy-groups.ts
 import { Node } from '@/types';
 
 // Helper function to filter nodes by keyword
@@ -41,7 +41,7 @@ export const getClashProxyGroups = (nodes: Node[]) => {
     {
         name: '🐟 漏网之鱼',
         type: 'select',
-        proxies: ['🚀 节点选择', '♻️ 自动选择', 'DIRECT'],
+        proxies: ['REJECT', 'DIRECT'],
     },
     {
         name: '🛑 广告拦截',
@@ -61,12 +61,12 @@ export const getClashProxyGroups = (nodes: Node[]) => {
     {
         name: '📹 油管视频',
         type: 'select',
-        proxies: ['🚀 节点选择', '♻️ 自动选择', ...hkNodes, ...twNodes, ...usNodes],
+        proxies: ['🌍 国外媒体'],
     },
     {
         name: '🎥 奈飞视频',
         type: 'select',
-        proxies: ['🚀 节点选择', '♻️ 自动选择', ...hkNodes, ...twNodes, ...usNodes],
+        proxies: ['🌍 国外媒体'],
     },
     {
         name: '🤖 OpenAi',
@@ -138,4 +138,3 @@ export const getClashProxyGroups = (nodes: Node[]) => {
     },
   ];
 };
-"""

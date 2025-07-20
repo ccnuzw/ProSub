@@ -1,4 +1,4 @@
-"""// src/lib/sing-box-outbounds.ts
+// src/lib/sing-box-outbounds.ts
 import { Node } from '@/types';
 
 const filterNodeTags = (nodes: Node[], keyword: string | RegExp): string[] => {
@@ -68,7 +68,7 @@ export const getSingBoxOutbounds = (nodes: Node[]) => {
     { tag: '🚀 节点选择', type: 'select', outbounds: ['♻️ 自动选择', 'DIRECT', ...nodeNames] },
     { tag: '☑️ 手动切换', type: 'select', outbounds: nodeNames },
     { tag: '♻️ 自动选择', type: 'url-test', outbounds: nodeNames, url: 'http://www.gstatic.com/generate_204', interval: '5m' },
-    { tag: '🐟 漏网之鱼', type: 'select', outbounds: ['🚀 节点选择', '♻️ 自动选择', 'DIRECT'] },
+    { tag: '🐟 漏网之鱼', type: 'select', outbounds: ['BLOCK', 'DIRECT'] },
     { tag: '🛑 广告拦截', type: 'select', outbounds: ['BLOCK', 'DIRECT'] },
     { tag: '🌏 国内媒体', type: 'select', outbounds: ['DIRECT', '🚀 节点选择'] },
     { tag: '🌍 国外媒体', type: 'select', outbounds: ['🚀 节点选择', '♻️ 自动选择', ...hkNodes, ...twNodes, ...usNodes] },
@@ -94,4 +94,3 @@ export const getSingBoxOutbounds = (nodes: Node[]) => {
 
   return [...nodeOutbounds, ...groupOutbounds];
 };
-"""

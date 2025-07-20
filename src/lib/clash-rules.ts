@@ -1,4 +1,4 @@
-"""// src/lib/clash-rules.ts
+// src/lib/clash-rules.ts
 
 // These are rule providers, which allow the client to fetch and update rulesets independently.
 export const ruleProviders = {
@@ -98,4 +98,3 @@ export const clashRules = [
   'GEOIP,CN,🎯 全球直连',
   'MATCH,🐟 漏网之鱼'
 ];
-"""

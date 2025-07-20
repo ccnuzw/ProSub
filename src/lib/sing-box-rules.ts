@@ -1,4 +1,4 @@
-"""// src/lib/sing-box-rules.ts
+// src/lib/sing-box-rules.ts
 
 export const getSingBoxRoute = () => {
   const ruleSets = [
@@ -39,4 +39,3 @@ export const getSingBoxRoute = () => {
     final: '🐟 漏网之鱼',
   };
 };
-"""

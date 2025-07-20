@@ -1,4 +1,4 @@
-"""// src/lib/loon-rules.ts
+// src/lib/loon-rules.ts
 
 // Loon rules. It supports remote rule sets.
 
@@ -36,4 +36,3 @@ export const loonRules = [
   '# > Final',
   'FINAL,🐟 漏网之鱼'
 ];
-"""

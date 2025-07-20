@@ -1,4 +1,4 @@
-"""// src/lib/surge-rules.ts
+// src/lib/surge-rules.ts
 
 // Surge rule format is slightly different from Clash.
 // We will define the rules as an array of strings.
@@ -37,4 +37,3 @@ export const surgeRules = [
   '# > Final',
   'FINAL,🐟 漏网之鱼'
 ];
-"""
