@@ -41,8 +41,10 @@ export interface Subscription {
 export interface Profile {
   id: string;
   name: string;
+  alias?: string; // <-- Added this line
   nodes: string[];
   subscriptions: string[];
+  updatedAt: string;
 }
 
 export interface ProfileTrafficData {

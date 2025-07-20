@@ -194,6 +194,14 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
         <Input placeholder="例如：主力配置" />
       </Form.Item>
 
+      <Form.Item
+        label="Custom Subscription Path"
+        name="alias"
+        tooltip="Create a short, memorable link like /sub/my-best-nodes. Use only letters, numbers, hyphen, and underscore."
+      >
+        <Input addonBefore={"/sub/"} />
+      </Form.Item>
+
       <Title level={5} style={{marginTop: '24px'}}>选择节点</Title>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div style={{ flex: 1, minWidth: 0 }}>

@@ -72,16 +72,19 @@ export default function ProfilesPage() {
     {
       title: '订阅链接',
       key: 'subscribe_url',
-      render: (_, record) => {
-        const subscribeUrl = `${origin}/api/subscribe/${record.id}`;
+      render: (text: string, record: Profile) => {
+        const subUrl = record.alias 
+          ? `${window.location.origin}/sub/${record.alias}`
+          : `${window.location.origin}/api/subscribe/${record.id}`;
+        
         return (
-          <Space.Compact style={{ width: '100%' }}>
-            <Input readOnly value={subscribeUrl} />
-            <Tooltip title="复制链接">
-              <Button icon={<CopyOutlined />} onClick={() => handleCopy(subscribeUrl)} disabled={!origin} />
+          <Space>
+            <Tooltip title={subUrl}>
+              <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(subUrl)} />
             </Tooltip>
-          </Space.Compact>
-        )
+            <Button icon={<QrcodeOutlined />} onClick={() => showQrCode(subUrl)} />
+          </Space>
+        );
       },
     },
     {
