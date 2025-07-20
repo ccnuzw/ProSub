@@ -1,4 +1,4 @@
-"""// src/app/sub/[alias]/route.ts
+// src/app/sub/[alias]/route.ts
 
 export const runtime = 'edge';
 
@@ -51,4 +51,3 @@ export async function GET(request: NextRequest, { params }: { params: { alias: s
     return new Response('Failed to generate subscription', { status: 500 });
   }
 }
-"""
