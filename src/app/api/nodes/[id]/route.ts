@@ -1,5 +1,5 @@
 export const runtime = 'edge';
-import { NextResponse, NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { Node } from '@/types'
 
 interface NodeRequest {
@@ -11,7 +11,7 @@ interface NodeRequest {
 }
 
 const getKV = () => {
-  return process.env.KV as KVNamespace
+  return (globalThis as unknown as { KV: KVNamespace }).KV
 }
 
 export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any

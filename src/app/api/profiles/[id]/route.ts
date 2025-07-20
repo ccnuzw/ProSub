@@ -1,15 +1,16 @@
 export const runtime = 'edge';
-import { NextResponse, NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { Profile } from '@/types'
 
-interface ProfileRequest {
-  name: string;
-  nodes: string[];
-  subscriptions: string[];
+interface ProfileRequestBody {
+  name?: string;
+  nodes?: string[];
+  subscriptions?: string[];
+  alias?: string;
 }
 
 const getKV = () => {
-  return process.env.KV as KVNamespace
+  return (globalThis as unknown as { KV: KVNamespace }).KV
 }
 
 export async function GET(request: NextRequest, { params }: { // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { // eslint-disable-
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const KV = getKV();
+    const KV = getKV()
     const profileId = params.id;
 
     // 1. Get existing profile
@@ -41,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const existingProfile: Profile = JSON.parse(profileJson);
 
     // 2. Get new data from request body
-    const body = await request.json();
+    const body: ProfileRequestBody = await request.json();
     const { name, nodes, subscriptions, alias } = body;
 
     // 3. Handle alias update
@@ -90,8 +91,15 @@ export async function DELETE(request: NextRequest, { params }: { // eslint-disab
 }) {
   try {
     const KV = getKV()
+    const profile = await KV.get(`profile:${params.id}`)
+    if (profile) {
+      const { alias } = JSON.parse(profile)
+      if (alias) {
+        await KV.delete(`alias:${alias}`)
+      }
+    }
     await KV.delete(`profile:${params.id}`)
-    
+
     return new Response(null, { status: 204 })
   } catch (error) {
     console.error(`Failed to delete profile ${params.id}:`, error)
