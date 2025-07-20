@@ -1,94 +1,95 @@
-22:31:44.574	Cloning repository...
-22:31:45.233	From https://github.com/imzyb/ProSub
-22:31:45.233	 * branch            7ce7cff56dfd713aed461f343b045e3b8252bc4c -> FETCH_HEAD
-22:31:45.233	
-22:31:45.262	HEAD is now at 7ce7cff 优化订阅逻辑
-22:31:45.263	
-22:31:45.337	
-22:31:45.338	Using v2 root directory strategy
-22:31:45.357	Success: Finished cloning repository files
-22:31:45.990	Restoring from dependencies cache
-22:31:46.007	Restoring from build output cache
-22:31:47.163	Checking for configuration in a Wrangler configuration file (BETA)
-22:31:47.164	
-22:31:48.257	No wrangler.toml file found. Continuing.
-22:31:48.331	Detected the following tools from environment: nodejs@20.11.1, npm@10.9.2
-22:31:48.331	Installing nodejs 20.11.1
-22:31:49.345	Trying to update node-build... ok
-22:31:49.437	To follow progress, use 'tail -f /tmp/node-build.20250720143149.492.log' or pass --verbose
-22:31:49.531	Downloading node-v20.11.1-linux-x64.tar.gz...
-22:31:49.814	-> https://nodejs.org/dist/v20.11.1/node-v20.11.1-linux-x64.tar.gz
-22:31:51.463	
-22:31:51.463	WARNING: node-v20.11.1-linux-x64 is in LTS Maintenance mode and nearing its end of life.
-22:31:51.463	It only receives *critical* security updates, *critical* bug fixes and documentation updates.
-22:31:51.463	
-22:31:51.463	Installing node-v20.11.1-linux-x64...
-22:31:51.856	Installed node-v20.11.1-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/20.11.1
-22:31:51.856	
-22:31:52.843	Installing project dependencies: npm clean-install --progress=false
-22:32:08.064	
-22:32:08.064	added 426 packages, and audited 427 packages in 15s
-22:32:08.064	
-22:32:08.064	138 packages are looking for funding
-22:32:08.065	  run `npm fund` for details
-22:32:08.066	
-22:32:08.066	found 0 vulnerabilities
-22:32:08.087	Executing user command: npx @cloudflare/next-on-pages@1
-22:32:09.102	npm WARN exec The following package was not found and will be installed: @cloudflare/next-on-pages@1.13.12
-22:32:14.470	npm WARN EBADENGINE Unsupported engine {
-22:32:14.470	npm WARN EBADENGINE   package: 'undici@7.12.0',
-22:32:14.470	npm WARN EBADENGINE   required: { node: '>=20.18.1' },
-22:32:14.470	npm WARN EBADENGINE   current: { node: 'v20.11.1', npm: '10.2.4' }
-22:32:14.471	npm WARN EBADENGINE }
-22:32:16.211	npm WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
-22:32:20.579	⚡️ @cloudflare/next-on-pages CLI v.1.13.12
-22:32:20.901	⚡️ Detected Package Manager: npm (10.2.4)
-22:32:20.902	⚡️ Preparing project...
-22:32:20.905	⚡️ Project is ready
-22:32:20.905	⚡️ Building project...
-22:32:21.742	▲  npm WARN exec The following package was not found and will be installed: vercel@44.5.0
-22:32:24.287	▲  npm WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
-22:32:25.730	▲  Vercel CLI 44.5.0
-22:32:25.735	▲  > NOTE: The Vercel CLI now collects telemetry regarding usage of the CLI.
-22:32:25.735	▲  > This information is used to shape the CLI roadmap and prioritize features.
-22:32:25.735	▲  > You can learn more, including how to opt-out if you'd not like to participate in this program, by visiting the following URL:
-22:32:25.735	▲  > https://vercel.com/docs/cli/about-telemetry
-22:32:25.845	▲  WARN! Build not running on Vercel. System environment variables will not be available.
-22:32:25.978	▲  Warning: Detected "engines": { "node": ">=20.11.1" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: http://vercel.link/node-version
-22:32:25.990	▲  Installing dependencies...
-22:32:26.918	▲  up to date in 659ms
-22:32:26.918	▲  138 packages are looking for funding
-22:32:26.918	▲  run `npm fund` for details
-22:32:26.927	▲  Detected Next.js version: 14.2.30
-22:32:26.931	▲  Running "npm run build"
-22:32:27.277	▲  > prosub@0.1.0 build
-22:32:27.277	▲  > next build && rm -rf ./.next/cache
-22:32:27.861	▲  Attention: Next.js now collects completely anonymous telemetry regarding usage.
-22:32:27.861	▲  This information is used to shape Next.js' roadmap and prioritize features.
-22:32:27.861	▲  You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-22:32:27.861	▲  https://nextjs.org/telemetry
-22:32:27.921	▲  ▲ Next.js 14.2.30
-22:32:27.921	▲  
-22:32:27.982	▲  Creating an optimized production build ...
-22:33:02.325	▲  ✓ Compiled successfully
-22:33:02.326	▲  Linting and checking validity of types ...
-22:33:06.358	▲  Failed to compile.
-22:33:06.358	▲  ./src/app/api/profiles/route.ts:36:13
-22:33:06.358	▲  Type error: Property 'name' does not exist on type 'unknown'.
-22:33:06.358	▲  
-22:33:06.358	▲    34 |   try {
-22:33:06.358	▲    35 |     const body = await request.json();
-22:33:06.359	▲  > 36 |     const { name, nodes = [], subscriptions = [], alias } = body;
-22:33:06.359	▲       |             ^
-22:33:06.359	▲    37 |
-22:33:06.359	▲    38 |     if (!name) {
-22:33:06.359	▲    39 |       return new Response('Profile name is required', { status: 400 });
-22:33:06.382	▲  Next.js build worker exited with code: 1 and signal: null
-22:33:06.406	▲  Error: Command "npm run build" exited with 1
-22:33:06.453	
-22:33:06.453	⚡️ The Vercel build (`npx vercel build`) command failed. For more details see the Vercel logs above.
-22:33:06.454	⚡️ If you need help solving the issue, refer to the Vercel or Next.js documentation or their repositories.
-22:33:06.454	
-22:33:06.496	Failed: Error while executing user command. Exited with error code: 1
-22:33:06.506	Failed: build command exited with code: 1
-22:33:07.509	Failed: error occurred while running build command
+22:35:14.087	Cloning repository...
+22:35:14.695	From https://github.com/imzyb/ProSub
+22:35:14.695	 * branch            db718ef67085c41aa23edda5aa9db7ee109fed7e -> FETCH_HEAD
+22:35:14.695	
+22:35:14.722	HEAD is now at db718ef 优化订阅逻辑
+22:35:14.723	
+22:35:14.800	
+22:35:14.800	Using v2 root directory strategy
+22:35:14.821	Success: Finished cloning repository files
+22:35:15.501	Restoring from dependencies cache
+22:35:15.518	Restoring from build output cache
+22:35:16.737	Checking for configuration in a Wrangler configuration file (BETA)
+22:35:16.737	
+22:35:17.839	No wrangler.toml file found. Continuing.
+22:35:17.914	Detected the following tools from environment: nodejs@20.11.1, npm@10.9.2
+22:35:17.915	Installing nodejs 20.11.1
+22:35:18.971	Trying to update node-build... ok
+22:35:19.071	To follow progress, use 'tail -f /tmp/node-build.20250720143519.492.log' or pass --verbose
+22:35:19.169	Downloading node-v20.11.1-linux-x64.tar.gz...
+22:35:19.447	-> https://nodejs.org/dist/v20.11.1/node-v20.11.1-linux-x64.tar.gz
+22:35:21.059	
+22:35:21.060	WARNING: node-v20.11.1-linux-x64 is in LTS Maintenance mode and nearing its end of life.
+22:35:21.060	It only receives *critical* security updates, *critical* bug fixes and documentation updates.
+22:35:21.060	
+22:35:21.060	Installing node-v20.11.1-linux-x64...
+22:35:21.453	Installed node-v20.11.1-linux-x64 to /opt/buildhome/.asdf/installs/nodejs/20.11.1
+22:35:21.454	
+22:35:22.476	Installing project dependencies: npm clean-install --progress=false
+22:35:37.895	
+22:35:37.895	added 426 packages, and audited 427 packages in 15s
+22:35:37.895	
+22:35:37.895	138 packages are looking for funding
+22:35:37.895	  run `npm fund` for details
+22:35:37.896	
+22:35:37.897	found 0 vulnerabilities
+22:35:37.919	Executing user command: npx @cloudflare/next-on-pages@1
+22:35:38.916	npm WARN exec The following package was not found and will be installed: @cloudflare/next-on-pages@1.13.12
+22:35:44.111	npm WARN EBADENGINE Unsupported engine {
+22:35:44.111	npm WARN EBADENGINE   package: 'undici@7.12.0',
+22:35:44.111	npm WARN EBADENGINE   required: { node: '>=20.18.1' },
+22:35:44.111	npm WARN EBADENGINE   current: { node: 'v20.11.1', npm: '10.2.4' }
+22:35:44.111	npm WARN EBADENGINE }
+22:35:45.881	npm WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
+22:35:53.083	⚡️ @cloudflare/next-on-pages CLI v.1.13.12
+22:35:53.401	⚡️ Detected Package Manager: npm (10.2.4)
+22:35:53.401	⚡️ Preparing project...
+22:35:53.404	⚡️ Project is ready
+22:35:53.404	⚡️ Building project...
+22:35:54.254	▲  npm WARN exec The following package was not found and will be installed: vercel@44.5.0
+22:35:56.261	▲  npm
+22:35:56.261	▲  WARN deprecated path-match@1.2.4: This package is archived and no longer maintained. For support, visit https://github.com/expressjs/express/discussions
+22:35:57.730	▲  Vercel CLI 44.5.0
+22:35:57.735	▲  > NOTE: The Vercel CLI now collects telemetry regarding usage of the CLI.
+22:35:57.735	▲  > This information is used to shape the CLI roadmap and prioritize features.
+22:35:57.736	▲  > You can learn more, including how to opt-out if you'd not like to participate in this program, by visiting the following URL:
+22:35:57.736	▲  > https://vercel.com/docs/cli/about-telemetry
+22:35:57.845	▲  WARN! Build not running on Vercel. System environment variables will not be available.
+22:35:57.987	▲  Warning: Detected "engines": { "node": ">=20.11.1" } in your `package.json` that will automatically upgrade when a new major Node.js Version is released. Learn More: http://vercel.link/node-version
+22:35:58.001	▲  Installing dependencies...
+22:35:58.936	▲  up to date in 652ms
+22:35:58.936	▲  138 packages are looking for funding
+22:35:58.936	▲  run `npm fund` for details
+22:35:58.945	▲  Detected Next.js version: 14.2.30
+22:35:58.950	▲  Running "npm run build"
+22:35:59.298	▲  > prosub@0.1.0 build
+22:35:59.298	▲  > next build && rm -rf ./.next/cache
+22:35:59.895	▲  Attention: Next.js now collects completely anonymous telemetry regarding usage.
+22:35:59.896	▲  This information is used to shape Next.js' roadmap and prioritize features.
+22:35:59.896	▲  You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+22:35:59.896	▲  https://nextjs.org/telemetry
+22:35:59.957	▲  ▲ Next.js 14.2.30
+22:35:59.957	▲  
+22:36:00.020	▲  Creating an optimized production build ...
+22:36:35.716	▲  ✓ Compiled successfully
+22:36:35.717	▲  Linting and checking validity of types ...
+22:36:39.744	▲  Failed to compile.
+22:36:39.744	▲  ./src/app/profiles/page.tsx:83:62
+22:36:39.745	▲  Type error: Cannot find name 'copyToClipboard'.
+22:36:39.745	▲  
+22:36:39.745	▲    81 |           <Space>
+22:36:39.745	▲    82 |             <Tooltip title={subUrl}>
+22:36:39.745	▲  > 83 |               <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(subUrl)} />
+22:36:39.745	▲       |                                                              ^
+22:36:39.746	▲    84 |             </Tooltip>
+22:36:39.746	▲    85 |             <Button icon={<QrcodeOutlined />} onClick={() => showQrCode(subUrl)} />
+22:36:39.747	▲    86 |           </Space>
+22:36:39.769	▲  Next.js build worker exited with code: 1 and signal: null
+22:36:39.793	▲  Error: Command "npm run build" exited with 1
+22:36:39.842	
+22:36:39.843	⚡️ The Vercel build (`npx vercel build`) command failed. For more details see the Vercel logs above.
+22:36:39.843	⚡️ If you need help solving the issue, refer to the Vercel or Next.js documentation or their repositories.
+22:36:39.843	
+22:36:39.872	Failed: Error while executing user command. Exited with error code: 1
+22:36:39.881	Failed: build command exited with code: 1
+22:36:40.855	Failed: error occurred while running build command

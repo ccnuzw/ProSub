@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Button, Table, Space, Popconfirm, message, Tooltip, Input, Card, Typography } from 'antd'
+import { Button, Table, Space, Popconfirm, message, Tooltip, Modal, Card, Typography } from 'antd'
 import Link from 'next/link'
 import { Profile } from '@/types'
-import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined, ClusterOutlined, WifiOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined, QrcodeOutlined, ClusterOutlined, WifiOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
+import QRCode from 'qrcode.react';
 
 const { Title } = Typography;
 
@@ -54,6 +55,19 @@ export default function ProfilesPage() {
     message.success('订阅链接已复制到剪贴板')
   }
 
+  const showQrCode = (url: string) => {
+    Modal.info({
+      title: '订阅二维码',
+      content: (
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <QRCode value={url} size={256} />
+        </div>
+      ),
+      okText: '关闭',
+      centered: true,
+    });
+  };
+
   const columns: TableProps<Profile>['columns'] = [
     { title: '名称', dataIndex: 'name', key: 'name' },
     // *** 这是关键的修改 1: 新增列来显示数量 ***
@@ -80,7 +94,7 @@ export default function ProfilesPage() {
         return (
           <Space>
             <Tooltip title={subUrl}>
-              <Button icon={<CopyOutlined />} onClick={() => copyToClipboard(subUrl)} />
+              <Button icon={<CopyOutlined />} onClick={() => handleCopy(subUrl)} />
             </Tooltip>
             <Button icon={<QrcodeOutlined />} onClick={() => showQrCode(subUrl)} />
           </Space>
