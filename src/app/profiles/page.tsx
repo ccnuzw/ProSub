@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Profile } from '@/types'
 import { EditOutlined, DeleteOutlined, PlusOutlined, CopyOutlined, QrcodeOutlined, ClusterOutlined, WifiOutlined } from '@ant-design/icons'
 import type { TableProps } from 'antd';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas as QRCode } from 'qrcode.react';
 
 const { Title } = Typography;
 
