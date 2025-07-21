@@ -1,16 +1,22 @@
 // src/lib/node-parser.ts
 
 import { Node } from '@/types';
-import { Buffer } from 'buffer'; // 导入 Buffer 以便在 Edge 环境中使用
-
-// *** 这是关键的修复：使用 Buffer 来进行健壮的 Base64 解码 ***
+// 使用原生的 atob 和 btoa 进行 Base64 编码和解码
 function base64Decode(str: string): string {
     try {
-        // 替换 URL 安全字符，并使用 Buffer 进行解码，确保 UTF-8 兼容性
         const normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
-        return Buffer.from(normalizedStr, 'base64').toString('utf8');
+        return atob(normalizedStr);
     } catch (e) {
         console.error('Failed to decode base64 string:', str, e);
+        return '';
+    }
+}
+
+function base64Encode(str: string): string {
+    try {
+        return btoa(str);
+    } catch (e) {
+        console.error('Failed to encode base64 string:', str, e);
         return '';
     }
 }

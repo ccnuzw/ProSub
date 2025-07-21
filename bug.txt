@@ -1,0 +1,10 @@
+Mock KV: get user:admin
+Mock KV: put user:admin = {"id":"admin","name":"admin","password":"5cc555a3fc44786e6b030853a87269c8:e9d7ca86e2855bc4aa8642167424949396c730cb49ff4dc1f30817628547686d","profiles":[],"defaultPasswordChanged":false}
+Default admin user created.
+Mock KV: list with prefix user:
+Mock KV: get user:admin
+[wrangler:error] ReferenceError: comparePassword is not defined
+    at handleLogin (file:///E:/Cloudflare/prosub/worker/src/auth/login.ts:66:25)
+    at async jsonError (file:///C:/Users/Administrator/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts:22:10)
+    at async drainBody (file:///C:/Users/Administrator/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts:5:10)
+[wrangler:info] POST /api/auth/login 500 Internal Server Error (140ms)

@@ -2,7 +2,7 @@
 
 import { Profile, Node } from '@/types';
 import { NextRequest, NextResponse } from 'next/server';
-import { Buffer } from 'buffer';
+
 import * as yaml from 'js-yaml';
 
 // Import all the rule/group generators
@@ -37,7 +37,7 @@ function convertNodeToUri(node: Node): string {
                     path: node.params?.path ?? "",
                     tls: node.params?.tls ?? ""
                 };
-                return `vmess://${Buffer.from(JSON.stringify(vmessConfig), 'utf8').toString('base64')}`;
+                return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
             case 'vless':
             case 'trojan':
                 const url = new URL(`${node.type}://${node.password}@${node.server}:${node.port}`);
@@ -50,7 +50,7 @@ function convertNodeToUri(node: Node): string {
                 return url.toString();
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
-                const encodedCreds = Buffer.from(creds).toString('base64').replace(/=+$/, '');
+                const encodedCreds = btoa(creds).replace(/=+$/, '');
                 return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
             default:
                 return '';
@@ -66,7 +66,7 @@ function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
     if (nodeLinks.length === 0) return new Response('', { status: 200 });
     const combinedContent = nodeLinks.join('\n');
-    const base64Content = Buffer.from(combinedContent).toString('base64');
+    const base64Content = btoa(combinedContent);
     return new Response(base64Content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
 
@@ -284,7 +284,7 @@ async function fetchNodesFromSubscription(url: string): Promise<string[]> {
         const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
         if (!response.ok) return [];
         const content = await response.text();
-        const decodedContent = Buffer.from(content, 'base64').toString('utf8');
+        const decodedContent = atob(content);
         return decodedContent.split(/[\r\n]+/).filter(Boolean);
     } catch (error) {
         console.error(`Failed to fetch subscription from ${url}:`, error);
