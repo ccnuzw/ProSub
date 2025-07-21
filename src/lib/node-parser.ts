@@ -5,7 +5,12 @@ import { Node } from '@/types';
 function base64Decode(str: string): string {
     try {
         const normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
-        return atob(decodeURIComponent(normalizedStr));
+        const binaryString = atob(decodeURIComponent(normalizedStr));
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return new TextDecoder('utf-8').decode(bytes);
     } catch (e) {
         console.error('Failed to decode base64 string:', str, e);
         return '';
