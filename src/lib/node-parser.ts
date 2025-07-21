@@ -5,7 +5,7 @@ import { Node } from '@/types';
 function base64Decode(str: string): string {
     try {
         const normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
-        return atob(normalizedStr);
+        return atob(decodeURIComponent(normalizedStr));
     } catch (e) {
         console.error('Failed to decode base64 string:', str, e);
         return '';
