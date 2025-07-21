@@ -9,5 +9,6 @@ id = "prosub-kv-local"
 
 [dev]
 kv_namespaces = [
-  { binding = "KV", id = "prosub-kv-local", preview_id = "prosub-kv-local", persist_to = ".wrangler/state/v3/kv" }
+  { binding = "KV", id = "prosub-kv-local", preview_id = "prosub-kv-local", persist_to = ".wrangler/state/v3/kv", type = "kv" }
 ]
+

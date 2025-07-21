@@ -53,7 +53,7 @@
       </a-empty>
     </template>
 
-    <a-modal title="从剪贴板导入节点" v-model:open="isImportModalVisible" @ok="handleImport" @cancel="() => { isImportModalVisible = false; importLinks = ''; parsedNodes = []; }" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
+    <a-modal title="从剪贴板导入节点" v-model:open="isImportModalVisible" @ok="handleImport" @cancel="() => { isImportModalVisible = false; importLinks = ''; }" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
       <p>请粘贴一个或多个节点链接，每行一个。</p>
       <a-textarea :rows="5" v-model:value="importLinks" placeholder="vmess://...&#10;vless://...&#10;ss://..." />
 
