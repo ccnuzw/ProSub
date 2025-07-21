@@ -20,6 +20,7 @@ import { handleNodesGet, handleNodesPost } from './nodes';
 import { handleNodeGet, handleNodePut, handleNodeDelete } from './nodes-id';
 import { handleNodesBatchDelete } from './nodes-batch-delete';
 import { handleNodesBatchImport } from './nodes-batch-import';
+import { handleNodesClearAll } from './nodes-clear-all';
 import { handleProfilesGet, handleProfilesPost } from './profiles';
 import { handleProfileGet, handleProfilePut, handleProfileDelete } from './profiles-id';
 import { handleSubscribe } from './subscribe';
@@ -110,6 +111,10 @@ export default {
         return handleNodesBatchDelete(request, env);
       } else if (path === '/api/nodes/batch-import' && method === 'POST') {
         return handleNodesBatchImport(request, env);
+      } else if (path === '/api/node-health-check' && method === 'POST') {
+        return handleNodeHealthCheck(request, env);
+      } else if (path === '/api/nodes/clear-all' && method === 'POST') {
+        return handleNodesClearAll(request, env);
       }
       // Profile routes
       else if (path === '/api/profiles' && method === 'GET') {
