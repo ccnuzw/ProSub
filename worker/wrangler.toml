@@ -1,0 +1,13 @@
+name = "prosub-dev"
+main = "src/index.ts"
+compatibility_date = "2024-07-20"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "prosub-kv-local"
+
+[dev]
+kv_namespaces = [
+  { binding = "KV", id = "prosub-kv-local", preview_id = "prosub-kv-local", persist_to = ".wrangler/state/v3/kv" }
+]
