@@ -7,7 +7,7 @@
     "dev:frontend": "vite",
     "dev:worker": "cd worker && wrangler dev --config wrangler.toml",
     "dev": "npm run build:frontend && npm-run-all -p dev:frontend dev:worker",
-    "build:frontend": "node ./node_modules/vite/bin/vite.js build",
+    "build:frontend": "npx vite build",
     "build:worker": "npx wrangler deploy --config worker/wrangler.toml --minify",
     "build": "npm install && npm run build:frontend && npm run build:worker",
     "deploy": "npm run build:frontend && cd worker && npx wrangler deploy",
