@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",
-    "dev:worker": "cd worker && wrangler dev --config wrangler.toml",
-    "dev": "npm-run-all -p dev:frontend dev:worker",
+    
+    "dev": "npm run dev:frontend",
     "build:frontend": "npx vite build",
-    "build:worker": "wrangler deploy --config worker/wrangler.toml --minify",
-    "build": "npm run build:frontend && npm run build:worker",
+    
+    "build": "npm run build:frontend",
     
     "preview": "vite preview"
   },
