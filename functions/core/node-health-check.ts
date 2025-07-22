@@ -1,15 +1,31 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { Node, HealthStatus, Env } from '@shared/types';
 
+const ALL_NODES_KEY = 'ALL_NODES';
 
+async function getAllNodes(env: Env): Promise<Record<string, Node>> {
+  const nodesJson = await env.KV.get(ALL_NODES_KEY);
+  return nodesJson ? JSON.parse(nodesJson) : {};
+}
+
+async function putAllNodes(env: Env, nodes: Record<string, Node>): Promise<void> {
+  await env.KV.put(ALL_NODES_KEY, JSON.stringify(nodes));
+}
 
 export async function handleNodeHealthCheck(request: Request, env: Env): Promise<Response> {
-  const { server, port, nodeId } = (await request.json()) as { server: string, port: number, nodeId: string };
+  const { nodeId } = (await request.json()) as { nodeId: string };
 
-  if (!server || !port || !nodeId) {
-    return errorResponse('Server, port, and nodeId are required', 400);
+  if (!nodeId) {
+    return errorResponse('NodeId is required', 400);
   }
 
-  const KV = env.KV;
+  const allNodes = await getAllNodes(env);
+  const node = allNodes[nodeId];
+
+  if (!node) {
+    return errorResponse('Node not found', 404);
+  }
+
   const healthStatus: HealthStatus = {
     status: 'offline',
     timestamp: new Date().toISOString(),
@@ -21,7 +37,7 @@ export async function handleNodeHealthCheck(request: Request, env: Env): Promise
   try {
     const startTime = Date.now();
     
-    await fetch(`http://${server}:${port}`, {
+    await fetch(`http://${node.server}:${node.port}`, {
       method: 'HEAD',
       signal: controller.signal,
       headers: {
@@ -45,7 +61,8 @@ export async function handleNodeHealthCheck(request: Request, env: Env): Promise
     clearTimeout(timeoutId);
   }
 
-  await KV.put(`node-status:${nodeId}`, JSON.stringify(healthStatus));
+  node.healthStatus = healthStatus;
+  await putAllNodes(env, allNodes);
 
   return jsonResponse(healthStatus);
 }
