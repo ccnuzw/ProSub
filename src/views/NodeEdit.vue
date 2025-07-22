@@ -4,8 +4,17 @@
     :extra="h(RouterLink, { to: '/nodes' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
   >
     <a-spin :spinning="loading">
-      <NodeForm v-if="node" :node="node" />
-      <p v-else-if="!loading">节点数据加载失败或不存在。</p>
+      <a-row :gutter="[16, 16]">
+        <a-col :span="12">
+          <NodeForm v-if="node" :node="node" />
+          <p v-else-if="!loading">节点数据加载失败或不存在。</p>
+        </a-col>
+        <a-col :span="12">
+          <a-card title="原始节点信息" v-if="node">
+            <pre style="background-color: #f0f0f0; padding: 10px; border-radius: 4px;">{{ JSON.stringify(node, null, 2) }}</pre>
+          </a-card>
+        </a-col>
+      </a-row>
     </a-spin>
   </a-card>
 </template>
@@ -14,7 +23,7 @@
 import { ref, onMounted, h } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { Node } from '../types'
-import { message, Spin, Card, Button } from 'ant-design-vue'
+import { message, Spin, Card, Button, Row, Col } from 'ant-design-vue'
 import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import NodeForm from '../components/NodeForm.vue'
 

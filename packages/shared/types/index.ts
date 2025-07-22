@@ -36,6 +36,9 @@ export interface Subscription {
   id: string;
   name: string;
   url: string;
+  nodeCount?: number; // 新增：订阅包含的节点数量
+  lastUpdated?: string; // 新增：最后更新时间
+  error?: string; // 新增：更新失败时的错误信息
 }
 
 export interface Profile {
