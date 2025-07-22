@@ -1,10 +1,116 @@
-Mock KV: get user:admin
-Mock KV: put user:admin = {"id":"admin","name":"admin","password":"5cc555a3fc44786e6b030853a87269c8:e9d7ca86e2855bc4aa8642167424949396c730cb49ff4dc1f30817628547686d","profiles":[],"defaultPasswordChanged":false}
-Default admin user created.
-Mock KV: list with prefix user:
-Mock KV: get user:admin
-[wrangler:error] ReferenceError: comparePassword is not defined
-    at handleLogin (file:///E:/Cloudflare/prosub/worker/src/auth/login.ts:66:25)
-    at async jsonError (file:///C:/Users/Administrator/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts:22:10)
-    at async drainBody (file:///C:/Users/Administrator/AppData/Roaming/npm/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts:5:10)
-[wrangler:info] POST /api/auth/login 500 Internal Server Error (140ms)
+10:31:08.377	Cloning repository...
+10:31:09.030	From https://github.com/imzyb/ProSub
+10:31:09.030	 * branch            49cf4307c6cfd5b33ddbaac53f1580c9628eace1 -> FETCH_HEAD
+10:31:09.030	
+10:31:09.064	HEAD is now at 49cf430 Merge pull request #3 from ccnuzw/main
+10:31:09.064	
+10:31:09.144	
+10:31:09.144	Using v2 root directory strategy
+10:31:09.167	Success: Finished cloning repository files
+10:31:09.825	Restoring from dependencies cache
+10:31:09.841	Restoring from build output cache
+10:31:11.004	Checking for configuration in a Wrangler configuration file (BETA)
+10:31:11.005	
+10:31:12.103	No wrangler.toml file found. Continuing.
+10:31:12.169	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+10:31:12.170	Installing project dependencies: npm clean-install --progress=false
+10:31:24.871	
+10:31:24.871	added 519 packages, and audited 520 packages in 12s
+10:31:24.872	
+10:31:24.872	154 packages are looking for funding
+10:31:24.872	  run `npm fund` for details
+10:31:24.880	
+10:31:24.880	2 moderate severity vulnerabilities
+10:31:24.880	
+10:31:24.880	To address all issues (including breaking changes), run:
+10:31:24.881	  npm audit fix --force
+10:31:24.881	
+10:31:24.881	Run `npm audit` for details.
+10:31:24.913	Executing user command: npm run build
+10:31:25.280	
+10:31:25.280	> prosub@0.1.0 build
+10:31:25.280	> npm run build:frontend && npm run build:worker
+10:31:25.280	
+10:31:25.468	
+10:31:25.468	> prosub@0.1.0 build:frontend
+10:31:25.468	> npx vite build
+10:31:25.468	
+10:31:26.375	vite v5.4.19 building for production...
+10:31:26.686	transforming...
+10:31:33.718	✓ 3237 modules transformed.
+10:31:34.150	rendering chunks...
+10:31:34.571	computing gzip size...
+10:31:34.612	dist/index.html                                 0.68 kB │ gzip:   0.35 kB
+10:31:34.612	dist/assets/Dashboard-tn0RQdqM.css              0.00 kB │ gzip:   0.02 kB
+10:31:34.612	dist/assets/vue-CqAJlDPB.css                    2.93 kB │ gzip:   1.17 kB
+10:31:34.612	dist/assets/index-_XhCr4sf.css                 13.26 kB │ gzip:   3.17 kB
+10:31:34.612	dist/assets/UserSubscription-ChvxhWG2.js        0.32 kB │ gzip:   0.32 kB
+10:31:34.612	dist/assets/UserNew-BpF2tpqI.js                 0.49 kB │ gzip:   0.39 kB
+10:31:34.613	dist/assets/NodeNew-BIeH1kmK.js                 0.49 kB │ gzip:   0.39 kB
+10:31:34.613	dist/assets/ProfileNew-D5RyThow.js              0.50 kB │ gzip:   0.40 kB
+10:31:34.613	dist/assets/SubscriptionNew-BzD2V-yP.js         0.51 kB │ gzip:   0.39 kB
+10:31:34.613	dist/assets/UserEdit-DvI3nFW_.js                0.96 kB │ gzip:   0.69 kB
+10:31:34.613	dist/assets/NodeEdit-C0LybPmR.js                0.96 kB │ gzip:   0.69 kB
+10:31:34.613	dist/assets/ProfileEdit-Dq1pppRt.js             0.98 kB │ gzip:   0.70 kB
+10:31:34.613	dist/assets/SubscriptionEdit-CPqSPsKA.js        1.00 kB │ gzip:   0.69 kB
+10:31:34.613	dist/assets/SubscriptionForm-t9Smceik.js        1.65 kB │ gzip:   0.96 kB
+10:31:34.613	dist/assets/Login-Bj2hZZwj.js                   1.84 kB │ gzip:   1.11 kB
+10:31:34.614	dist/assets/UserChangePassword-DrEOKmWC.js      1.98 kB │ gzip:   1.08 kB
+10:31:34.614	dist/assets/Users-C2GnZQJy.js                   2.10 kB │ gzip:   1.32 kB
+10:31:34.614	dist/assets/node-parser-4Ynmtve7.js             2.24 kB │ gzip:   1.03 kB
+10:31:34.614	dist/assets/UserForm-b7SjpM5K.js                2.55 kB │ gzip:   1.40 kB
+10:31:34.614	dist/assets/Profiles-PO8LSfwu.js                2.88 kB │ gzip:   1.63 kB
+10:31:34.614	dist/assets/UserProfile-CnlkInNo.js             3.63 kB │ gzip:   1.94 kB
+10:31:34.614	dist/assets/NodeForm-BgkUqQXJ.js                3.74 kB │ gzip:   1.77 kB
+10:31:34.615	dist/assets/Dashboard-CHz8GJJo.js               4.59 kB │ gzip:   1.91 kB
+10:31:34.615	dist/assets/Subscriptions-B4G3h6Ij.js           5.68 kB │ gzip:   2.67 kB
+10:31:34.615	dist/assets/Nodes-bI-dEBbd.js                   7.65 kB │ gzip:   3.46 kB
+10:31:34.615	dist/assets/index-BF2lLgyt.js                   8.31 kB │ gzip:   3.39 kB
+10:31:34.615	dist/assets/ProfileForm-VbWJFe6G.js             9.79 kB │ gzip:   3.00 kB
+10:31:34.615	dist/assets/vendor-D03_9kzQ.js                139.30 kB │ gzip:  46.68 kB
+10:31:34.615	dist/assets/vue-DC5Ub8Ph.js                 1,412.04 kB │ gzip: 429.18 kB
+10:31:34.615	✓ built in 8.21s
+10:31:34.615	
+10:31:34.616	(!) Some chunks are larger than 500 kB after minification. Consider:
+10:31:34.616	- Using dynamic import() to code-split the application
+10:31:34.616	- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+10:31:34.616	- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+10:31:34.860	
+10:31:34.860	> prosub@0.1.0 build:worker
+10:31:34.860	> wrangler deploy --config worker/wrangler.toml --minify --dry-run
+10:31:34.860	
+10:31:35.734	
+10:31:35.735	 ⛅️ wrangler 4.25.0
+10:31:35.735	───────────────────
+10:31:35.824	▲ [WARNING] Processing worker/wrangler.toml configuration:
+10:31:35.824	
+10:31:35.824	    - Unexpected fields found in dev field: "kv_namespaces"
+10:31:35.824	
+10:31:35.825	
+10:31:35.879	Total Upload: 107.84 KiB / gzip: 27.53 KiB
+10:31:35.881	Your Worker has access to the following bindings:
+10:31:35.882	Binding                                        Resource          
+10:31:35.882	env.KV (9b01882c3f7e4bf18df5e2f12a608cc8)      KV Namespace      
+10:31:35.882	
+10:31:35.884	--dry-run: exiting now.
+10:31:35.887	
+10:31:35.887	Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+10:31:36.035	Finished
+10:31:36.916	Checking for configuration in a Wrangler configuration file (BETA)
+10:31:36.917	
+10:31:38.022	No wrangler.toml file found. Continuing.
+10:31:38.023	Note: No functions dir at /functions found. Skipping.
+10:31:38.023	Validating asset output directory
+10:31:40.742	Deploying your site to Cloudflare's global network...
+10:31:42.786	Uploading... (0/29)
+10:31:43.434	Uploading... (9/29)
+10:31:43.806	Uploading... (19/29)
+10:31:44.414	Uploading... (29/29)
+10:31:44.414	✨ Success! Uploaded 29 files (1.88 sec)
+10:31:44.414	
+10:31:44.831	✨ Upload complete!
+10:31:47.301	Uploading to dependency cache
+10:31:47.368	Skipping build output cache as it's not supported for your project
+10:31:48.452	Success: Dependencies uploaded to build cache.
+10:31:49.456	Success: Assets published!
+10:31:51.000	Success: Your site was deployed!
