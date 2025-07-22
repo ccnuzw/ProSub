@@ -5,15 +5,9 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",
-    "dev:worker": "npm run build:worker-dev && wrangler dev .wrangler/tmp/bundled-worker.js --config wrangler.toml --persist-to .wrangler/state --no-bundle",
-    
-    "dev": "npm-run-all -p dev:frontend dev:worker",
-    "build:frontend": "npx vite build",
-    "build:worker-dev": "esbuild functions/api-handler.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL --tsconfig=tsconfig.functions.json",
-    
-    "build": "npm run build:frontend",
-    
-    "preview": "vite preview"
+    "dev": "npm run build && wrangler pages dev dist --kv=KV",
+    "build": "vite build",
+    "preview": "npm run build && wrangler pages dev ./dist"
   },
   "dependencies": {
     "@types/cookie": "^0.6.0",
