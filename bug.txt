@@ -13,7 +13,7 @@ PS E:\Cloudflare\prosub> npm run dev
 
 
 > prosub@0.1.0 build:worker-dev
-> esbuild functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL
+> esbuild functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL --tsconfig=tsconfig.functions.json
 
 ✘ [ERROR] Could not resolve "functions/index.ts"
 
@@ -22,7 +22,7 @@ node:child_process:921
     throw err;
     ^
 
-Error: Command failed: E:\Cloudflare\prosub\node_modules\@esbuild\win32-x64\esbuild.exe functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL
+Error: Command failed: E:\Cloudflare\prosub\node_modules\@esbuild\win32-x64\esbuild.exe functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL --tsconfig=tsconfig.functions.json
     at genericNodeError (node:internal/errors:983:15)
     at wrappedFn (node:internal/errors:537:14)
     at checkExecSyncError (node:child_process:882:11)
@@ -36,14 +36,14 @@ Error: Command failed: E:\Cloudflare\prosub\node_modules\@esbuild\win32-x64\esbu
   status: 1,
   signal: null,
   output: [ null, null, null ],
-  pid: 30980,
+  pid: 29508,
   stdout: null,
   stderr: null
 }
 
 Node.js v22.16.0
 
-  VITE v5.4.19  ready in 500 ms
+  VITE v5.4.19  ready in 768 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
