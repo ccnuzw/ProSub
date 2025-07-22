@@ -1,41 +1,31 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
 import { hashPassword, comparePassword } from './utils/crypto';
-import { User, Env, UserSession } from '@shared/types';
+import { User, Env } from '@shared/types'; // UserSession is no longer needed here
 
-async function authenticateUser(request: Request, env: Env): Promise<UserSession | null> {
+// Corrected authenticateUser function
+async function authenticateUser(request: Request, env: Env): Promise<{ id: string } | null> {
   const cookies = parse(request.headers.get('Cookie') || '');
-  const token = cookies.auth_token;
+  const token = cookies.auth_token; // The token is the user ID
 
   if (!token) {
     return null;
   }
 
-  const userSessionJson = await env.KV.get(`user_session:${token}`);
-  if (!userSessionJson) {
+  // Instead of looking for a session, we check if a user exists with this ID.
+  const userJson = await env.KV.get(`user:${token}`);
+  if (!userJson) {
+    // If no user is found for this token, the session is invalid.
     return null;
   }
 
-  const userSession = JSON.parse(userSessionJson) as UserSession;
-  if (userSession.expires < Date.now()) {
-    await env.KV.delete(`user_session:${token}`);
-    return null;
-  }
-
-  return userSession;
+  // User exists, session is valid. Return an object with the user's ID.
+  return { id: token };
 }
 
 export async function handleUsersGet(request: Request, env: Env): Promise<Response> {
-  const cookies = parse(request.headers.get('Cookie') || '');
-  const token = cookies.auth_token;
-
-  if (!token) {
-    return errorResponse('未授权', 401);
-  }
-
-  const userJson = await env.KV.get(`user:${token}`);
-
-  if (!userJson) {
+  const authenticatedUser = await authenticateUser(request, env);
+  if (!authenticatedUser) {
     return errorResponse('未授权', 401);
   }
 
@@ -76,15 +66,16 @@ export async function handleUsersPost(request: Request, env: Env): Promise<Respo
     }
 
     const KV = env.KV;
-    const existingUserList = await KV.list({ prefix: 'user:' });
-    const existingUsers = await Promise.all(
-      existingUserList.keys.map(async ({ name: keyName }) => {
-        const userJson = await KV.get(keyName);
-        return userJson ? JSON.parse(userJson) : null;
-      })
-    );
-    if (existingUsers.filter(Boolean).some(u => u.name === name)) {
-      return errorResponse('用户已存在', 409);
+    const userIndexJson = await KV.get('_index:users');
+    const userIds = userIndexJson ? JSON.parse(userIndexJson) : [];
+    for (const userId of userIds) {
+        const userJson = await KV.get(`user:${userId}`);
+        if(userJson) {
+            const user = JSON.parse(userJson);
+            if (user.name === name) {
+                return errorResponse('用户已存在', 409);
+            }
+        }
     }
 
     const hashedPassword = await hashPassword(password);
@@ -93,13 +84,11 @@ export async function handleUsersPost(request: Request, env: Env): Promise<Respo
     
     await KV.put(`user:${id}`, JSON.stringify(newUser));
 
-    const userIndexJson = await KV.get('_index:users');
-    const userIds = userIndexJson ? JSON.parse(userIndexJson) : [];
     userIds.push(id);
     await KV.put('_index:users', JSON.stringify(userIds));
     
     const { password: _, ...userWithoutPassword } = newUser;
-    return jsonResponse(userWithoutPassword);
+    return jsonResponse(userWithoutPassword, 201);
   } catch (error) {
     console.error('Failed to create user:', error);
     return errorResponse('Failed to create user');
@@ -126,7 +115,7 @@ export async function handleUserChangePassword(request: Request, env: Env): Prom
     }
     const user = JSON.parse(userJson) as User;
 
-    const passwordMatch = await comparePassword(oldPassword, user.password);
+    const passwordMatch = await comparePassword(oldPassword, user.password as string);
     if (!passwordMatch) {
       return errorResponse('旧密码不正确', 401);
     }

@@ -1,11 +1,5 @@
-// src/lib/subscription-generator.ts
-
-import { Profile, Node } from './types';
-import { NextRequest, NextResponse } from 'next/server';
-
+import { Profile, Node, Env } from './types';
 import * as yaml from 'js-yaml';
-
-// Import all the rule/group generators
 import { getClashProxyGroups } from './clash-proxy-groups';
 import { clashRules, ruleProviders } from './clash-rules';
 import { getSurgeProxyGroups } from './surge-proxy-groups';
@@ -18,29 +12,34 @@ import { getSingBoxOutbounds } from './sing-box-outbounds';
 import { getSingBoxRoute } from './sing-box-rules';
 import { parseNodeLink } from './node-parser';
 
-// --- Node to URI Converter ---
+// Helper to encode base64 in a URL-safe way
+function base64Encode(str: string): string {
+    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
 function convertNodeToUri(node: Node): string {
     const encodedName = encodeURIComponent(node.name);
     try {
         switch (node.type) {
             case 'vmess':
                 const vmessConfig = {
-                    v: "2",
-                    ps: node.name,
-                    add: node.server,
-                    port: node.port,
-                    id: node.password,
-                    aid: node.params?.aid ?? "0",
-                    net: node.params?.net ?? "tcp",
-                    type: node.params?.type ?? "none",
-                    host: node.params?.host ?? "",
-                    path: node.params?.path ?? "",
-                    tls: node.params?.tls ?? ""
+                    v: "2", ps: node.name, add: node.server, port: node.port, id: node.password,
+                    aid: node.params?.aid ?? "0", net: node.params?.net ?? "tcp",
+                    type: node.params?.type ?? "none", host: node.params?.host ?? "",
+                    path: node.params?.path ?? "", tls: node.params?.tls ?? ""
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
+
             case 'vless':
+            case 'vless-reality':
             case 'trojan':
-                const url = new URL(`${node.type}://${node.password}@${node.server}:${node.port}`);
+            case 'socks5':
+            case 'tuic':
+            case 'hysteria':
+            case 'hysteria2':
+            case 'anytls':
+                const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
+                const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
                 url.hash = encodedName;
                 if (node.params) {
                     for (const key in node.params) {
@@ -48,18 +47,36 @@ function convertNodeToUri(node: Node): string {
                     }
                 }
                 return url.toString();
+
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
                 return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
+            
+            // *** FIX STARTS HERE: Added SSR Generator ***
+            case 'ssr':
+                const password_base64 = base64Encode(node.password || '');
+                const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
+                
+                const params = new URLSearchParams();
+                params.set('remarks', base64Encode(node.name));
+                if (node.params?.obfsparam) params.set('obfsparam', base64Encode(node.params.obfsparam));
+                if (node.params?.protoparam) params.set('protoparam', base64Encode(node.params.protoparam));
+
+                const fullInfo = `${mainInfo}/?${params.toString()}`;
+                return `ssr://${base64Encode(fullInfo)}`;
+            // *** FIX ENDS HERE ***
+
             default:
+                console.warn(`不支持的节点类型: ${node.type}`);
                 return '';
         }
     } catch (e) {
-        console.error(`Failed to convert node to URI: ${node.name}`, e);
+        console.error(`转换节点到 URI 失败: ${node.name}`, e);
         return '';
     }
 }
+
 
 // --- Subscription Generators ---
 function generateBase64Subscription(nodes: Node[]): Response {
@@ -89,13 +106,22 @@ function generateClashSubscription(nodes: Node[]): Response {
             type: node.type,
             server: node.server,
             port: node.port,
-            password: (node.type !== 'vmess' && node.type !== 'vless') ? node.password : undefined,
-            uuid: (node.type === 'vmess' || node.type === 'vless') ? node.password : undefined,
+            password: (node.type !== 'vmess' && node.type !== 'vless' && node.type !== 'vless-reality') ? node.password : undefined,
+            uuid: (node.type === 'vmess' || node.type === 'vless' || node.type === 'vless-reality') ? node.password : undefined,
             cipher: node.type === 'ss' ? node.params?.method : undefined,
             tls: node.params?.tls === 'tls' || node.params?.tls === true ? true : undefined,
             network: node.params?.net,
             'ws-opts': node.params?.net === 'ws' ? { path: node.params?.path, headers: { Host: node.params?.host } } : undefined,
         };
+        // *** FIX IS HERE ***
+        if (node.type === 'vless-reality') {
+            proxy.flow = node.params?.flow || 'xtls-rprx-vision';
+            proxy.servername = node.params?.sni;
+            proxy['reality-opts'] = { // Changed to bracket notation
+                'public-key': node.params?.pbk,
+                'short-id': node.params?.sid || '',
+            };
+        }
         Object.keys(proxy).forEach(key => proxy[key] === undefined && delete proxy[key]);
         return proxy;
     });
@@ -107,7 +133,7 @@ function generateClashSubscription(nodes: Node[]): Response {
         'allow-lan': false,
         'mode': 'rule',
         'log-level': 'info',
-        'external-controller': '127.0.0.0.1:9090',
+        'external-controller': '127.0.0.1:9090',
         'proxies': proxies,
         'proxy-groups': proxyGroups,
         'rule-providers': ruleProviders,
@@ -117,47 +143,23 @@ function generateClashSubscription(nodes: Node[]): Response {
     return new Response(yamlString, { 
         headers: { 
             'Content-Type': 'text/yaml; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_clash_acl4ssr.yaml"`
+            'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
         } 
     });
 }
 
-// ... other generators (Surge, QuantumultX, Loon, SingBox) go here, copied from the original file ...
+// ... other generators ...
 function generateSurgeSubscription(nodes: Node[]): Response {
     const proxyLines = nodes.map(node => {
-        const params = new URLSearchParams();
-        if (node.password) {
-            params.set('password', node.password);
-        }
-        if (node.type === 'ss' && node.params?.method) {
-            params.set('encrypt-method', node.params.method);
-        }
-        if (node.params?.tls === 'tls' || node.params?.tls === true) {
-            params.set('tls', 'true');
-        }
-        if (node.params?.net === 'ws') {
-            params.set('ws', 'true');
-            if (node.params.host) {
-                params.set('ws-headers', `Host:${node.params.host}`);
-            }
-        }
-        const paramString = Array.from(params.entries()).map(([key, value]) => `${key}=${value}`).join(', ');
-        let line = `${node.name} = ${node.type}, ${node.server}, ${node.port}`;
-        if (paramString) {
-            line += `, ${paramString}`;
-        }
+        let line = `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`;
+        if(node.type === 'ss') line += `, method=${node.params?.method}`;
+        if(node.params?.tls) line += `, tls=true`;
+        if(node.params?.net === 'ws') line += `, ws=true, ws-path=${node.params.path}, ws-headers=Host:${node.params.host}`;
         return line;
     });
-    const proxyGroups = getSurgeProxyGroups(nodes);
-    const content = `\n[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${proxyGroups.join('\n')}\n\n[Rule]\n${surgeRules.join('\n')}\n    `.trim();
-    return new Response(content, { 
-        headers: { 
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_surge.conf"`
-        } 
-    });
+    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${getSurgeProxyGroups(nodes).join('\n')}\n\n[Rule]\n${surgeRules.join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
-
 function generateQuantumultXSubscription(nodes: Node[]): Response {
     const serverLines = nodes.map(node => {
         let line = '';
@@ -168,8 +170,8 @@ function generateQuantumultXSubscription(nodes: Node[]): Response {
                 line = `shadowsocks=${node.server}:${node.port}, method=${node.params?.method}, password=${node.password}, ${remark}`;
                 break;
             case 'vmess':
-                const tls = (node.params?.tls === 'tls' || node.params?.tls === true) ? ', obfs=wss' : '';
-                line = `vmess=${node.server}:${node.port}, method=aes-128-gcm, password=${node.password}, obfs=ws, obfs-uri=${node.params?.path}, obfs-header="Host: ${node.params?.host}[Rr][Nn]User-Agent: okhttp/3.12.1"${tls}, ${remark}`;
+                const tls = (node.params?.tls) ? ', obfs=wss' : '';
+                line = `vmess=${node.server}:${node.port}, method=aes-128-gcm, password=${node.password}, obfs=ws, obfs-uri=${node.params?.path}, obfs-header="Host: ${node.params?.host}"${tls}, ${remark}`;
                 break;
             case 'trojan':
                 line = `trojan=${node.server}:${node.port}, password=${node.password}, ${remark}`;
@@ -177,75 +179,71 @@ function generateQuantumultXSubscription(nodes: Node[]): Response {
         }
         return line ? `${line}, ${tag}` : '';
     }).filter(Boolean);
-    const policies = getQuantumultXPolicies(nodes);
-    const content = `\n[server_local]\n${serverLines.join('\n')}\n\n[filter_remote]\n${quantumultXRules.join('\n')}\n\n[policy]\n${policies.join('\n')}\n    `.trim();
-    return new Response(content, { 
-        headers: { 
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_quantumultx.conf"`
-        } 
-    });
+    const content = `[server_local]\n${serverLines.join('\n')}\n\n[filter_remote]\n${quantumultXRules.join('\n')}\n\n[policy]\n${getQuantumultXPolicies(nodes).join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
-
 function generateLoonSubscription(nodes: Node[]): Response {
-    const proxyLines = nodes.map(node => {
-        let line = `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`;
-        if (node.type === 'ss') {
-            line += `, method=${node.params?.method}`;
-        }
-        if (node.params?.tls === 'tls' || node.params?.tls === true) {
-            line += ', tls=true';
-        }
-        if (node.params?.net === 'ws') {
-            line += ', transport=ws';
-            if (node.params.host) {
-                line += `, ws-header=Host:${node.params.host}`; 
-            }
-        }
-        return line;
-    });
-    const proxyGroups = getLoonProxyGroups(nodes);
-    const content = `\n[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${proxyGroups.join('\n')}\n\n[Rule]\n${loonRules.join('\n')}\n    `.trim();
-    return new Response(content, { 
-        headers: { 
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_loon.conf"`
-        } 
-    });
+    const proxyLines = nodes.map(node => `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`);
+    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${getLoonProxyGroups(nodes).join('\n')}\n\n[Rule]\n${loonRules.join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
-
 function generateSingBoxSubscription(nodes: Node[]): Response {
     const outbounds = getSingBoxOutbounds(nodes);
     const route = getSingBoxRoute();
     const singboxConfig = {
-        log: { level: 'info', timestamp: true },
-        dns: {
-            servers: [
-                { address: 'https://223.5.5.5/dns-query', detour: 'DIRECT' },
-                { address: 'https://1.1.1.1/dns-query', detour: '🚀 节点选择' },
-            ],
-            strategy: 'ipv4_only',
-        },
+        log: { level: 'info' },
+        dns: { servers: [{ address: 'https://dns.google/dns-query' }] },
         inbounds: [
-            { type: 'tun', interface_name: 'tun0', inet4_address: '172.19.0.1/30', mtu: 1500, auto_route: true, strict_route: true },
-            { type: 'mixed', listen: '0.0.0.0', listen_port: 7890 },
+            { type: 'tun', tag: 'tun-in', interface_name: 'tun0' },
+            { type: 'mixed', tag: 'mixed-in', listen: '0.0.0.0', listen_port: 7890 }
         ],
-        outbounds: outbounds,
-        route: route,
+        outbounds,
+        route,
     };
-    const jsonString = JSON.stringify(singboxConfig, null, 2);
-    return new Response(jsonString, { 
-        headers: { 
-            'Content-Type': 'application/json; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_singbox.json"`
-        } 
-    });
+    return new Response(JSON.stringify(singboxConfig, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+}
+
+
+// --- Data Fetching Logic ---
+async function fetchNodesFromSubscription(url: string): Promise<string[]> {
+    try {
+        const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
+        if (!response.ok) return [];
+        const content = await response.text();
+        const decodedContent = atob(content);
+        return decodedContent.split(/[\r\n]+/).filter(Boolean);
+    } catch (error) {
+        console.error(`Failed to fetch subscription from ${url}:`, error);
+        return [];
+    }
+}
+
+async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
+    const KV = env.KV; 
+    const nodeIds = profile.nodes || [];
+    const subIds = profile.subscriptions || [];
+
+    const allNodesJson = await KV.get('ALL_NODES');
+    const allManualNodes: Record<string, Node> = allNodesJson ? JSON.parse(allNodesJson) : {};
+    const manualNodes = nodeIds
+        .map(id => allManualNodes[id])
+        .filter(Boolean); 
+
+    const subsJson = await Promise.all(subIds.map(id => KV.get(`subscription:${id}`)));
+    const subscriptions = subsJson.filter(Boolean).map(json => JSON.parse(json as string));
+
+    const subLinksPromises = subscriptions.map(sub => fetchNodesFromSubscription(sub.url));
+    const subLinksArrays = await Promise.all(subLinksPromises);
+    const allSubLinks = subLinksArrays.flat();
+    const parsedSubNodes = allSubLinks.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
+
+    return [...manualNodes, ...parsedSubNodes];
 }
 
 
 // --- Main Handler ---
-export async function generateSubscriptionResponse(request: NextRequest, profile: Profile): Promise<Response> {
-    const allNodes = await fetchAllNodes(profile);
+export async function generateSubscriptionResponse(request: Request, profile: Profile, env: Env): Promise<Response> {
+    const allNodes = await fetchAllNodes(profile, env);
     
     let targetClient = new URL(request.url).searchParams.get('target')?.toLowerCase();
     if (!targetClient) {
@@ -276,38 +274,4 @@ export async function generateSubscriptionResponse(request: NextRequest, profile
         default:
             return generateBase64Subscription(allNodes);
     }
-}
-
-// --- Data Fetching Logic ---
-async function fetchNodesFromSubscription(url: string): Promise<string[]> {
-    try {
-        const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
-        if (!response.ok) return [];
-        const content = await response.text();
-        const decodedContent = atob(content);
-        return decodedContent.split(/[\r\n]+/).filter(Boolean);
-    } catch (error) {
-        console.error(`Failed to fetch subscription from ${url}:`, error);
-        return [];
-    }
-}
-
-async function fetchAllNodes(profile: Profile): Promise<Node[]> {
-    // @ts-ignore
-    const KV = process.env.KV as KVNamespace;
-    const nodeIds = profile.nodes || [];
-    const subIds = profile.subscriptions || [];
-
-    const nodesJson = await Promise.all(nodeIds.map(id => KV.get(`node:${id}`)));
-    const manualNodes = nodesJson.filter(Boolean).map(json => JSON.parse(json as string));
-
-    const subsJson = await Promise.all(subIds.map(id => KV.get(`subscription:${id}`)));
-    const subscriptions = subsJson.filter(Boolean).map(json => JSON.parse(json as string));
-
-    const subLinksPromises = subscriptions.map(sub => fetchNodesFromSubscription(sub.url));
-    const subLinksArrays = await Promise.all(subLinksPromises);
-    const allSubLinks = subLinksArrays.flat();
-    const parsedSubNodes = allSubLinks.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
-
-    return [...manualNodes, ...parsedSubNodes];
 }
