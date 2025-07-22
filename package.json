@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite",
-    "dev": "wrangler pages dev --kv=KV -- npm run dev:frontend",
+    "dev": "npm run build && wrangler pages dev dist --kv=KV",
     "build": "vite build",
     "preview": "npm run build && wrangler pages dev ./dist"
   },

@@ -1,5 +1,7 @@
 name = "prosub"
 compatibility_date = "2025-07-22"
 
-[pages_dev]
-kv_namespaces = [{ binding = "KV", id = "9b01882c3f7e4bf18df5e2f12a608cc8" }]
+[[kv_namespaces]]
+binding = "KV"
+id = "9b01882c3f7e4bf18df5e2f12a608cc8"
+preview_id = "9b01882c3f7e4bf18df5e2f12a608cc8"
