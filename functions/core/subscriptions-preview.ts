@@ -2,6 +2,7 @@ import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
 import { Subscription, Env } from '@shared/types';
 import { parseNodeLink } from '@shared/node-parser';
+import { parseClashYaml } from '@shared/clash-parser';
 
 const ALL_SUBSCRIPTIONS_KEY = 'ALL_SUBSCRIPTIONS';
 
@@ -15,35 +16,32 @@ async function putAllSubscriptions(env: Env, subscriptions: Record<string, Subsc
 }
 
 // 基础的 Base64 解码函数
-function base64Decode(str: string): string {
+function base64Decode(str: string): string | null {
+    let normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
+    normalizedStr = normalizedStr.trim(); // Trim whitespace
+
+    // Basic validation for Base64 string
+    if (!normalizedStr || !/^[A-Za-z0-9+/=]*$/.test(normalizedStr) || normalizedStr.length % 4 !== 0) {
+        return null; // Not a valid Base64 string or empty after trim
+    }
+
     try {
-        const normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
-        const binaryString = atob(decodeURIComponent(normalizedStr));
+        const binaryString = atob(normalizedStr);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
         }
         return new TextDecoder('utf-8').decode(bytes);
     } catch (e) {
-        console.error('Failed to decode base64 string:', str, e);
-        return '';
+        return null; // Return null on atob error
     }
 }
 
 export async function handleSubscriptionsPreview(request: Request, env: Env, id: string): Promise<Response> {
-  console.log(`[Preview] Starting handleSubscriptionsPreview for ID: ${id}`);
   const cookies = parse(request.headers.get('Cookie') || '');
   const token = cookies.auth_token;
 
   if (!token) {
-    console.log('[Preview] Unauthorized: No token');
-    return errorResponse('未授权', 401);
-  }
-
-  const userJson = await env.KV.get(`user:${token}`);
-
-  if (!userJson) {
-    console.log('[Preview] Unauthorized: User not found for token');
     return errorResponse('未授权', 401);
   }
 
@@ -54,45 +52,56 @@ export async function handleSubscriptionsPreview(request: Request, env: Env, id:
     const subscription = allSubscriptions[id];
 
     if (!subscription) {
-      console.log(`[Preview] Subscription ${id} not found in KV.`);
       return errorResponse('订阅不存在', 404);
     }
-    console.log(`[Preview] Fetched subscription: ${subscription.name} - ${subscription.url}`);
 
-    console.log(`[Preview] Fetching content from URL: ${subscription.url}`);
     const response = await fetch(subscription.url, {
         headers: { 'User-Agent': 'ProSub/1.0' }
     });
 
     if (!response.ok) {
-      console.error(`[Preview] Failed to fetch URL content: ${response.status}`);
       throw new Error(`请求订阅链接失败，状态码: ${response.status}`);
     }
 
-    console.log('[Preview] Reading response content.');
     const content = await response.text();
     let decodedContent = '';
-    console.log('[Preview] Attempting to decode content.');
-    try {
-      // Attempt to decode as Base64
-      decodedContent = base64Decode(content);
-      console.log('[Preview] Content successfully Base64 decoded.');
-    } catch (decodeError) {
-      // If decoding fails, assume content is already plain text
-      console.warn(`[Preview] Content from ${subscription.url} is not valid Base64, treating as plain text.`);
-      decodedContent = content;
-    }
+    let nodes: Node[] = [];
 
-    console.log('[Preview] Splitting content into lines and parsing nodes.');
-    const lines = decodedContent.split(/\r?\n|\r/).filter(line => line.trim() !== '');
-    const nodes = lines.map(line => parseNodeLink(line)).filter(Boolean);
-    console.log(`[Preview] Found ${nodes.length} nodes.`);
+    // Heuristic: Check if the URL suggests Clash YAML (existing)
+    const isClashYamlUrl = subscription.url.endsWith('.yaml') || subscription.url.endsWith('.yml') || subscription.url.includes('/clash/');
+
+    // New: Check if content looks like YAML
+    const isContentYaml = content.startsWith('---') || content.includes('proxies:') || content.includes('proxy-groups:') || content.includes('rules:');
+
+    if (isClashYamlUrl || isContentYaml) {
+      nodes = parseClashYaml(content);
+      // If Clash YAML parsing yields no nodes, fall back to parsing as node links
+      if (nodes.length === 0) {
+        const attemptedDecode = base64Decode(content);
+        if (attemptedDecode) {
+          decodedContent = attemptedDecode;
+        } else {
+          decodedContent = content;
+        }
+        const lines = decodedContent.split(/\r?\n|\r/).filter(line => line.trim() !== '');
+        nodes = lines.map(line => parseNodeLink(line)).filter(Boolean);
+      }
+    } else {
+      // Existing logic for non-Clash YAML content
+      const attemptedDecode = base64Decode(content);
+      if (attemptedDecode) {
+        decodedContent = attemptedDecode;
+      } else {
+        decodedContent = content;
+      }
+      const lines = decodedContent.split(/\r?\n|\r/).filter(line => line.trim() !== '');
+      nodes = lines.map(line => parseNodeLink(line)).filter(Boolean);
+    }
 
     return jsonResponse({ nodes });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[Preview] Failed to preview subscription ${id}:`, error);
     return errorResponse(`预览订阅失败: ${errorMessage}`);
   }
 }

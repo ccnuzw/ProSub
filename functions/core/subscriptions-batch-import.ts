@@ -39,26 +39,46 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
     const existingSubscriptionUrls = new Set<string>(Object.values(allSubscriptions).map(sub => sub.url));
 
     const importedSubscriptions: Subscription[] = [];
+    let importedCount = 0;
+    let skippedCount = 0;
 
-    for (const url of urls) {
-      if (existingSubscriptionUrls.has(url)) {
-        console.warn(`Skipping duplicate subscription URL: ${url}`);
+    for (const rawUrl of urls) {
+      let processedUrl = rawUrl.trim();
+
+      // Skip empty lines (frontend already filters, but for robustness)
+      if (!processedUrl) {
+        skippedCount++;
         continue;
       }
 
-      let name = url;
-      try {
-        const urlObj = new URL(url);
-        name = urlObj.hostname;
-      } catch (e) {
-        // If URL is invalid, use the full URL as name
-        console.warn(`Invalid URL format, using full URL as name: ${url}`);
+      // Attempt to prepend https:// if no protocol is present
+      if (!processedUrl.startsWith('http://') && !processedUrl.startsWith('https://')) {
+        processedUrl = `https://${processedUrl}`;
       }
 
+      let urlObj: URL;
+      try {
+        urlObj = new URL(processedUrl);
+      } catch (e) {
+        console.warn(`Skipping invalid URL format: ${rawUrl}. Error: ${e instanceof Error ? e.message : String(e)}`);
+        skippedCount++;
+        continue; // Skip this URL if it's truly invalid
+      }
+
+      // Check for duplicate URLs
+      if (existingSubscriptionUrls.has(urlObj.toString())) {
+        console.warn(`Skipping duplicate subscription URL: ${urlObj.toString()}`);
+        skippedCount++;
+        continue;
+      }
+
+      let name = urlObj.hostname;
+
       const id = crypto.randomUUID();
-      const newSubscription: Subscription = { id, name, url };
+      const newSubscription: Subscription = { id, name, url: urlObj.toString() };
       allSubscriptions[id] = newSubscription;
       importedSubscriptions.push(newSubscription);
+      importedCount++;
     }
 
     if (importedSubscriptions.length > 0) {
@@ -66,8 +86,9 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
     }
 
     return jsonResponse({
-      message: `成功导入 ${importedSubscriptions.length} 条订阅。`,
-      importedCount: importedSubscriptions.length,
+      message: `成功导入 ${importedCount} 个订阅，跳过 ${skippedCount} 个无效或重复订阅。`,
+      importedCount,
+      skippedCount,
       importedSubscriptions,
     });
 

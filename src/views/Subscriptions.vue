@@ -36,7 +36,7 @@
         <a-table size="small" :columns="previewColumns" :data-source="previewNodes" :row-key="(record, index) => `${record.server}-${index}`" :pagination="{ pageSize: 10 }"/>
       </a-spin>
     </a-modal>
-    <a-modal title="从剪贴板导入订阅" v-model:open="isImportModalVisible" @ok="handleBatchImport" @cancel="() => setIsImportModalVisible(false)" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
+    <a-modal title="从剪贴板导入订阅" v-model:open="isImportModalVisible" @ok="handleBatchImport" @cancel="isImportModalVisible = false" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
       <p>请粘贴一个或多个订阅链接，每行一个。</p>
       <a-textarea :rows="10" v-model:value="importUrls" placeholder="https://example.com/sub1&#10;https://example.com/sub2"/>
     </a-modal>
