@@ -4804,8 +4804,8 @@ async function handleUserChangePassword(request, env) {
   }
 }
 
-// functions/index.ts
-var functions_default = {
+// functions/api-handler.ts
+var api_handler_default = {
   async fetch(request, env, ctx) {
     console.log("env.KV:", env.KV);
     const url = new URL(request.url);
@@ -4939,7 +4939,7 @@ var functions_default = {
   }
 };
 export {
-  functions_default as default
+  api_handler_default as default
 };
 /*! Bundled license information:
 

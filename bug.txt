@@ -15,86 +15,37 @@ PS E:\Cloudflare\prosub> npm run dev
 > prosub@0.1.0 build:worker-dev
 > esbuild functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL
 
+✘ [ERROR] Could not resolve "functions/index.ts"
 
-  .wrangler\tmp\bundled-worker.js  188.0kb
+1 error
+node:child_process:921
+    throw err;
+    ^
 
-⚡ Done in 14ms
+Error: Command failed: E:\Cloudflare\prosub\node_modules\@esbuild\win32-x64\esbuild.exe functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL
+    at genericNodeError (node:internal/errors:983:15)
+    at wrappedFn (node:internal/errors:537:14)
+    at checkExecSyncError (node:child_process:882:11)
+    at Object.execFileSync (node:child_process:918:15)
+    at Object.<anonymous> (E:\Cloudflare\prosub\node_modules\esbuild\bin\esbuild:220:28)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14) {
+  status: 1,
+  signal: null,
+  output: [ null, null, null ],
+  pid: 30980,
+  stdout: null,
+  stderr: null
+}
+
+Node.js v22.16.0
 
   VITE v5.4.19  ready in 500 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
-
- ⛅️ wrangler 4.25.0
-───────────────────
-Your Worker has access to the following bindings:
-Binding                                        Resource          Mode
-env.KV (9b01882c3f7e4bf18df5e2f12a608cc8)      KV Namespace      local
-
-╭──────────────────────────────────────────────────────────────────────╮
-│  [b] open a browser [d] open devtools [c] clear console [x] to exit  │
-╰──────────────────────────────────────────────────────────────────────╯
-⎔ Starting local server...
-[wrangler:info] Ready on http://127.0.0.1:8787
-env.KV: KvNamespace {}
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
-
-      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
-      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
-      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
-
-
-[wrangler:info] GET /api/auth/me 500 Internal Server Error (54ms)
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
-
-
-env.KV: KvNamespace {}
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
-
-      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
-      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
-      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
-
-
-[wrangler:info] GET /api/auth/me 500 Internal Server Error (5ms)
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
-
-
-env.KV: KvNamespace {}
-Default admin user created.
-[wrangler:info] POST /api/auth/login 200 OK (24ms)
-env.KV: KvNamespace {}
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
-
-      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
-      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
-      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
-
-
-[wrangler:info] GET /api/auth/me 500 Internal Server Error (6ms)
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
-
-
-env.KV: KvNamespace {}
-[wrangler:info] GET /api/nodes 200 OK (3ms)
-env.KV: KvNamespace {}
-env.KV: KvNamespace {}
-[wrangler:info] GET /api/subscriptions 200 OK (5ms)
-[wrangler:info] GET /api/profiles 200 OK (5ms)
-env.KV: KvNamespace {}
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
-
-      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
-      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
-      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
-
-
-[wrangler:info] GET /api/auth/me 500 Internal Server Error (6ms)
-✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
-
-
-env.KV: KvNamespace {}
-[wrangler:info] GET /api/traffic 200 OK (3ms)
-env.KV: KvNamespace {}
-[wrangler:info] GET /api/traffic 200 OK (3ms)
+ERROR: "dev:worker" exited with 1.
