@@ -53,9 +53,16 @@ export async function handleNodeHealthCheck(request: Request, env: Env): Promise
   } catch (error) {
     healthStatus.status = 'offline';
     if (error instanceof Error) {
+      // Check for specific error messages that indicate unsupported operations in Workers
+      if (error.message.includes('network connection') || error.message.includes('unsupported protocol')) {
+        healthStatus.error = `Health check failed: Direct connection to ${node.type} node is not fully supported from Cloudflare Workers.`;
+      } else if (error.name === 'AbortError') {
+        healthStatus.error = 'Health check timed out.';
+      } else {
         healthStatus.error = error.message;
+      }
     } else {
-        healthStatus.error = String(error);
+      healthStatus.error = String(error);
     }
   } finally {
     clearTimeout(timeoutId);
