@@ -69,13 +69,9 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
   }
 
   // TEMPORARY DEBUGGING: Hardcode password check
-  if (name === 'admin' && password === 'admin') {
-    // Bypassing the hash comparison for now
-  } else {
-    const passwordMatch = await comparePassword(password, user.password);
-    if (!passwordMatch) {
-      return errorResponse('用户名或密码不正确', 401);
-    }
+  const passwordMatch = await comparePassword(password, user.password);
+  if (!passwordMatch) {
+    return errorResponse('用户名或密码不正确', 401);
   }
 
   const token = user.id;
