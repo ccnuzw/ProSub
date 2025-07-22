@@ -36,7 +36,7 @@
         <a-table size="small" :columns="previewColumns" :data-source="previewNodes" :row-key="(record, index) => `${record.server}-${index}`" :pagination="{ pageSize: 10 }"/>
       </a-spin>
     </a-modal>
-    <a-modal title="从剪贴板导入订阅" v-model:open="isImportModalVisible" @ok="handleBatchImport" @cancel="() => setIsImportModalVisible(false)" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
+    <a-modal title="从剪贴板导入订阅" v-model:open="isImportModalVisible" @ok="handleBatchImport" @cancel="isImportModalVisible = false" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
       <p>请粘贴一个或多个订阅链接，每行一个。</p>
       <a-textarea :rows="10" v-model:value="importUrls" placeholder="https://example.com/sub1&#10;https://example.com/sub2"/>
     </a-modal>
@@ -70,12 +70,12 @@ interface SubscriptionStatus {
 
 type ParsedNode = Partial<Node>;
 
-const subscriptions = ref<Subscription[]>([])
+const subscriptions = ref<Subscription>([])
 const statuses = ref<Record<string, SubscriptionStatus>>({})
 const loading = ref(true)
 const updatingAll = ref(false)
 const isPreviewModalVisible = ref(false)
-const previewNodes = ref<ParsedNode[]>([])
+const previewNodes = ref<ParsedNode>([])
 const previewLoading = ref(false)
 const previewSubName = ref('')
 const isImportModalVisible = ref(false)
@@ -108,13 +108,30 @@ const handleUpdate = async (id: string) => {
   statuses.value = { ...statuses.value, [id]: { status: 'updating' } }
   try {
     const res = await fetch(`/api/subscriptions/update/${id}`, { method: 'POST' })
-    const data = await res.json() as SubscriptionStatus & { error?: string }
-    if (!res.ok) throw new Error(data.error || '更新失败')
-    statuses.value = { ...statuses.value, [id]: data }
+    const updatedSub = (await res.json()) as Subscription;
+    if (!res.ok) {
+      const errorMessage = updatedSub.error || '更新失败';
+      message.error(`订阅 "${subscriptions.value.find(s=>s.id===id)?.name}" 更新失败: ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
+    statuses.value = {
+      ...statuses.value,
+      [id]: {
+        status: updatedSub.error ? 'error' : 'success',
+        nodeCount: updatedSub.nodeCount,
+        lastUpdated: updatedSub.lastUpdated,
+        error: updatedSub.error,
+      },
+    };
     message.success(`订阅 "${subscriptions.value.find(s=>s.id===id)?.name}" 更新成功!`);
   } catch (error) {
-    if(error instanceof Error) message.error(error.message)
-    fetchData()
+    console.error('Error updating subscription:', error);
+    if(error instanceof Error) {
+      // message.error(error.message); // Already handled by the specific error message above
+    } else {
+      message.error('更新订阅时发生未知错误');
+    }
+    fetchData();
   }
 }
 const handleUpdateAll = async () => {
@@ -140,10 +157,9 @@ const handlePreview = async (sub: Subscription) => {
   previewSubName.value = sub.name
   try {
       const res = await fetch(`/api/subscriptions/preview/${sub.id}`)
-      const data = (await res.json()) as { nodes?: string[], error?: string }
+      const data = (await res.json()) as { nodes?: Node[], error?: string }
       if(!res.ok) throw new Error(data.error || '预览失败')
-      const parsed = (data.nodes || []).map(link => parseNodeLink(link)).filter(Boolean) as ParsedNode[]
-      previewNodes.value = parsed
+      previewNodes.value = (data.nodes || []) as ParsedNode[]
   } catch (error) {
       if(error instanceof Error) message.error(error.message)
       previewNodes.value = []
@@ -157,7 +173,7 @@ const handleBatchImport = async () => {
     const res = await fetch('/api/subscriptions/batch-import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls: importUrls.value }),
+      body: JSON.stringify({ urls: importUrls.value.split('\n').filter(url => url.trim() !== '') }),
     })
     const result = (await res.json()) as { message: string }
     if (!res.ok) {

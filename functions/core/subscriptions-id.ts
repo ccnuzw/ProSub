@@ -1,54 +1,67 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { Subscription, Env } from '@shared/types';
+
+const ALL_SUBSCRIPTIONS_KEY = 'ALL_SUBSCRIPTIONS';
+
+async function getAllSubscriptions(env: Env): Promise<Record<string, Subscription>> {
+  const subsJson = await env.KV.get(ALL_SUBSCRIPTIONS_KEY);
+  return subsJson ? JSON.parse(subsJson) : {};
+}
+
+async function putAllSubscriptions(env: Env, subscriptions: Record<string, Subscription>): Promise<void> {
+  await env.KV.put(ALL_SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions));
+}
 
 interface SubscriptionRequest {
   name: string;
   url: string;
 }
 
-
-
 export async function handleSubscriptionGet(request: Request, env: Env, id: string): Promise<Response> {
   try {
-    const KV = env.KV
-    const subJson = await KV.get(`subscription:${id}`)
-    if (!subJson) {
+    const allSubscriptions = await getAllSubscriptions(env);
+    const sub = allSubscriptions[id];
+    if (!sub) {
       return errorResponse('Subscription not found', 404);
     }
-    return jsonResponse(JSON.parse(subJson));
+    return jsonResponse(sub);
   } catch (error) {
-    console.error(`Failed to fetch subscription ${id}:`, error)
+    console.error(`Failed to fetch subscription ${id}:`, error);
     return errorResponse('Failed to fetch subscription');
   }
 }
 
 export async function handleSubscriptionPut(request: Request, env: Env, id: string): Promise<Response> {
   try {
-    const { name, url } = (await request.json()) as SubscriptionRequest
-    const updatedSubscription: Subscription = { id, name, url }
+    const { name, url } = (await request.json()) as SubscriptionRequest;
+    const updatedSubscription: Subscription = { id, name, url };
     
-    const KV = env.KV
-    await KV.put(`subscription:${id}`, JSON.stringify(updatedSubscription))
+    const allSubscriptions = await getAllSubscriptions(env);
+    if (!allSubscriptions[id]) {
+      return errorResponse('Subscription not found', 404);
+    }
+    allSubscriptions[id] = updatedSubscription;
+    await putAllSubscriptions(env, allSubscriptions);
     
     return jsonResponse(updatedSubscription);
   } catch (error) {
-    console.error(`Failed to update subscription ${id}:`, error)
+    console.error(`Failed to update subscription ${id}:`, error);
     return errorResponse('Failed to update subscription');
   }
 }
 
 export async function handleSubscriptionDelete(request: Request, env: Env, id: string): Promise<Response> {
   try {
-    const KV = env.KV
-    await KV.delete(`subscription:${id}`)
-
-    const subIndexJson = await KV.get('_index:subscriptions');
-    const subIds = subIndexJson ? JSON.parse(subIndexJson) : [];
-    const updatedSubIds = subIds.filter((subId: string) => subId !== id);
-    await KV.put('_index:subscriptions', JSON.stringify(updatedSubIds));
+    const allSubscriptions = await getAllSubscriptions(env);
+    if (!allSubscriptions[id]) {
+      return errorResponse('Subscription not found', 404);
+    }
+    delete allSubscriptions[id];
+    await putAllSubscriptions(env, allSubscriptions);
     
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error(`Failed to delete subscription ${id}:`, error)
+    console.error(`Failed to delete subscription ${id}:`, error);
     return errorResponse('Failed to delete subscription');
   }
 }

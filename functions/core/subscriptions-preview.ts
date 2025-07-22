@@ -1,12 +1,39 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
+import { Subscription, Env } from '@shared/types';
+import { parseNodeLink } from '@shared/node-parser';
+import { parseClashYaml } from '@shared/clash-parser';
+
+const ALL_SUBSCRIPTIONS_KEY = 'ALL_SUBSCRIPTIONS';
+
+async function getAllSubscriptions(env: Env): Promise<Record<string, Subscription>> {
+  const subsJson = await env.KV.get(ALL_SUBSCRIPTIONS_KEY);
+  return subsJson ? JSON.parse(subsJson) : {};
+}
+
+async function putAllSubscriptions(env: Env, subscriptions: Record<string, Subscription>): Promise<void> {
+  await env.KV.put(ALL_SUBSCRIPTIONS_KEY, JSON.stringify(subscriptions));
+}
 
 // 基础的 Base64 解码函数
-function base64Decode(str: string): string {
+function base64Decode(str: string): string | null {
+    let normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
+    normalizedStr = normalizedStr.trim(); // Trim whitespace
+
+    // Basic validation for Base64 string
+    if (!normalizedStr || !/^[A-Za-z0-9+/=]*$/.test(normalizedStr) || normalizedStr.length % 4 !== 0) {
+        return null; // Not a valid Base64 string or empty after trim
+    }
+
     try {
-        return atob(str.replace(/_/g, '/').replace(/-/g, '+'));
+        const binaryString = atob(normalizedStr);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return new TextDecoder('utf-8').decode(bytes);
     } catch (e) {
-        return ''; // 如果解码失败，返回空字符串
+        return null; // Return null on atob error
     }
 }
 
@@ -18,20 +45,15 @@ export async function handleSubscriptionsPreview(request: Request, env: Env, id:
     return errorResponse('未授权', 401);
   }
 
-  const userJson = await env.KV.get(`user:${token}`);
-
-  if (!userJson) {
-    return errorResponse('未授权', 401);
-  }
-
   const KV = env.KV;
 
   try {
-    const subJson = await KV.get(`subscription:${id}`);
-    if (!subJson) {
+    const allSubscriptions = await getAllSubscriptions(env);
+    const subscription = allSubscriptions[id];
+
+    if (!subscription) {
       return errorResponse('订阅不存在', 404);
     }
-    const subscription: Subscription = JSON.parse(subJson);
 
     const response = await fetch(subscription.url, {
         headers: { 'User-Agent': 'ProSub/1.0' }
@@ -42,14 +64,44 @@ export async function handleSubscriptionsPreview(request: Request, env: Env, id:
     }
 
     const content = await response.text();
-    const decodedContent = base64Decode(content);
-    const nodes = decodedContent.split(/[\r\n]+/).filter(Boolean);
+    let decodedContent = '';
+    let nodes: Node[] = [];
+
+    // Heuristic: Check if the URL suggests Clash YAML (existing)
+    const isClashYamlUrl = subscription.url.endsWith('.yaml') || subscription.url.endsWith('.yml') || subscription.url.includes('/clash/');
+
+    // New: Check if content looks like YAML
+    const isContentYaml = content.startsWith('---') || content.includes('proxies:') || content.includes('proxy-groups:') || content.includes('rules:');
+
+    if (isClashYamlUrl || isContentYaml) {
+      nodes = parseClashYaml(content);
+      // If Clash YAML parsing yields no nodes, fall back to parsing as node links
+      if (nodes.length === 0) {
+        const attemptedDecode = base64Decode(content);
+        if (attemptedDecode) {
+          decodedContent = attemptedDecode;
+        } else {
+          decodedContent = content;
+        }
+        const lines = decodedContent.split(/\r?\n|\r/).filter(line => line.trim() !== '');
+        nodes = lines.map(line => parseNodeLink(line)).filter(Boolean);
+      }
+    } else {
+      // Existing logic for non-Clash YAML content
+      const attemptedDecode = base64Decode(content);
+      if (attemptedDecode) {
+        decodedContent = attemptedDecode;
+      } else {
+        decodedContent = content;
+      }
+      const lines = decodedContent.split(/\r?\n|\r/).filter(line => line.trim() !== '');
+      nodes = lines.map(line => parseNodeLink(line)).filter(Boolean);
+    }
 
     return jsonResponse({ nodes });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`Failed to preview subscription ${id}:`, error);
     return errorResponse(`预览订阅失败: ${errorMessage}`);
   }
 }
