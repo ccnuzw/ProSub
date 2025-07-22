@@ -1,26 +1,100 @@
-{
-  "name": "misub-vue",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "js-yaml": "^4.1.0",
-    "pinia": "^3.0.3",
-    "vue": "^3.4.27",
-    "vuedraggable": "^4.1.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "autoprefixer": "^10.4.19",
-    "miniflare": "^4.20250604.1",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
-    "vite": "^5.2.11"
-  }
-}
+PS E:\Cloudflare\prosub> npm run dev
+
+> prosub@0.1.0 dev
+> npm-run-all -p dev:frontend dev:worker
+
+
+> prosub@0.1.0 dev:frontend
+> vite
+
+
+> prosub@0.1.0 dev:worker
+> npm run build:worker-dev && wrangler dev .wrangler/tmp/bundled-worker.js --config wrangler.toml --persist-to .wrangler/state --no-bundle
+
+
+> prosub@0.1.0 build:worker-dev
+> esbuild functions/index.ts --bundle --outfile=.wrangler/tmp/bundled-worker.js --platform=browser --format=esm --external:__STATIC_CONTENT_MANIFEST --external:__STATIC_CONTENT_MANIFEST_URL
+
+
+  .wrangler\tmp\bundled-worker.js  188.0kb
+
+⚡ Done in 14ms
+
+  VITE v5.4.19  ready in 500 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+
+ ⛅️ wrangler 4.25.0
+───────────────────
+Your Worker has access to the following bindings:
+Binding                                        Resource          Mode
+env.KV (9b01882c3f7e4bf18df5e2f12a608cc8)      KV Namespace      local
+
+╭──────────────────────────────────────────────────────────────────────╮
+│  [b] open a browser [d] open devtools [c] clear console [x] to exit  │
+╰──────────────────────────────────────────────────────────────────────╯
+⎔ Starting local server...
+[wrangler:info] Ready on http://127.0.0.1:8787
+env.KV: KvNamespace {}
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
+
+      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
+      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
+      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
+
+
+[wrangler:info] GET /api/auth/me 500 Internal Server Error (54ms)
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
+
+
+env.KV: KvNamespace {}
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
+
+      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
+      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
+      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
+
+
+[wrangler:info] GET /api/auth/me 500 Internal Server Error (5ms)
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
+
+
+env.KV: KvNamespace {}
+Default admin user created.
+[wrangler:info] POST /api/auth/login 200 OK (24ms)
+env.KV: KvNamespace {}
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
+
+      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
+      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
+      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
+
+
+[wrangler:info] GET /api/auth/me 500 Internal Server Error (6ms)
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
+
+
+env.KV: KvNamespace {}
+[wrangler:info] GET /api/nodes 200 OK (3ms)
+env.KV: KvNamespace {}
+env.KV: KvNamespace {}
+[wrangler:info] GET /api/subscriptions 200 OK (5ms)
+[wrangler:info] GET /api/profiles 200 OK (5ms)
+env.KV: KvNamespace {}
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get') Error
+
+      at authenticateUser (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:297:33)
+      at handleMe (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:311:22)
+      at fetch (file:///E:/Cloudflare/prosub/.wrangler/tmp/bundled-worker.js:4849:16)
+
+
+[wrangler:info] GET /api/auth/me 500 Internal Server Error (6ms)
+✘ [ERROR] Uncaught TypeError: Cannot read properties of undefined (reading 'get')
+
+
+env.KV: KvNamespace {}
+[wrangler:info] GET /api/traffic 200 OK (3ms)
+env.KV: KvNamespace {}
+[wrangler:info] GET /api/traffic 200 OK (3ms)
