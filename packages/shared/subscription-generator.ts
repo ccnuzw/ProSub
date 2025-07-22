@@ -21,20 +21,14 @@ function convertNodeToUri(node: Node): string {
         switch (node.type) {
             case 'vmess':
                 const vmessConfig = {
-                    v: "2",
-                    ps: node.name,
-                    add: node.server,
-                    port: node.port,
-                    id: node.password,
-                    aid: node.params?.aid ?? "0",
-                    net: node.params?.net ?? "tcp",
-                    type: node.params?.type ?? "none",
-                    host: node.params?.host ?? "",
-                    path: node.params?.path ?? "",
-                    tls: node.params?.tls ?? ""
+                    v: "2", ps: node.name, add: node.server, port: node.port, id: node.password,
+                    aid: node.params?.aid ?? "0", net: node.params?.net ?? "tcp",
+                    type: node.params?.type ?? "none", host: node.params?.host ?? "",
+                    path: node.params?.path ?? "", tls: node.params?.tls ?? ""
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
 
+            // *** FIX IS HERE ***
             case 'vless':
             case 'vless-reality':
             case 'trojan':
@@ -42,8 +36,9 @@ function convertNodeToUri(node: Node): string {
             case 'tuic':
             case 'hysteria':
             case 'hysteria2':
+            case 'anytls': // <--- 新增 anytls
                 const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
-                const url = new URL(`${protocol}://${node.password}@${node.server}:${node.port}`);
+                const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
                 url.hash = encodedName;
                 if (node.params) {
                     for (const key in node.params) {
@@ -58,11 +53,11 @@ function convertNodeToUri(node: Node): string {
                 return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
             
             default:
-                console.warn(`Unsupported node type for URI generation: ${node.type}`);
+                console.warn(`不支持的节点类型: ${node.type}`);
                 return '';
         }
     } catch (e) {
-        console.error(`Failed to convert node to URI: ${node.name}`, e);
+        console.error(`转换节点到 URI 失败: ${node.name}`, e);
         return '';
     }
 }
