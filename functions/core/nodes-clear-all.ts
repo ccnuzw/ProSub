@@ -1,5 +1,17 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
+import { Node, Env } from '@shared/types';
+
+const ALL_NODES_KEY = 'ALL_NODES';
+
+async function getAllNodes(env: Env): Promise<Record<string, Node>> {
+  const nodesJson = await env.KV.get(ALL_NODES_KEY);
+  return nodesJson ? JSON.parse(nodesJson) : {};
+}
+
+async function putAllNodes(env: Env, nodes: Record<string, Node>): Promise<void> {
+  await env.KV.put(ALL_NODES_KEY, JSON.stringify(nodes));
+}
 
 export async function handleNodesClearAll(request: Request, env: Env): Promise<Response> {
   const cookies = parse(request.headers.get('Cookie') || '');
@@ -16,17 +28,7 @@ export async function handleNodesClearAll(request: Request, env: Env): Promise<R
   }
 
   try {
-    const KV = env.KV;
-    const nodeList = await KV.list({ prefix: 'node:' });
-    const deletePromises: Promise<any>[] = [];
-
-    for (const key of nodeList.keys) {
-      deletePromises.push(KV.delete(key.name));
-    }
-
-    await Promise.all(deletePromises);
-
-    await KV.put('_index:nodes', JSON.stringify([]));
+    await putAllNodes(env, {});
 
     return jsonResponse({ message: '所有节点已清空' });
 

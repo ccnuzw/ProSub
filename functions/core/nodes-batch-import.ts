@@ -1,5 +1,17 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
+import { Node, Env } from '@shared/types';
+
+const ALL_NODES_KEY = 'ALL_NODES';
+
+async function getAllNodes(env: Env): Promise<Record<string, Node>> {
+  const nodesJson = await env.KV.get(ALL_NODES_KEY);
+  return nodesJson ? JSON.parse(nodesJson) : {};
+}
+
+async function putAllNodes(env: Env, nodes: Record<string, Node>): Promise<void> {
+  await env.KV.put(ALL_NODES_KEY, JSON.stringify(nodes));
+}
 
 export async function handleNodesBatchImport(request: Request, env: Env): Promise<Response> {
   const cookies = parse(request.headers.get('Cookie') || '');
@@ -22,21 +34,13 @@ export async function handleNodesBatchImport(request: Request, env: Env): Promis
       return errorResponse('请求体中需要提供 nodes 数组', 400);
     }
 
-    const KV = env.KV;
-    const nodeList = await KV.list({ prefix: 'node:' });
-    const existingNodesJson = await Promise.all(
-      nodeList.keys.map(async ({ name }) => KV.get(name))
-    );
-    const existingNodes: Node[] = existingNodesJson.filter(Boolean).map(json => JSON.parse(json as string));
-
+    const allNodes = await getAllNodes(env);
     const existingNodeSet = new Set(
-      existingNodes.map(node => `${node.server}:${node.port}:${node.password || ''}`)
+      Object.values(allNodes).map(node => `${node.server}:${node.port}:${node.password || ''}`)
     );
 
     let importedCount = 0;
     let skippedCount = 0;
-    const putPromises: Promise<any>[] = [];
-    const newIds: string[] = [];
 
     for (const node of nodes) {
       if (node && node.server && node.port) {
@@ -47,8 +51,7 @@ export async function handleNodesBatchImport(request: Request, env: Env): Promis
             id: crypto.randomUUID(),
             ...node
           } as Node;
-          newIds.push(newNode.id);
-          putPromises.push(KV.put(`node:${newNode.id}`, JSON.stringify(newNode)));
+          allNodes[newNode.id] = newNode;
           existingNodeSet.add(uniqueKey);
           importedCount++;
         } else {
@@ -57,12 +60,8 @@ export async function handleNodesBatchImport(request: Request, env: Env): Promis
       }
     }
 
-    if (putPromises.length > 0) {
-      await Promise.all(putPromises);
-      const nodeIndexJson = await KV.get('_index:nodes');
-      const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
-      const updatedNodeIds = [...nodeIds, ...newIds];
-      await KV.put('_index:nodes', JSON.stringify(updatedNodeIds));
+    if (importedCount > 0) {
+      await putAllNodes(env, allNodes);
     }
 
     return jsonResponse({

@@ -1,4 +1,16 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { Node, Env } from '@shared/types';
+
+const ALL_NODES_KEY = 'ALL_NODES';
+
+async function getAllNodes(env: Env): Promise<Record<string, Node>> {
+  const nodesJson = await env.KV.get(ALL_NODES_KEY);
+  return nodesJson ? JSON.parse(nodesJson) : {};
+}
+
+async function putAllNodes(env: Env, nodes: Record<string, Node>): Promise<void> {
+  await env.KV.put(ALL_NODES_KEY, JSON.stringify(nodes));
+}
 
 interface NodeRequest {
   name: string;
@@ -8,45 +20,29 @@ interface NodeRequest {
   type: 'ss' | 'ssr' | 'vmess' | 'vless' | 'trojan' | 'socks5' | 'anytls' | 'tuic' | 'hysteria' | 'hysteria2' | 'vless-reality';
 }
 
-
-
 export async function handleNodesGet(request: Request, env: Env): Promise<Response> {
   try {
-    const KV = env.KV
-    const nodeIndexJson = await KV.get('_index:nodes');
-    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
-
-    const nodes = await Promise.all(
-      nodeIds.map(async (nodeId: string) => {
-        const nodeJson = await KV.get(`node:${nodeId}`);
-        return nodeJson ? JSON.parse(nodeJson) : null;
-      })
-    );
-
-    return jsonResponse(nodes.filter(Boolean));
+    const allNodes = await getAllNodes(env);
+    return jsonResponse(Object.values(allNodes));
   } catch (error) {
-    console.error('Failed to fetch nodes:', error)
+    console.error('Failed to fetch nodes:', error);
     return errorResponse('Failed to fetch nodes');
   }
 }
 
 export async function handleNodesPost(request: Request, env: Env): Promise<Response> {
   try {
-    const { name, server, port, password, type } = (await request.json()) as NodeRequest
-    const id = crypto.randomUUID()
-    const newNode: Node = { id, name, server, port, password, type }
-    
-    const KV = env.KV
-    await KV.put(`node:${id}`, JSON.stringify(newNode))
+    const { name, server, port, password, type } = (await request.json()) as NodeRequest;
+    const id = crypto.randomUUID();
+    const newNode: Node = { id, name, server, port, password, type };
 
-    const nodeIndexJson = await KV.get('_index:nodes');
-    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
-    nodeIds.push(id);
-    await KV.put('_index:nodes', JSON.stringify(nodeIds));
-    
+    const allNodes = await getAllNodes(env);
+    allNodes[id] = newNode;
+    await putAllNodes(env, allNodes);
+
     return jsonResponse(newNode);
   } catch (error) {
-    console.error('Failed to create node:', error)
+    console.error('Failed to create node:', error);
     return errorResponse('Failed to create node');
   }
 }

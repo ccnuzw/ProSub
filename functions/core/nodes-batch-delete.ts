@@ -1,5 +1,17 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
+import { Node, Env } from '@shared/types';
+
+const ALL_NODES_KEY = 'ALL_NODES';
+
+async function getAllNodes(env: Env): Promise<Record<string, Node>> {
+  const nodesJson = await env.KV.get(ALL_NODES_KEY);
+  return nodesJson ? JSON.parse(nodesJson) : {};
+}
+
+async function putAllNodes(env: Env, nodes: Record<string, Node>): Promise<void> {
+  await env.KV.put(ALL_NODES_KEY, JSON.stringify(nodes));
+}
 
 export async function handleNodesBatchDelete(request: Request, env: Env): Promise<Response> {
   const cookies = parse(request.headers.get('Cookie') || '');
@@ -22,18 +34,21 @@ export async function handleNodesBatchDelete(request: Request, env: Env): Promis
       return errorResponse('请求体中需要提供一个包含节点 ID 的数组', 400);
     }
 
-    const KV = env.KV;
-    
-    const deletePromises = ids.map(id => KV.delete(`node:${id}`));
-    
-    await Promise.all(deletePromises);
+    const allNodes = await getAllNodes(env);
+    let deletedCount = 0;
 
-    const nodeIndexJson = await KV.get('_index:nodes');
-    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
-    const updatedNodeIds = nodeIds.filter((nodeId: string) => !ids.includes(nodeId));
-    await KV.put('_index:nodes', JSON.stringify(updatedNodeIds));
+    for (const id of ids) {
+      if (allNodes[id]) {
+        delete allNodes[id];
+        deletedCount++;
+      }
+    }
 
-    return jsonResponse({ message: `${ids.length} 个节点已成功删除` });
+    if (deletedCount > 0) {
+      await putAllNodes(env, allNodes);
+    }
+
+    return jsonResponse({ message: `${deletedCount} 个节点已成功删除` });
 
   } catch (error) {
     console.error('Failed to batch delete nodes:', error);

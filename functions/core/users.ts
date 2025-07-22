@@ -1,9 +1,29 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { parse } from 'cookie';
-
 import { hashPassword, comparePassword } from './utils/crypto';
+import { User, Env, UserSession } from '@shared/types';
 
+async function authenticateUser(request: Request, env: Env): Promise<UserSession | null> {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
 
+  if (!token) {
+    return null;
+  }
+
+  const userSessionJson = await env.KV.get(`user_session:${token}`);
+  if (!userSessionJson) {
+    return null;
+  }
+
+  const userSession = JSON.parse(userSessionJson) as UserSession;
+  if (userSession.expires < Date.now()) {
+    await env.KV.delete(`user_session:${token}`);
+    return null;
+  }
+
+  return userSession;
+}
 
 export async function handleUsersGet(request: Request, env: Env): Promise<Response> {
   const cookies = parse(request.headers.get('Cookie') || '');
