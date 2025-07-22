@@ -1,7 +1,5 @@
 import { Profile, Node, Env } from './types';
 import * as yaml from 'js-yaml';
-
-// Import all the rule/group generators
 import { getClashProxyGroups } from './clash-proxy-groups';
 import { clashRules, ruleProviders } from './clash-rules';
 import { getSurgeProxyGroups } from './surge-proxy-groups';
@@ -14,7 +12,11 @@ import { getSingBoxOutbounds } from './sing-box-outbounds';
 import { getSingBoxRoute } from './sing-box-rules';
 import { parseNodeLink } from './node-parser';
 
-// --- Node to URI Converter ---
+// Helper to encode base64 in a URL-safe way
+function base64Encode(str: string): string {
+    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
 function convertNodeToUri(node: Node): string {
     const encodedName = encodeURIComponent(node.name);
     try {
@@ -28,7 +30,6 @@ function convertNodeToUri(node: Node): string {
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
 
-            // *** FIX IS HERE ***
             case 'vless':
             case 'vless-reality':
             case 'trojan':
@@ -36,7 +37,7 @@ function convertNodeToUri(node: Node): string {
             case 'tuic':
             case 'hysteria':
             case 'hysteria2':
-            case 'anytls': // <--- 新增 anytls
+            case 'anytls':
                 const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
                 const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
                 url.hash = encodedName;
@@ -52,6 +53,20 @@ function convertNodeToUri(node: Node): string {
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
                 return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
             
+            // *** FIX STARTS HERE: Added SSR Generator ***
+            case 'ssr':
+                const password_base64 = base64Encode(node.password || '');
+                const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
+                
+                const params = new URLSearchParams();
+                params.set('remarks', base64Encode(node.name));
+                if (node.params?.obfsparam) params.set('obfsparam', base64Encode(node.params.obfsparam));
+                if (node.params?.protoparam) params.set('protoparam', base64Encode(node.params.protoparam));
+
+                const fullInfo = `${mainInfo}/?${params.toString()}`;
+                return `ssr://${base64Encode(fullInfo)}`;
+            // *** FIX ENDS HERE ***
+
             default:
                 console.warn(`不支持的节点类型: ${node.type}`);
                 return '';
