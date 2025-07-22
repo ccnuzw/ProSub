@@ -40,35 +40,11 @@ interface Env {
   NODE_ENV: string; // For secure cookie flag
 }
 
+
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     console.log('env.KV:', env.KV);
-    // Fallback for local development if env.KV is undefined
-    if (!env.KV && env.NODE_ENV !== 'production') {
-      console.warn('env.KV is undefined. Using a mock KV for local development.');
-      env.KV = {
-        get: async (key: string) => {
-          console.log(`Mock KV: get ${key}`);
-          return mockKVStore.get(key) || null;
-        },
-        put: async (key: string, value: string) => {
-          console.log(`Mock KV: put ${key} = ${value}`);
-          // Store in-memory for mock KV
-          mockKVStore.set(key, value);
-        },
-        list: async ({ prefix = '' } = {}) => {
-          console.log(`Mock KV: list with prefix ${prefix}`);
-          const keys = Array.from(mockKVStore.keys())
-            .filter(k => k.startsWith(prefix))
-            .map(k => ({ name: k }));
-          return { keys, list_complete: true };
-        },
-        delete: async (key: string) => {
-          console.log(`Mock KV: delete ${key}`);
-          mockKVStore.delete(key);
-        },
-      } as unknown as KVNamespace;
-    }
 
     const url = new URL(request.url);
     const path = url.pathname;
@@ -230,5 +206,4 @@ export default {
   },
 } satisfies ExportedHandler<Env>;
 
-// In-memory store for mock KV
-const mockKVStore = new Map<string, string>();
+

@@ -1,23 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '../views/Dashboard.vue'
-import Nodes from '../views/Nodes.vue'
-import Profiles from '../views/Profiles.vue'
-import Subscriptions from '../views/Subscriptions.vue'
-import Users from '../views/Users.vue'
-import Login from '../views/Login.vue'
-import UserEdit from '../views/UserEdit.vue'
-import UserNew from '../views/UserNew.vue'
-import UserProfile from '../views/UserProfile.vue'
-import UserSubscription from '../views/UserSubscription.vue'
-import NodeEdit from '../views/NodeEdit.vue'
-import NodeNew from '../views/NodeNew.vue'
-import ProfileEdit from '../views/ProfileEdit.vue'
-import ProfileNew from '../views/ProfileNew.vue'
-import SubscriptionEdit from '../views/SubscriptionEdit.vue'
-import SubscriptionNew from '../views/SubscriptionNew.vue'
-
-import UserChangePassword from '../views/UserChangePassword.vue'
-
 const routes = [
   {
     path: '/',
@@ -26,87 +7,87 @@ const routes = [
   {
     path: '/dashboard',
     name: 'Dashboard',
-    component: Dashboard,
+    component: () => import('../views/Dashboard.vue'),
   },
   {
     path: '/nodes',
     name: 'Nodes',
-    component: Nodes,
+    component: () => import('../views/Nodes.vue'),
   },
   {
     path: '/profiles',
     name: 'Profiles',
-    component: Profiles,
+    component: () => import('../views/Profiles.vue'),
   },
   {
     path: '/subscriptions',
     name: 'Subscriptions',
-    component: Subscriptions,
+    component: () => import('../views/Subscriptions.vue'),
   },
   {
     path: '/user',
     name: 'Users',
-    component: Users,
+    component: () => import('../views/Users.vue'),
   },
   {
     path: '/user/login',
     name: 'Login',
-    component: Login,
+    component: () => import('../views/Login.vue'),
   },
   {
     path: '/user/change-password',
     name: 'UserChangePassword',
-    component: UserChangePassword,
+    component: () => import('../views/UserChangePassword.vue'),
   },
   {
     path: '/user/:id',
     name: 'UserEdit',
-    component: UserEdit,
+    component: () => import('../views/UserEdit.vue'),
   },
   {
     path: '/user/new',
     name: 'UserNew',
-    component: UserNew,
+    component: () => import('../views/UserNew.vue'),
   },
   {
     path: '/user/profile',
     name: 'UserProfile',
-    component: UserProfile,
+    component: () => import('../views/UserProfile.vue'),
   },
   {
     path: '/user/subscription',
     name: 'UserSubscription',
-    component: UserSubscription,
+    component: () => import('../views/UserSubscription.vue'),
   },
   {
     path: '/nodes/:id',
     name: 'NodeEdit',
-    component: NodeEdit,
+    component: () => import('../views/NodeEdit.vue'),
   },
   {
     path: '/nodes/new',
     name: 'NodeNew',
-    component: NodeNew,
+    component: () => import('../views/NodeNew.vue'),
   },
   {
     path: '/profiles/:id',
     name: 'ProfileEdit',
-    component: ProfileEdit,
+    component: () => import('../views/ProfileEdit.vue'),
   },
   {
     path: '/profiles/new',
     name: 'ProfileNew',
-    component: ProfileNew,
+    component: () => import('../views/ProfileNew.vue'),
   },
   {
     path: '/subscriptions/:id',
     name: 'SubscriptionEdit',
-    component: SubscriptionEdit,
+    component: () => import('../views/SubscriptionEdit.vue'),
   },
   {
     path: '/subscriptions/new',
     name: 'SubscriptionNew',
-    component: SubscriptionNew,
+    component: () => import('../views/SubscriptionNew.vue'),
   },
 ]
 
