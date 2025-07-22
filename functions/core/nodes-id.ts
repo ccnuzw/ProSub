@@ -43,6 +43,11 @@ export async function handleNodeDelete(request: Request, env: Env, id: string): 
   try {
     const KV = env.KV
     await KV.delete(`node:${id}`)
+
+    const nodeIndexJson = await KV.get('_index:nodes');
+    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
+    const updatedNodeIds = nodeIds.filter((nodeId: string) => nodeId !== id);
+    await KV.put('_index:nodes', JSON.stringify(updatedNodeIds));
     
     return new Response(null, { status: 204 });
   } catch (error) {

@@ -13,13 +13,16 @@ interface NodeRequest {
 export async function handleNodesGet(request: Request, env: Env): Promise<Response> {
   try {
     const KV = env.KV
-    const nodeList = await KV.list({ prefix: 'node:' })
+    const nodeIndexJson = await KV.get('_index:nodes');
+    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
+
     const nodes = await Promise.all(
-      nodeList.keys.map(async ({ name }) => {
-        const nodeJson = await KV.get(name)
-        return nodeJson ? JSON.parse(nodeJson) : null
+      nodeIds.map(async (nodeId: string) => {
+        const nodeJson = await KV.get(`node:${nodeId}`);
+        return nodeJson ? JSON.parse(nodeJson) : null;
       })
-    )
+    );
+
     return jsonResponse(nodes.filter(Boolean));
   } catch (error) {
     console.error('Failed to fetch nodes:', error)
@@ -35,6 +38,11 @@ export async function handleNodesPost(request: Request, env: Env): Promise<Respo
     
     const KV = env.KV
     await KV.put(`node:${id}`, JSON.stringify(newNode))
+
+    const nodeIndexJson = await KV.get('_index:nodes');
+    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
+    nodeIds.push(id);
+    await KV.put('_index:nodes', JSON.stringify(nodeIds));
     
     return jsonResponse(newNode);
   } catch (error) {

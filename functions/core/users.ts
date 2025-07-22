@@ -1,22 +1,32 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { authenticateUser } from './lib/auth';
+import { parse } from 'cookie';
 
 import { hashPassword, comparePassword } from './utils/crypto';
 
 
 
 export async function handleUsersGet(request: Request, env: Env): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
+
+  if (!token) {
+    return errorResponse('未授权', 401);
+  }
+
+  const userJson = await env.KV.get(`user:${token}`);
+
+  if (!userJson) {
     return errorResponse('未授权', 401);
   }
 
   try {
     const KV = env.KV;
-    const userList = await KV.list({ prefix: 'user:' });
+    const userIndexJson = await KV.get('_index:users');
+    const userIds = userIndexJson ? JSON.parse(userIndexJson) : [];
+
     const users = await Promise.all(
-      userList.keys.map(async ({ name: keyName }) => {
-        const userJson = await KV.get(keyName);
+      userIds.map(async (userId: string) => {
+        const userJson = await KV.get(`user:${userId}`);
         const user = userJson ? JSON.parse(userJson) : null;
         if (user) {
           delete user.password;
@@ -24,6 +34,7 @@ export async function handleUsersGet(request: Request, env: Env): Promise<Respon
         return user;
       })
     );
+    
     return jsonResponse(users.filter(Boolean));
   } catch (error) {
     console.error('Failed to fetch users:', error);
@@ -61,6 +72,11 @@ export async function handleUsersPost(request: Request, env: Env): Promise<Respo
     const newUser: User = { id, name, password: hashedPassword, profiles: profiles || [], defaultPasswordChanged: true };
     
     await KV.put(`user:${id}`, JSON.stringify(newUser));
+
+    const userIndexJson = await KV.get('_index:users');
+    const userIds = userIndexJson ? JSON.parse(userIndexJson) : [];
+    userIds.push(id);
+    await KV.put('_index:users', JSON.stringify(userIds));
     
     const { password: _, ...userWithoutPassword } = newUser;
     return jsonResponse(userWithoutPassword);

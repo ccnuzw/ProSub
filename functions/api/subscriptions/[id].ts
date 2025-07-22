@@ -1,5 +1,5 @@
-import { handleSubscriptionGet, handleSubscriptionPut, handleSubscriptionDelete } from '../../_lib/subscriptions-id';
-import { Env } from '../../_lib/types';
+import { handleSubscriptionGet, handleSubscriptionPut, handleSubscriptionDelete } from '../../core/subscriptions-id';
+import { Env } from '@shared/types';
 
 export const onRequestGet = async ({ request, env, params }: { request: Request; env: Env; params: { id: string } }) => {
   return handleSubscriptionGet(request, env, params.id);

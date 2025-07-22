@@ -10,13 +10,16 @@ interface SubscriptionRequest {
 export async function handleSubscriptionsGet(request: Request, env: Env): Promise<Response> {
   try {
     const KV = env.KV
-    const subList = await KV.list({ prefix: 'subscription:' })
+    const subIndexJson = await KV.get('_index:subscriptions');
+    const subIds = subIndexJson ? JSON.parse(subIndexJson) : [];
+
     const subscriptions = await Promise.all(
-      subList.keys.map(async ({ name }) => {
-        const subJson = await KV.get(name)
-        return subJson ? JSON.parse(subJson) : null
+      subIds.map(async (subId: string) => {
+        const subJson = await KV.get(`subscription:${subId}`);
+        return subJson ? JSON.parse(subJson) : null;
       })
-    )
+    );
+
     return jsonResponse(subscriptions.filter(Boolean));
   } catch (error) {
     console.error('Failed to fetch subscriptions:', error)
@@ -32,6 +35,11 @@ export async function handleSubscriptionsPost(request: Request, env: Env): Promi
     
     const KV = env.KV
     await KV.put(`subscription:${id}`, JSON.stringify(newSubscription))
+
+    const subIndexJson = await KV.get('_index:subscriptions');
+    const subIds = subIndexJson ? JSON.parse(subIndexJson) : [];
+    subIds.push(id);
+    await KV.put('_index:subscriptions', JSON.stringify(subIds));
     
     return jsonResponse(newSubscription);
   } catch (error) {

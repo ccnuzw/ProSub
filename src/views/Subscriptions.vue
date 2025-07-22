@@ -4,7 +4,7 @@
       <a-typography-title :level="3" style="margin: 0">订阅管理</a-typography-title>
       <a-space>
         <a-button type="default" :icon="$slots.syncOutlined ? $slots.syncOutlined() : ''" @click="handleUpdateAll" :loading="updatingAll">全部更新</a-button>
-        <a-button type="default" :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="setIsImportModalVisible(true)">导入订阅</a-button>
+        <a-button type="default" :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">导入订阅</a-button>
         <router-link to="/subscriptions/new">
           <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''">添加订阅</a-button>
         </router-link>
@@ -25,7 +25,7 @@
             <router-link to="/subscriptions/new">
               <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''">手动添加</a-button>
             </router-link>
-            <a-button :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="setIsImportModalVisible(true)">从剪贴板导入</a-button>
+            <a-button :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">从剪贴板导入</a-button>
           </a-space>
         </a-empty>
       </template>
@@ -45,6 +45,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, h } from 'vue'
+import { RouterLink } from 'vue-router'
 import { message, Modal, Tag, Tooltip, Empty, Button, Space, Popconfirm } from 'ant-design-vue'
 import {
   EditOutlined,
@@ -57,8 +58,8 @@ import {
   ImportOutlined,
 } from '@ant-design/icons-vue'
 import type { TableProps } from 'ant-design-vue'
-import { Subscription, Node } from '../types'
-import { parseNodeLink } from '../lib/node-parser'
+import { Subscription, Node } from '@shared/types'
+import { parseNodeLink } from '@shared/node-parser'
 
 interface SubscriptionStatus {
   status: 'success' | 'error' | 'updating';

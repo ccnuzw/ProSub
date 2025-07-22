@@ -1,5 +1,5 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { generateSubscriptionResponse } from './lib/subscription-generator';
+import { generateSubscriptionResponse } from '@shared/subscription-generator';
 
 
 

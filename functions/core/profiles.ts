@@ -12,13 +12,16 @@ interface ProfileRequest {
 export async function handleProfilesGet(request: Request, env: Env): Promise<Response> {
   try {
     const KV = env.KV
-    const profileList = await KV.list({ prefix: 'profile:' })
+    const profileIndexJson = await KV.get('_index:profiles');
+    const profileIds = profileIndexJson ? JSON.parse(profileIndexJson) : [];
+
     const profiles = await Promise.all(
-      profileList.keys.map(async ({ name }) => {
-        const profileJson = await KV.get(name)
-        return profileJson ? JSON.parse(profileJson) : null
+      profileIds.map(async (profileId: string) => {
+        const profileJson = await KV.get(`profile:${profileId}`);
+        return profileJson ? JSON.parse(profileJson) : null;
       })
-    )
+    );
+
     return jsonResponse(profiles.filter(Boolean));
   } catch (error) {
     console.error('Failed to fetch profiles:', error)
@@ -60,6 +63,11 @@ export async function handleProfilesPost(request: Request, env: Env): Promise<Re
     if (alias) {
       await KV.put(`alias:${alias}`, JSON.stringify({ id: newProfile.id }));
     }
+
+    const profileIndexJson = await KV.get('_index:profiles');
+    const profileIds = profileIndexJson ? JSON.parse(profileIndexJson) : [];
+    profileIds.push(newProfile.id);
+    await KV.put('_index:profiles', JSON.stringify(profileIds));
 
     return jsonResponse(newProfile, 201);
   } catch (error) {

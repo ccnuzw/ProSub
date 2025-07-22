@@ -1,5 +1,5 @@
-import { handleNodesBatchImport } from '../../_lib/nodes-batch-import';
-import { Env } from '../../_lib/types';
+import { handleNodesBatchImport } from '../../core/nodes-batch-import';
+import { Env } from '@shared/types';
 
 export const onRequestPost = async ({ request, env }: { request: Request; env: Env }) => {
   return handleNodesBatchImport(request, env);

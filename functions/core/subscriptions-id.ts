@@ -40,6 +40,11 @@ export async function handleSubscriptionDelete(request: Request, env: Env, id: s
   try {
     const KV = env.KV
     await KV.delete(`subscription:${id}`)
+
+    const subIndexJson = await KV.get('_index:subscriptions');
+    const subIds = subIndexJson ? JSON.parse(subIndexJson) : [];
+    const updatedSubIds = subIds.filter((subId: string) => subId !== id);
+    await KV.put('_index:subscriptions', JSON.stringify(updatedSubIds));
     
     return new Response(null, { status: 204 });
   } catch (error) {

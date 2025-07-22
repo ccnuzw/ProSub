@@ -1,7 +1,5 @@
-import { authenticateUser } from './lib/auth';
 import { jsonResponse, errorResponse } from './utils/response';
-
-
+import { parse } from 'cookie';
 
 // 基础的 Base64 解码函数
 function base64Decode(str: string): string {
@@ -13,8 +11,16 @@ function base64Decode(str: string): string {
 }
 
 export async function handleSubscriptionsPreview(request: Request, env: Env, id: string): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
+
+  if (!token) {
+    return errorResponse('未授权', 401);
+  }
+
+  const userJson = await env.KV.get(`user:${token}`);
+
+  if (!userJson) {
     return errorResponse('未授权', 401);
   }
 

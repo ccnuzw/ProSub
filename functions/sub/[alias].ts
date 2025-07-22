@@ -1,5 +1,5 @@
-import { handleSubscribe } from '../_lib/subscribe';
-import { Env } from '../_lib/types';
+import { handleSubscribe } from '../core/subscribe';
+import { Env } from '@shared/types';
 
 export const onRequestGet = async ({ request, env, params }: { request: Request; env: Env; params: { alias: string } }) => {
   const alias = params.alias;

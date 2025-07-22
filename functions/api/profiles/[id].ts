@@ -1,5 +1,5 @@
-import { handleProfileGet, handleProfilePut, handleProfileDelete } from '../../_lib/profiles-id';
-import { Env } from '../../_lib/types';
+import { handleProfileGet, handleProfilePut, handleProfileDelete } from '../../core/profiles-id';
+import { Env } from '@shared/types';
 
 export const onRequestGet = async ({ request, env, params }: { request: Request; env: Env; params: { id: string } }) => {
   return handleProfileGet(request, env, params.id);

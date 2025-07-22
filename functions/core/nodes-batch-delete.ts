@@ -1,10 +1,17 @@
 import { jsonResponse, errorResponse } from './utils/response';
-
-
+import { parse } from 'cookie';
 
 export async function handleNodesBatchDelete(request: Request, env: Env): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
+
+  if (!token) {
+    return errorResponse('未授权', 401);
+  }
+
+  const userJson = await env.KV.get(`user:${token}`);
+
+  if (!userJson) {
     return errorResponse('未授权', 401);
   }
 
@@ -20,6 +27,11 @@ export async function handleNodesBatchDelete(request: Request, env: Env): Promis
     const deletePromises = ids.map(id => KV.delete(`node:${id}`));
     
     await Promise.all(deletePromises);
+
+    const nodeIndexJson = await KV.get('_index:nodes');
+    const nodeIds = nodeIndexJson ? JSON.parse(nodeIndexJson) : [];
+    const updatedNodeIds = nodeIds.filter((nodeId: string) => !ids.includes(nodeId));
+    await KV.put('_index:nodes', JSON.stringify(updatedNodeIds));
 
     return jsonResponse({ message: `${ids.length} 个节点已成功删除` });
 

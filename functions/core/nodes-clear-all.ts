@@ -1,10 +1,17 @@
 import { jsonResponse, errorResponse } from './utils/response';
-
-
+import { parse } from 'cookie';
 
 export async function handleNodesClearAll(request: Request, env: Env): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
+
+  if (!token) {
+    return errorResponse('未授权', 401);
+  }
+
+  const userJson = await env.KV.get(`user:${token}`);
+
+  if (!userJson) {
     return errorResponse('未授权', 401);
   }
 
@@ -18,6 +25,8 @@ export async function handleNodesClearAll(request: Request, env: Env): Promise<R
     }
 
     await Promise.all(deletePromises);
+
+    await KV.put('_index:nodes', JSON.stringify([]));
 
     return jsonResponse({ message: '所有节点已清空' });
 

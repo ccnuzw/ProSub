@@ -1,7 +1,5 @@
-import { authenticateUser } from './lib/auth';
 import { jsonResponse, errorResponse } from './utils/response';
-
-
+import { parse } from 'cookie';
 
 // 简单的 URL 验证函数
 const isValidUrl = (urlString: string) => {
@@ -14,8 +12,16 @@ const isValidUrl = (urlString: string) => {
 };
 
 export async function handleSubscriptionsBatchImport(request: Request, env: Env): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
+
+  if (!token) {
+    return errorResponse('未授权', 401);
+  }
+
+  const userJson = await env.KV.get(`user:${token}`);
+
+  if (!userJson) {
     return errorResponse('未授权', 401);
   }
 
@@ -25,7 +31,7 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
       return errorResponse('请求体中需要提供 urls 字符串', 400);
     }
 
-    const urlArray = urls.split(new RegExp('[\n]+')).filter(Boolean);
+    const urlArray = urls.split('\n').filter(Boolean);
     if (urlArray.length === 0) {
       return errorResponse('未提供任何链接', 400);
     }
@@ -43,6 +49,7 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
     let skippedCount = 0;
     let invalidCount = 0;
     const putPromises: Promise<any>[] = [];
+    const newIds: string[] = [];
 
     for (const url of urlArray) {
       if (!isValidUrl(url)) {
@@ -51,6 +58,7 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
       }
       if (!existingUrlSet.has(url)) {
         const id = crypto.randomUUID();
+        newIds.push(id);
         let name = `导入的订阅 ${importedCount + 1}`;
         try {
             const urlObject = new URL(url);
@@ -70,6 +78,10 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
 
     if (putPromises.length > 0) {
       await Promise.all(putPromises);
+      const subIndexJson = await KV.get('_index:subscriptions');
+      const subIds = subIndexJson ? JSON.parse(subIndexJson) : [];
+      const updatedSubIds = [...subIds, ...newIds];
+      await KV.put('_index:subscriptions', JSON.stringify(updatedSubIds));
     }
 
     return jsonResponse({ 

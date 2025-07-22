@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { XMarkIcon } from '@heroicons/vue/24/outline';
-import { parseNode } from '../lib/node-parser';
+import { parseNode } from '@shared/node-parser';
 import { Node } from '../types';
 
 const isOpen = ref(false);

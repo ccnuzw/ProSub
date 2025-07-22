@@ -85,6 +85,11 @@ export async function handleProfileDelete(request: Request, env: Env, id: string
     }
     await KV.delete(`profile:${id}`)
 
+    const profileIndexJson = await KV.get('_index:profiles');
+    const profileIds = profileIndexJson ? JSON.parse(profileIndexJson) : [];
+    const updatedProfileIds = profileIds.filter((profileId: string) => profileId !== id);
+    await KV.put('_index:profiles', JSON.stringify(updatedProfileIds));
+
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error(`Failed to delete profile ${id}:`, error)

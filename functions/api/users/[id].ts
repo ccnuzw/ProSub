@@ -1,5 +1,5 @@
-import { handleUserGet, handleUserPut, handleUserDelete } from '../../_lib/users-id';
-import { Env } from '../../_lib/types';
+import { handleUserGet, handleUserPut, handleUserDelete } from '../../core/users-id';
+import { Env } from '@shared/types';
 
 export const onRequestGet = async ({ request, env, params }: { request: Request; env: Env; params: { id: string } }) => {
   return handleUserGet(request, env, params.id);

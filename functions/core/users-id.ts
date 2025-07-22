@@ -1,5 +1,5 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { authenticateUser } from './lib/auth';
+import { parse } from 'cookie';
 
 import { hashPassword } from './utils/crypto';
 
@@ -8,8 +8,16 @@ interface Env {
 }
 
 export async function handleUserGet(request: Request, env: Env, id: string): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const token = cookies.auth_token;
+
+  if (!token) {
+    return errorResponse('未授权', 401);
+  }
+
+  const userJson = await env.KV.get(`user:${token}`);
+
+  if (!userJson) {
     return errorResponse('未授权', 401);
   }
 
@@ -81,6 +89,11 @@ export async function handleUserDelete(request: Request, env: Env, id: string): 
     try {
       const KV = env.KV;
       await KV.delete(`user:${id}`);
+
+      const userIndexJson = await KV.get('_index:users');
+      const userIds = userIndexJson ? JSON.parse(userIndexJson) : [];
+      const updatedUserIds = userIds.filter((userId: string) => userId !== id);
+      await KV.put('_index:users', JSON.stringify(updatedUserIds));
       
       return new Response(null, { status: 204 });
     } catch (error) {

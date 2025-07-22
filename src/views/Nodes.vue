@@ -77,7 +77,7 @@ import {
 } from '@ant-design/icons-vue'
 import type { TableProps } from 'ant-design-vue'
 import { Node, HealthStatus } from '../types'
-import { parseNodeLink as parseNode } from '../lib/node-parser'
+import { parseNodeLink as parseNode } from '@shared/node-parser'
 
 import { useRouter } from 'vue-router'
 

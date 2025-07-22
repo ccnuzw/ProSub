@@ -1,5 +1,5 @@
-import { handleNodeGet, handleNodePut, handleNodeDelete } from '../../_lib/nodes-id';
-import { Env } from '../../_lib/types';
+import { handleNodeGet, handleNodePut, handleNodeDelete } from '../../core/nodes-id';
+import { Env } from '@shared/types';
 
 export const onRequestGet = async ({ request, env, params }: { request: Request; env: Env; params: { id: string } }) => {
   return handleNodeGet(request, env, params.id);

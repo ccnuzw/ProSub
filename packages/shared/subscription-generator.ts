@@ -1,6 +1,7 @@
 // src/lib/subscription-generator.ts
 
-import { Profile, Node } from '../types';
+import { Profile, Node } from './types';
+import { NextRequest, NextResponse } from 'next/server';
 
 import * as yaml from 'js-yaml';
 
@@ -243,8 +244,8 @@ function generateSingBoxSubscription(nodes: Node[]): Response {
 
 
 // --- Main Handler ---
-export async function generateSubscriptionResponse(request: Request, profile: Profile, env: any): Promise<Response> {
-    const allNodes = await fetchAllNodes(profile, env);
+export async function generateSubscriptionResponse(request: NextRequest, profile: Profile): Promise<Response> {
+    const allNodes = await fetchAllNodes(profile);
     
     let targetClient = new URL(request.url).searchParams.get('target')?.toLowerCase();
     if (!targetClient) {
@@ -291,8 +292,9 @@ async function fetchNodesFromSubscription(url: string): Promise<string[]> {
     }
 }
 
-async function fetchAllNodes(profile: Profile, env: any): Promise<Node[]> {
-    const KV = env.KV as KVNamespace;
+async function fetchAllNodes(profile: Profile): Promise<Node[]> {
+    // @ts-ignore
+    const KV = process.env.KV as KVNamespace;
     const nodeIds = profile.nodes || [];
     const subIds = profile.subscriptions || [];
 

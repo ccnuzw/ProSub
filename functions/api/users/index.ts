@@ -1,5 +1,5 @@
-import { handleUsersGet, handleUsersPost } from '../../_lib/users';
-import { Env } from '../../_lib/types';
+import { handleUsersGet, handleUsersPost } from '../../core/users';
+import { Env } from '@shared/types';
 
 export const onRequestGet = async ({ request, env }: { request: Request; env: Env }) => {
   return handleUsersGet(request, env);
