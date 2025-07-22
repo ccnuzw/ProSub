@@ -1,35 +1,24 @@
-// src/lib/node-parser.ts
+import { Node } from './types'; // Corrected import path
 
-import { Node } from '@/types';
-// 使用原生的 atob 和 btoa 进行 Base64 编码和解码
+// Helper to decode base64, handling URL-safe variants
 function base64Decode(str: string): string {
     try {
-        const normalizedStr = str.replace(/_/g, '/').replace(/-/g, '+');
-        const binaryString = atob(decodeURIComponent(normalizedStr));
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+        // Replace URL-safe characters, add padding if missing
+        let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) {
+            base64 += '=';
         }
-        return new TextDecoder('utf-8').decode(bytes);
+        return atob(base64);
     } catch (e) {
         console.error('Failed to decode base64 string:', str, e);
         return '';
     }
 }
 
-function base64Encode(str: string): string {
-    try {
-        return btoa(str);
-    } catch (e) {
-        console.error('Failed to encode base64 string:', str, e);
-        return '';
-    }
-}
-
+// A more robust node link parser
 export function parseNodeLink(link: string): Partial<Node> | null {
     link = link.trim();
 
-    // 1. Vmess (JSON-based)
     if (link.startsWith('vmess://')) {
         try {
             const jsonStr = base64Decode(link.substring(8));
@@ -50,34 +39,34 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 },
             };
         } catch (e) {
-            console.error('Failed to parse VMess link:', e);
+            console.error('Failed to parse VMess link:', link, e);
             return null;
         }
     }
 
-    // 2. Shadowsocks (SS) - 兼容 IPv6
     if (link.startsWith('ss://')) {
         try {
-            const atIndex = link.indexOf('@');
+            // Handle links with remarks after #
             const hashIndex = link.lastIndexOf('#');
-            if (atIndex === -1 || hashIndex === -1) throw new Error("Invalid SS link format");
+            const name = hashIndex !== -1 ? decodeURIComponent(link.substring(hashIndex + 1)) : '';
+            const coreUrl = hashIndex !== -1 ? link.substring(0, hashIndex) : link;
+            
+            const atIndex = coreUrl.indexOf('@');
+            if (atIndex === -1) throw new Error("Invalid SS link format: missing '@'");
 
-            const name = decodeURIComponent(link.substring(hashIndex + 1));
-            const serverInfo = link.substring(atIndex + 1, hashIndex);
-            
-            const lastColonIndex = serverInfo.lastIndexOf(':');
-            if (lastColonIndex === -1) throw new Error("Port not found in SS link");
-            
-            let server = serverInfo.substring(0, lastColonIndex);
-            const port = parseInt(serverInfo.substring(lastColonIndex + 1), 10);
-            
-            if (server.startsWith('[') && server.endsWith(']')) {
-                server = server.substring(1, server.length - 1);
-            }
-
-            const credentialsBase64 = link.substring(5, atIndex);
+            const credentialsBase64 = coreUrl.substring(5, atIndex);
             const credentials = base64Decode(credentialsBase64);
             const [method, password] = credentials.split(':');
+
+            const serverInfo = coreUrl.substring(atIndex + 1);
+            const lastColonIndex = serverInfo.lastIndexOf(':');
+            if (lastColonIndex === -1) throw new Error("Port not found in SS link");
+
+            let server = serverInfo.substring(0, lastColonIndex);
+            if (server.startsWith('[') && server.endsWith(']')) {
+                server = server.substring(1, server.length - 1); // Handle IPv6
+            }
+            const port = parseInt(serverInfo.substring(lastColonIndex + 1), 10);
             
             return {
                 name: name || `${server}:${port}`,
@@ -88,57 +77,17 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 params: { method },
             };
         } catch (e) {
-            console.error('Failed to parse SS link:', e);
+            console.error('Failed to parse SS link:', link, e);
             return null;
         }
     }
-
-    // 3. ShadowsocksR (SSR) - 格式非常特殊
-    if (link.startsWith('ssr://')) {
-        try {
-            const decoded = base64Decode(link.substring(6));
-            const mainParts = decoded.split('/?');
-            const [server, port, protocol, method, obfs, passwordBase64] = mainParts[0].split(':');
-            
-            const password = base64Decode(passwordBase64);
-            const params: Record<string, any> = {};
-            if (mainParts[1]) {
-                const searchParams = new URLSearchParams(mainParts[1]);
-                searchParams.forEach((value, key) => {
-                    if (key === 'remarks') {
-                        params[key] = base64Decode(value);
-                    } else {
-                        params[key] = value;
-                    }
-                });
-            }
-
-            return {
-                name: params.remarks || `${server}:${port}`,
-                server,
-                port: parseInt(port, 10),
-                password,
-                type: 'ssr',
-                params: {
-                    protocol,
-                    method,
-                    obfs,
-                    obfsparam: params.obfsparam ? base64Decode(params.obfsparam) : undefined,
-                    protoparam: params.protoparam ? base64Decode(params.protoparam) : undefined,
-                },
-            };
-        } catch (e) {
-            console.error('Failed to parse SSR link:', e);
-            return null;
-        }
-    }
-
-    // 4. VLESS, Trojan, SOCKS5, TUIC, Hysteria, Hysteria2 (Standard URL-based)
+    
+    // Generic URL-based parser for vless, trojan, hysteria2 etc.
     try {
         const url = new URL(link);
         const protocol = url.protocol.replace(':', '');
-        
-        const supportedUrlProtocols = ['vless', 'trojan', 'socks5', 'tuic', 'hysteria', 'hysteria2'];
+        const supportedUrlProtocols = ['vless', 'trojan', 'socks', 'hysteria', 'hysteria2'];
+
         if (supportedUrlProtocols.includes(protocol)) {
             const params: Record<string, any> = {};
             url.searchParams.forEach((value, key) => {
@@ -146,7 +95,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             });
 
             let nodeType = protocol as Node['type'];
-            if(protocol === 'vless' && params.security === 'reality') {
+            if (protocol === 'vless' && params.security === 'reality') {
                 nodeType = 'vless-reality';
             }
 
@@ -154,15 +103,15 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname,
                 port: parseInt(url.port, 10),
-                password: url.username ? decodeURIComponent(url.username) : undefined,
+                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : undefined,
                 type: nodeType,
                 params: params,
             };
         }
-    } catch(e) {
-        // 如果 new URL() 失败，说明不是一个有效的 URL 格式，可以忽略错误继续
+    } catch (e) {
+        // Not a standard URL, which is fine, we just ignore the error and let it fall through.
     }
 
-    console.warn(`Unsupported or malformed link: ${link}`);
+    console.warn(`Unsupported or malformed link, skipping: ${link}`);
     return null;
 }

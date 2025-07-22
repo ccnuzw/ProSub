@@ -75,7 +75,7 @@ const onFinish = async (values: LoginFormValues) => {
       // router.go(0); // 强制刷新以更新布局中的用户信息，Vue Router 中不需要 router.refresh()
     } else {
       const errorData = (await res.json()) as { message: string }
-      message.error(errorData.message || '登录失败')
+      message.error(errorData.error || '登录失败')
     }
   } catch (error) {
     console.error('Login failed:', error)
