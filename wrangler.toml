@@ -1,13 +1,5 @@
-name = "prosub-worker-dev"
-main = "functions/index.ts"
+name = "prosub"
 compatibility_date = "2025-07-22"
 
-[dev]
-# 可以在这里配置本地开发服务器的端口，如果与 Vite 冲突可以修改
-# port = 8787
-
-[[kv_namespaces]]
-# 这个绑定是为了本地开发时模拟 KV 存储
-binding = "KV"
-id = "9b01882c3f7e4bf18df5e2f12a608cc8"
-preview_id = "9b01882c3f7e4bf18df5e2f12a608cc8"
+[pages_dev]
+kv_namespaces = [{ binding = "KV", id = "9b01882c3f7e4bf18df5e2f12a608cc8" }]
