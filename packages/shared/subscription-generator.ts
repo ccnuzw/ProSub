@@ -2,6 +2,7 @@ import { Profile, Node, Env } from './types';
 import * as yaml from 'js-yaml';
 import { getClashProxyGroups } from './clash-proxy-groups';
 import { clashRules, ruleProviders } from './clash-rules';
+import { parseClashYaml } from './clash-parser';
 import { getSurgeProxyGroups } from './surge-proxy-groups';
 import { surgeRules } from './surge-rules';
 import { getQuantumultXPolicies } from './quantumult-x-policies';
@@ -205,39 +206,102 @@ function generateSingBoxSubscription(nodes: Node[]): Response {
 
 
 // --- Data Fetching Logic ---
-async function fetchNodesFromSubscription(url: string): Promise<string[]> {
+async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
-        if (!response.ok) return [];
+        if (!response.ok) {
+            console.error(`从 ${url} 获取订阅失败，状态码: ${response.status}`);
+            return [];
+        }
+
         const content = await response.text();
-        const decodedContent = atob(content);
-        return decodedContent.split(/[\r\n]+/).filter(Boolean);
+        let nodes: Node[] = [];
+
+        // 优先尝试将其作为 Clash YAML 格式解析
+        nodes = parseClashYaml(content);
+
+        // 如果 YAML 解析后没有节点，则回退到原有的 Base64/纯文本 链接列表方式
+        if (nodes.length === 0) {
+            let decodedContent = '';
+            try {
+                // 尝试进行 Base64 解码
+                decodedContent = atob(content.replace(/_/g, '/').replace(/-/g, '+'));
+            } catch (e) {
+                // 如果解码失败，说明内容不是 Base64，直接作为纯文本处理
+                decodedContent = content;
+            }
+
+            const lines = decodedContent.split(/[\r\n]+/).filter(Boolean);
+            nodes = lines.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
+        }
+
+        return nodes;
     } catch (error) {
-        console.error(`Failed to fetch subscription from ${url}:`, error);
+        console.error(`从 ${url} 获取订阅时发生错误:`, error);
         return [];
     }
 }
 
-async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
-    const KV = env.KV; 
-    const nodeIds = profile.nodes || [];
-    const subIds = profile.subscriptions || [];
+function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): Node[] {
+  if (!rules || rules.length === 0) {
+    return nodes;
+  }
 
+  let filteredNodes = nodes;
+
+  const includeRules = rules.filter(r => r.type === 'include');
+  const excludeRules = rules.filter(r => r.type === 'exclude');
+
+  // 应用包含规则 (如果存在)
+  if (includeRules.length > 0) {
+    filteredNodes = filteredNodes.filter(node => {
+      return includeRules.some(rule => {
+        const regex = new RegExp(rule.pattern, 'i');
+        return regex.test(node[rule.field]);
+      });
+    });
+  }
+
+  // 应用排除规则
+  if (excludeRules.length > 0) {
+    filteredNodes = filteredNodes.filter(node => {
+      return !excludeRules.some(rule => {
+        const regex = new RegExp(rule.pattern, 'i');
+        return regex.test(node[rule.field]);
+      });
+    });
+  }
+
+  return filteredNodes;
+}
+
+async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
+    const KV = env.KV;
+    const nodeIds = profile.nodes || [];
+    const profileSubs = profile.subscriptions || []; // 现在是 ProfileSubscription[]
+
+    // 获取手动添加的节点 (逻辑不变)
     const allNodesJson = await KV.get('ALL_NODES');
     const allManualNodes: Record<string, Node> = allNodesJson ? JSON.parse(allNodesJson) : {};
-    const manualNodes = nodeIds
-        .map(id => allManualNodes[id])
-        .filter(Boolean); 
+    const manualNodes = nodeIds.map(id => allManualNodes[id]).filter(Boolean);
 
-    const subsJson = await Promise.all(subIds.map(id => KV.get(`subscription:${id}`)));
-    const subscriptions = subsJson.filter(Boolean).map(json => JSON.parse(json as string));
+    // 获取订阅中的节点 (逻辑需要修改)
+    const allSubsJson = await KV.get('ALL_SUBSCRIPTIONS');
+    const allSubscriptions: Record<string, Subscription> = allSubsJson ? JSON.parse(allSubsJson) : {};
 
-    const subLinksPromises = subscriptions.map(sub => fetchNodesFromSubscription(sub.url));
-    const subLinksArrays = await Promise.all(subLinksPromises);
-    const allSubLinks = subLinksArrays.flat();
-    const parsedSubNodes = allSubLinks.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
+    let allSubNodes: Node[] = [];
 
-    return [...manualNodes, ...parsedSubNodes];
+    for (const profileSub of profileSubs) {
+        const subscription = allSubscriptions[profileSub.id];
+        if (subscription) {
+            let nodesFromSub = await fetchNodesFromSubscription(subscription.url);
+            // 在这里应用规则！
+            let processedNodes = applySubscriptionRules(nodesFromSub, profileSub.rules);
+            allSubNodes = allSubNodes.concat(processedNodes);
+        }
+    }
+
+    return [...manualNodes, ...allSubNodes];
 }
 
 
