@@ -52,7 +52,10 @@ function convertNodeToUri(node: Node): string {
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
-                return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
+                const serverAddress = node.server.includes(':') 
+                    ? `[${node.server}]` 
+                    : node.server;
+                return `ss://${encodedCreds}@${serverAddress}:${node.port}#${encodedName}`;
             
             // *** FIX STARTS HERE: Added SSR Generator ***
             case 'ssr':
@@ -102,30 +105,91 @@ function generateShadowrocketSubscription(nodes: Node[]): Response {
 
 function generateClashSubscription(nodes: Node[]): Response {
     const proxies = nodes.map(node => {
+        // 创建一个基础的 proxy 对象
         const proxy: any = {
             name: node.name,
             type: node.type,
             server: node.server,
             port: node.port,
-            password: (node.type !== 'vmess' && node.type !== 'vless' && node.type !== 'vless-reality') ? node.password : undefined,
-            uuid: (node.type === 'vmess' || node.type === 'vless' || node.type === 'vless-reality') ? node.password : undefined,
-            cipher: node.type === 'ss' ? node.params?.method : undefined,
-            tls: node.params?.tls === 'tls' || node.params?.tls === true ? true : undefined,
-            network: node.params?.net,
-            'ws-opts': node.params?.net === 'ws' ? { path: node.params?.path, headers: { Host: node.params?.host } } : undefined,
         };
-        // *** FIX IS HERE ***
-        if (node.type === 'vless-reality') {
-            proxy.flow = node.params?.flow || 'xtls-rprx-vision';
-            proxy.servername = node.params?.sni;
-            proxy['reality-opts'] = { // Changed to bracket notation
-                'public-key': node.params?.pbk,
-                'short-id': node.params?.sid || '',
-            };
+
+        // --- 开始修改和新增逻辑 ---
+
+        // 根据不同类型处理特定参数
+        switch (node.type) {
+            case 'ss':
+                proxy.password = node.password;
+                proxy.cipher = node.params?.method;
+                break;
+
+            case 'ssr': // 新增：处理 SSR 节点 (兼容 Clash Meta/Verge)
+                proxy.type = 'ssr'; // 明确类型为 ssr
+                proxy.password = node.password;
+                proxy.cipher = node.params?.method;
+                proxy.protocol = node.params?.protocol;
+                proxy['protocol-param'] = node.params?.protoparam;
+                proxy.obfs = node.params?.obfs;
+                proxy['obfs-param'] = node.params?.obfsparam;
+                break;
+
+            case 'vmess':
+                proxy.uuid = node.password;
+                proxy.alterId = node.params?.aid ?? 0;
+                proxy.cipher = node.params?.cipher ?? 'auto';
+                proxy.tls = !!node.params?.tls;
+                proxy.network = node.params?.net;
+                if (proxy.network === 'ws') {
+                    proxy['ws-opts'] = {
+                        path: node.params?.path,
+                        headers: { Host: node.params?.host },
+                    };
+                }
+                break;
+            
+            case 'vless':
+            case 'vless-reality': // 合并处理 VLESS 和 REALITY
+                proxy.type = 'vless'; // Clash 中类型都是 vless
+                proxy.uuid = node.password;
+                proxy.tls = !!node.params?.tls;
+                proxy.network = node.params?.net;
+                proxy.flow = node.params?.flow;
+
+                if (proxy.network === 'ws') {
+                    proxy['ws-opts'] = {
+                        path: node.params?.path,
+                        headers: { Host: node.params?.host },
+                    };
+                }
+
+                // 新增：为 vless-reality 类型添加 reality-opts
+                if (node.type === 'vless-reality') {
+                    proxy.servername = node.params?.sni; // REALITY 需要 servername
+                    proxy['reality-opts'] = {
+                        'public-key': node.params?.pbk,
+                        'short-id': node.params?.sid || '',
+                    };
+                }
+                break;
+
+            case 'trojan':
+                proxy.password = node.password;
+                proxy.sni = node.params?.sni;
+                proxy['skip-cert-verify'] = node.params?.allowInsecure === 'true';
+                break;
         }
+        
+        // 移除所有值为 undefined 的键，保持配置文件干净
         Object.keys(proxy).forEach(key => proxy[key] === undefined && delete proxy[key]);
+        if (proxy['ws-opts']) {
+          Object.keys(proxy['ws-opts']).forEach(key => proxy['ws-opts'][key] === undefined && delete proxy['ws-opts'][key]);
+        }
+
         return proxy;
-    });
+
+    // 过滤掉无法处理的节点类型
+    }).filter(p => p.type && ['ss', 'ssr', 'vmess', 'vless', 'trojan'].includes(p.type)); 
+    
+    // --- 结束修改 ---
 
     const proxyGroups = getClashProxyGroups(nodes);
     const clashConfig = {
@@ -135,7 +199,7 @@ function generateClashSubscription(nodes: Node[]): Response {
         'mode': 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        'proxies': proxies,
+        'proxies': proxies, // 使用处理过的 proxies
         'proxy-groups': proxyGroups,
         'rule-providers': ruleProviders,
         'rules': clashRules,
