@@ -52,12 +52,19 @@ export interface ProfileSubscription {
   rules?: SubscriptionRule[]; // 应用于该订阅的规则列表
 }
 
+export interface RuleSetConfig {
+  type: 'built-in' | 'remote';
+  id?: string; // 'default', 'lite'
+  url?: string; // 远程配置 URL
+}
+
 export interface Profile {
   id: string;
   name: string;
   alias?: string;
   nodes: string[]; // 手动选择的节点ID列表
   subscriptions: ProfileSubscription[]; // 修改：现在是包含规则的对象列表
+  ruleSets?: Record<string, RuleSetConfig>; // 修改: e.g. { clash: { type: 'remote', url: '...' } }
   updatedAt: string;
 }
 
@@ -74,3 +81,5 @@ export interface User {
   profiles: string[]; // List of profile IDs associated with this user
   defaultPasswordChanged?: boolean; // New field to track if default password has been changed
 }
+
+

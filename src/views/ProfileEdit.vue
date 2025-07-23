@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { Profile } from '../types'
+import { Profile } from '@shared/types'
 import { message, Spin, Card, Button } from 'ant-design-vue'
 import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import ProfileForm from '../components/ProfileForm.vue'

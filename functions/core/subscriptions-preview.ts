@@ -45,6 +45,12 @@ export async function handleSubscriptionsPreview(request: Request, env: Env, id:
     return errorResponse('未授权', 401);
   }
 
+  const userId = await env.KV.get(`user_session:${token}`);
+
+  if (!userId) {
+    return errorResponse('未授权', 401);
+  }
+
   const KV = env.KV;
 
   try {

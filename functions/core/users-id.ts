@@ -1,31 +1,20 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { hashPassword, comparePassword } from './utils/crypto';
+import { Env, User } from '@shared/types';
 import { parse } from 'cookie';
-import { hashPassword } from './utils/crypto';
-import { User, Env, UserSession } from '@shared/types';
 
-async function authenticateUser(request: Request, env: Env): Promise<UserSession | null> {
-  const cookies = parse(request.headers.get('Cookie') || '');
-  const token = cookies.auth_token;
+const ADMIN_USER_KEY = 'ADMIN_USER';
 
-  if (!token) {
-    return null;
-  }
-
-  const userSessionJson = await env.KV.get(`user_session:${token}`);
-  if (!userSessionJson) {
-    return null;
-  }
-
-  const userSession = JSON.parse(userSessionJson) as UserSession;
-  if (userSession.expires < Date.now()) {
-    await env.KV.delete(`user_session:${token}`);
-    return null;
-  }
-
-  return userSession;
+async function getAdminUser(env: Env): Promise<User | null> {
+  const userJson = await env.KV.get(ADMIN_USER_KEY);
+  return userJson ? JSON.parse(userJson) : null;
 }
 
-export async function handleUserGet(request: Request, env: Env, id: string): Promise<Response> {
+async function putAdminUser(env: Env, user: User): Promise<void> {
+  await env.KV.put(ADMIN_USER_KEY, JSON.stringify(user));
+}
+
+export async function handleUserChangePassword(request: Request, env: Env): Promise<Response> {
   const cookies = parse(request.headers.get('Cookie') || '');
   const token = cookies.auth_token;
 
@@ -33,89 +22,43 @@ export async function handleUserGet(request: Request, env: Env, id: string): Pro
     return errorResponse('未授权', 401);
   }
 
-  const userJson = await env.KV.get(`user:${token}`);
+  const userId = await env.KV.get(`user_session:${token}`);
 
-  if (!userJson) {
+  if (!userId) {
+    return errorResponse('未授权', 401);
+  }
+
+  let adminUser = await getAdminUser(env);
+
+  if (!adminUser || adminUser.id !== userId) {
     return errorResponse('未授权', 401);
   }
 
   try {
-    const KV = env.KV;
-    const userJson = await KV.get(`user:${id}`);
-    if (!userJson) {
-      return errorResponse('User not found', 404);
+    const { oldPassword, newPassword } = (await request.json()) as { oldPassword?: string; newPassword?: string };
+
+    if (!newPassword || newPassword.length < 6) {
+      return errorResponse('新密码至少需要6个字符', 400);
     }
-    const user = JSON.parse(userJson);
-    delete user.password;
-    return jsonResponse(user);
-  } catch (error) {
-    console.error(`Failed to fetch user ${id}:`, error);
-    return errorResponse('Failed to fetch user');
-  }
-}
 
-export async function handleUserPut(request: Request, env: Env, id: string): Promise<Response> {
-  const authenticatedUser = await authenticateUser(request, env);
-  if (!authenticatedUser) {
-    return errorResponse('未授权', 401);
-  }
-
-  try {
-    const { name, password, profiles } = (await request.json()) as { name?: string; password?: string; profiles?: string[] };
-    const KV = env.KV;
-    const userJson = await KV.get(`user:${id}`);
-    if (!userJson) {
-      return errorResponse('User not found', 404);
-    }
-    const existingUser: User = JSON.parse(userJson);
-
-    let hashedPassword = existingUser.password;
-    let defaultPasswordChanged = existingUser.defaultPasswordChanged;
-
-    if (password) {
-      hashedPassword = await hashPassword(password);
-      if (existingUser.name === 'admin' && existingUser.defaultPasswordChanged === false) {
-        defaultPasswordChanged = true;
+    // If it's the first login (default password not changed), oldPassword is not required
+    if (adminUser.defaultPasswordChanged) {
+      if (!oldPassword) {
+        return errorResponse('旧密码不能为空', 400);
+      }
+      const isOldPasswordValid = await comparePassword(oldPassword, adminUser.password || '');
+      if (!isOldPasswordValid) {
+        return errorResponse('旧密码不正确', 401);
       }
     }
 
-    const updatedUser: User = { 
-      ...existingUser,
-      id: id, 
-      name: name || existingUser.name, 
-      password: hashedPassword, 
-      profiles: profiles || existingUser.profiles, 
-      defaultPasswordChanged: defaultPasswordChanged
-    };
-    
-    await KV.put(`user:${id}`, JSON.stringify(updatedUser));
-    
-    const { password: _, ...userWithoutPassword } = updatedUser;
-    return jsonResponse(userWithoutPassword);
+    adminUser.password = await hashPassword(newPassword);
+    adminUser.defaultPasswordChanged = true;
+    await putAdminUser(env, adminUser);
+
+    return jsonResponse({ message: '密码修改成功' });
   } catch (error) {
-    console.error(`Failed to update user ${id}:`, error);
-    return errorResponse('Failed to update user');
+    console.error('修改密码失败:', error);
+    return errorResponse('修改密码失败');
   }
-}
-
-export async function handleUserDelete(request: Request, env: Env, id: string): Promise<Response> {
-    const authenticatedUser = await authenticateUser(request, env);
-    if (!authenticatedUser) {
-      return new Response(JSON.stringify({ message: '未授权' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-    }
-  
-    try {
-      const KV = env.KV;
-      await KV.delete(`user:${id}`);
-
-      const userIndexJson = await KV.get('_index:users');
-      const userIds = userIndexJson ? JSON.parse(userIndexJson) : [];
-      const updatedUserIds = userIds.filter((userId: string) => userId !== id);
-      await KV.put('_index:users', JSON.stringify(updatedUserIds));
-      
-      return new Response(null, { status: 204 });
-    } catch (error) {
-      console.error(`Failed to delete user ${id}:`, error);
-      return errorResponse('Failed to delete user');
-    }
 }

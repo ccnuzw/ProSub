@@ -1,14 +1,26 @@
-import { jsonResponse } from '../utils/response';
-import { serialize } from 'cookie';
+import { jsonResponse, errorResponse } from '../utils/response';
+import { serialize, parse } from 'cookie';
+import { Env } from '@shared/types';
 
 export async function handleLogout(request: Request, env: Env): Promise<Response> {
-  const cookie = serialize('auth_token', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // 在Cloudflare环境中，建议直接设为true或根据域名判断
-    sameSite: 'strict',
-    maxAge: -1, // 立即过期
-    path: '/',
-  });
+  try {
+    const cookies = parse(request.headers.get('Cookie') || '');
+    const token = cookies.auth_token;
 
-  return jsonResponse({ message: '登出成功' }, 200, { 'Set-Cookie': cookie });
+    if (token) {
+      await env.KV.delete(`user_session:${token}`);
+    }
+
+    const cookie = serialize('auth_token', '', {
+      httpOnly: true,
+      secure: env.ENVIRONMENT === 'production',
+      maxAge: -1, // Expire the cookie immediately
+      path: '/',
+    });
+
+    return jsonResponse({ message: '登出成功' }, 200, { 'Set-Cookie': cookie });
+  } catch (error) {
+    console.error('登出失败:', error);
+    return errorResponse('登出失败');
+  }
 }

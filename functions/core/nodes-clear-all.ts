@@ -21,7 +21,7 @@ export async function handleNodesClearAll(request: Request, env: Env): Promise<R
     return errorResponse('未授权', 401);
   }
 
-  const userJson = await env.KV.get(`user:${token}`);
+  const userJson = await env.KV.get(`user_session:${token}`);
 
   if (!userJson) {
     return errorResponse('未授权', 401);

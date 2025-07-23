@@ -1,16 +1,7 @@
-import { Profile, Node, Env } from './types';
+import { Profile, Node, Env, RuleSetConfig } from './types';
 import * as yaml from 'js-yaml';
-import { getClashProxyGroups } from './clash-proxy-groups';
-import { clashRules, ruleProviders } from './clash-rules';
+import * as ruleSets from './rulesets';
 import { parseClashYaml } from './clash-parser';
-import { getSurgeProxyGroups } from './surge-proxy-groups';
-import { surgeRules } from './surge-rules';
-import { getQuantumultXPolicies } from './quantumult-x-policies';
-import { quantumultXRules } from './quantumult-x-rules';
-import { getLoonProxyGroups } from './loon-proxy-groups';
-import { loonRules } from './loon-rules';
-import { getSingBoxOutbounds } from './sing-box-outbounds';
-import { getSingBoxRoute } from './sing-box-rules';
 import { parseNodeLink } from './node-parser';
 
 // Helper to encode base64 in a URL-safe way
@@ -52,13 +43,16 @@ function convertNodeToUri(node: Node): string {
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
-                return `ss://${encodedCreds}@${node.server}:${node.port}#${encodedName}`;
-            
+                const serverAddress = node.server.includes(':')
+                    ? `[${node.server}]`
+                    : node.server;
+                return `ss://${encodedCreds}@${serverAddress}:${node.port}#${encodedName}`;
+
             // *** FIX STARTS HERE: Added SSR Generator ***
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
                 const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
-                
+
                 const params = new URLSearchParams();
                 params.set('remarks', base64Encode(node.name));
                 if (node.params?.obfsparam) params.set('obfsparam', base64Encode(node.params.obfsparam));
@@ -92,42 +86,115 @@ function generateShadowrocketSubscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
     if (nodeLinks.length === 0) return new Response('', { status: 200 });
     const content = nodeLinks.join('\n');
-    return new Response(content, { 
-        headers: { 
+    return new Response(content, {
+        headers: {
             'Content-Type': 'text/plain; charset=utf-8',
             'Content-Disposition': `attachment; filename="prosub_shadowrocket.txt"`
-        } 
+        }
     });
 }
 
-function generateClashSubscription(nodes: Node[]): Response {
+async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
+        // 创建一个基础的 proxy 对象
         const proxy: any = {
             name: node.name,
             type: node.type,
             server: node.server,
             port: node.port,
-            password: (node.type !== 'vmess' && node.type !== 'vless' && node.type !== 'vless-reality') ? node.password : undefined,
-            uuid: (node.type === 'vmess' || node.type === 'vless' || node.type === 'vless-reality') ? node.password : undefined,
-            cipher: node.type === 'ss' ? node.params?.method : undefined,
-            tls: node.params?.tls === 'tls' || node.params?.tls === true ? true : undefined,
-            network: node.params?.net,
-            'ws-opts': node.params?.net === 'ws' ? { path: node.params?.path, headers: { Host: node.params?.host } } : undefined,
         };
-        // *** FIX IS HERE ***
-        if (node.type === 'vless-reality') {
-            proxy.flow = node.params?.flow || 'xtls-rprx-vision';
-            proxy.servername = node.params?.sni;
-            proxy['reality-opts'] = { // Changed to bracket notation
-                'public-key': node.params?.pbk,
-                'short-id': node.params?.sid || '',
-            };
-        }
-        Object.keys(proxy).forEach(key => proxy[key] === undefined && delete proxy[key]);
-        return proxy;
-    });
 
-    const proxyGroups = getClashProxyGroups(nodes);
+        // --- 开始修改和新增逻辑 ---
+
+        // 根据不同类型处理特定参数
+        switch (node.type) {
+            case 'ss':
+                proxy.password = node.password;
+                proxy.cipher = node.params?.method;
+                break;
+
+            case 'ssr': // 新增：处理 SSR 节点 (兼容 Clash Meta/Verge)
+                proxy.type = 'ssr'; // 明确类型为 ssr
+                proxy.password = node.password;
+                proxy.cipher = node.params?.method;
+                proxy.protocol = node.params?.protocol;
+                proxy['protocol-param'] = node.params?.protoparam;
+                proxy.obfs = node.params?.obfs;
+                proxy['obfs-param'] = node.params?.obfsparam;
+                break;
+
+            case 'vmess':
+                proxy.uuid = node.password;
+                proxy.alterId = node.params?.aid ?? 0;
+                proxy.cipher = node.params?.cipher ?? 'auto';
+                proxy.tls = !!node.params?.tls;
+                proxy.network = node.params?.net;
+                if (proxy.network === 'ws') {
+                    proxy['ws-opts'] = {
+                        path: node.params?.path,
+                        headers: { Host: node.params?.host },
+                    };
+                }
+                break;
+
+            case 'vless':
+            case 'vless-reality': // 合并处理 VLESS 和 REALITY
+                proxy.type = 'vless'; // Clash 中类型都是 vless
+                proxy.uuid = node.password;
+                proxy.tls = !!node.params?.tls;
+                proxy.network = node.params?.net;
+                proxy.flow = node.params?.flow;
+
+                if (proxy.network === 'ws') {
+                    proxy['ws-opts'] = {
+                        path: node.params?.path,
+                        headers: { Host: node.params?.host },
+                    };
+                }
+
+                // 新增：为 vless-reality 类型添加 reality-opts
+                if (node.type === 'vless-reality') {
+                    proxy.servername = node.params?.sni; // REALITY 需要 servername
+                    proxy['reality-opts'] = {
+                        'public-key': node.params?.pbk,
+                        'short-id': node.params?.sid || '',
+                    };
+                }
+                break;
+
+            case 'trojan':
+                proxy.password = node.password;
+                proxy.sni = node.params?.sni;
+                proxy['skip-cert-verify'] = node.params?.allowInsecure === 'true';
+                break;
+        }
+
+        // 移除所有值为 undefined 的键，保持配置文件干净
+        Object.keys(proxy).forEach(key => proxy[key] === undefined && delete proxy[key]);
+        if (proxy['ws-opts']) {
+          Object.keys(proxy['ws-opts']).forEach(key => proxy['ws-opts'][key] === undefined && delete proxy['ws-opts'][key]);
+        }
+
+        return proxy;
+
+    // 过滤掉无法处理的节点类型
+    }).filter(p => p.type && ['ss', 'ssr', 'vmess', 'vless', 'trojan'].includes(p.type));
+
+    let configRules;
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        if (fetchedRules) {
+            configRules = fetchedRules;
+        } else {
+            configRules = ruleSets.getClashDefaultRules(nodes);
+            console.warn(`远程 Clash 规则获取失败，已回退至内置规则。`);
+        }
+    } else if (ruleConfig?.id === 'lite') {
+        configRules = ruleSets.getClashLiteRules(nodes);
+    } else {
+        configRules = ruleSets.getClashDefaultRules(nodes);
+    }
+
     const clashConfig = {
         'port': 7890,
         'socks-port': 7891,
@@ -135,22 +202,19 @@ function generateClashSubscription(nodes: Node[]): Response {
         'mode': 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        'proxies': proxies,
-        'proxy-groups': proxyGroups,
-        'rule-providers': ruleProviders,
-        'rules': clashRules,
+        'proxies': proxies, // 使用处理过的 proxies
+        ...configRules,
     };
     const yamlString = yaml.dump(clashConfig, { sortKeys: false });
-    return new Response(yamlString, { 
-        headers: { 
+    return new Response(yamlString, {
+        headers: {
             'Content-Type': 'text/yaml; charset=utf-8',
             'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
-        } 
+        }
     });
 }
 
-// ... other generators ...
-function generateSurgeSubscription(nodes: Node[]): Response {
+async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxyLines = nodes.map(node => {
         let line = `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`;
         if(node.type === 'ss') line += `, method=${node.params?.method}`;
@@ -158,10 +222,26 @@ function generateSurgeSubscription(nodes: Node[]): Response {
         if(node.params?.net === 'ws') line += `, ws=true, ws-path=${node.params.path}, ws-headers=Host:${node.params.host}`;
         return line;
     });
-    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${getSurgeProxyGroups(nodes).join('\n')}\n\n[Rule]\n${surgeRules.join('\n')}`;
+
+    let remoteRules = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        if (fetchedRules) {
+            remoteRules = fetchedRules;
+        } else {
+            remoteRules = ruleSets.getSurgeDefaultRules(nodes);
+            console.warn(`远程 Surge 规则获取失败，已回退至内置规则。`);
+        }
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getSurgeLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getSurgeDefaultRules(nodes);
+    }
+
+    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${remoteRules['proxy-groups'].join('\n')}\n\n[Rule]\n${remoteRules['rules'].join('\n')}`;
     return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
-function generateQuantumultXSubscription(nodes: Node[]): Response {
+async function generateQuantumultXSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const serverLines = nodes.map(node => {
         let line = '';
         const remark = `remark=${node.name}`;
@@ -180,17 +260,110 @@ function generateQuantumultXSubscription(nodes: Node[]): Response {
         }
         return line ? `${line}, ${tag}` : '';
     }).filter(Boolean);
-    const content = `[server_local]\n${serverLines.join('\n')}\n\n[filter_remote]\n${quantumultXRules.join('\n')}\n\n[policy]\n${getQuantumultXPolicies(nodes).join('\n')}`;
+
+    let remoteRules = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        if (fetchedRules) {
+            remoteRules = fetchedRules;
+        } else {
+            remoteRules = ruleSets.getQuantumultXDefaultRules(nodes);
+            console.warn(`远程 Quantumult X 规则获取失败，已回退至内置规则。`);
+        }
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getQuantumultXLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getQuantumultXDefaultRules(nodes);
+    }
+
+    const content = `[server_local]\n${serverLines.join('\n')}\n\n[filter_remote]\n${remoteRules['filter_remote'].join('\n')}\n\n[policy]\n${remoteRules['policy'].join('\n')}`;
     return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
-function generateLoonSubscription(nodes: Node[]): Response {
+async function generateLoonSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxyLines = nodes.map(node => `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`);
-    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${getLoonProxyGroups(nodes).join('\n')}\n\n[Rule]\n${loonRules.join('\n')}`;
+
+    let remoteRules = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        if (fetchedRules) {
+            remoteRules = fetchedRules;
+        } else {
+            remoteRules = ruleSets.getLoonDefaultRules(nodes);
+            console.warn(`远程 Loon 规则获取失败，已回退至内置规则。`);
+        }
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getLoonLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getLoonDefaultRules(nodes);
+    }
+
+    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${remoteRules['proxy-groups'].join('\n')}\n\n[Rule]\n${remoteRules['rules'].join('\n')}`;
     return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
-function generateSingBoxSubscription(nodes: Node[]): Response {
-    const outbounds = getSingBoxOutbounds(nodes);
-    const route = getSingBoxRoute();
+async function generateSingBoxSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
+    const nodeOutbounds = nodes.map(node => {
+        const baseOutbound: any = {
+            tag: node.name,
+            type: node.type,
+            server: node.server,
+            server_port: node.port,
+        };
+
+        switch (node.type) {
+            case 'ss':
+                baseOutbound.method = node.params?.method;
+                baseOutbound.password = node.password;
+                break;
+            case 'vmess':
+                baseOutbound.uuid = node.password;
+                baseOutbound.security = 'auto';
+                baseOutbound.alter_id = 0;
+                break;
+            case 'vless':
+                baseOutbound.uuid = node.password;
+                baseOutbound.flow = node.params?.flow || '';
+                break;
+            case 'trojan':
+                baseOutbound.password = node.password;
+                break;
+        }
+
+        if (node.params?.net === 'ws') {
+            baseOutbound.transport = {
+                type: 'ws',
+                path: node.params.path || '/',
+                headers: {
+                    Host: node.params.host || node.server,
+                },
+            };
+        }
+
+        if (node.params?.tls === 'tls' || node.params?.tls === true) {
+            baseOutbound.tls = {
+                enabled: true,
+                server_name: node.params.host || node.server,
+                insecure: node.params.allowInsecure === 'true',
+            };
+        }
+
+        return baseOutbound;
+    });
+
+    let remoteRules = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        if (fetchedRules) {
+            remoteRules = fetchedRules;
+        } else {
+            remoteRules = ruleSets.getSingBoxDefaultRules(nodes);
+            console.warn(`远程 Sing-Box 规则获取失败，已回退至内置规则。`);
+        }
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getSingBoxLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getSingBoxDefaultRules(nodes);
+    }
+
     const singboxConfig = {
         log: { level: 'info' },
         dns: { servers: [{ address: 'https://dns.google/dns-query' }] },
@@ -198,8 +371,8 @@ function generateSingBoxSubscription(nodes: Node[]): Response {
             { type: 'tun', tag: 'tun-in', interface_name: 'tun0' },
             { type: 'mixed', tag: 'mixed-in', listen: '0.0.0.0', listen_port: 7890 }
         ],
-        outbounds,
-        route,
+        outbounds: [...nodeOutbounds, ...remoteRules.outbounds],
+        route: remoteRules.route,
     };
     return new Response(JSON.stringify(singboxConfig, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 }
@@ -308,33 +481,33 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
 // --- Main Handler ---
 export async function generateSubscriptionResponse(request: Request, profile: Profile, env: Env): Promise<Response> {
     const allNodes = await fetchAllNodes(profile, env);
-    
-    let targetClient = new URL(request.url).searchParams.get('target')?.toLowerCase();
+
+    const url = new URL(request.url);
+    const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
+    let targetClient = url.searchParams.get('target')?.toLowerCase();
+
     if (!targetClient) {
-        const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
         if (userAgent.includes('clash')) targetClient = 'clash';
         else if (userAgent.includes('surge')) targetClient = 'surge';
-        else if (userAgent.includes('quantumult x')) targetClient = 'quantumultx';
-        else if (userAgent.includes('loon')) targetClient = 'loon';
-        else if (userAgent.includes('sing-box')) targetClient = 'sing-box';
-        else if (userAgent.includes('shadowrocket')) targetClient = 'shadowrocket';
-        else targetClient = 'base64';
+        // ... 其他 User-Agent 判断
+        else targetClient = 'base64'; // 默认
     }
+
+    const ruleConfig = profile.ruleSets ? profile.ruleSets[targetClient] : undefined;
 
     switch (targetClient) {
         case 'clash':
         case 'mihomo':
-            return generateClashSubscription(allNodes);
+            return await generateClashSubscription(allNodes, ruleConfig);
         case 'surge':
-            return generateSurgeSubscription(allNodes);
+            return await generateSurgeSubscription(allNodes, ruleConfig);
         case 'quantumultx':
-            return generateQuantumultXSubscription(allNodes);
+            return await generateQuantumultXSubscription(allNodes, ruleConfig);
         case 'loon':
-            return generateLoonSubscription(allNodes);
+            return await generateLoonSubscription(allNodes, ruleConfig);
         case 'sing-box':
-            return generateSingBoxSubscription(allNodes);
-        case 'shadowrocket':
-            return generateShadowrocketSubscription(allNodes);
+            return await generateSingBoxSubscription(allNodes, ruleConfig);
+        // ... 未来可以为 Surge 等添加类似的 await generateSurgeSubscription(...)
         default:
             return generateBase64Subscription(allNodes);
     }

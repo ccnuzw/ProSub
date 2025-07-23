@@ -22,9 +22,9 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
     return errorResponse('未授权', 401);
   }
 
-  const userJson = await env.KV.get(`user:${token}`);
+  const userId = await env.KV.get(`user_session:${token}`);
 
-  if (!userJson) {
+  if (!userId) {
     return errorResponse('未授权', 401);
   }
 

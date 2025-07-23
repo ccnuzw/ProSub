@@ -81,7 +81,7 @@ import {
   WifiOutlined,
 } from '@ant-design/icons-vue';
 import type { TableProps } from 'ant-design-vue';
-import { Profile } from '../types';
+import type { Profile } from '@shared/types';
 import QrcodeVue from 'qrcode.vue';
 
 const profiles = ref<Profile[]>([]);
@@ -106,9 +106,61 @@ onMounted(() => {
 });
 
 const getSubscriptionUrl = (record: Profile) => {
-  return record.alias
+  const baseUrl = record.alias
     ? `${origin.value}/sub/${record.alias}`
     : `${origin.value}/api/subscribe/${record.id}`;
+
+  const clashRuleSet = record.ruleSets?.clash;
+  const surgeRuleSet = record.ruleSets?.surge;
+
+  if (clashRuleSet) {
+    const url = new URL(baseUrl);
+    url.searchParams.set('target', 'clash');
+
+    if (clashRuleSet.type === 'built-in' && clashRuleSet.id !== 'default') {
+      url.searchParams.set('ruleset', clashRuleSet.id!);
+    }
+
+    return url.toString();
+  } else if (surgeRuleSet) {
+    const url = new URL(baseUrl);
+    url.searchParams.set('target', 'surge');
+
+    if (surgeRuleSet.type === 'built-in' && surgeRuleSet.id !== 'default') {
+      url.searchParams.set('ruleset', surgeRuleSet.id!);
+    }
+
+    return url.toString();
+  } else if (record.ruleSets?.quantumultx) {
+    const url = new URL(baseUrl);
+    url.searchParams.set('target', 'quantumultx');
+
+    if (record.ruleSets.quantumultx.type === 'built-in' && record.ruleSets.quantumultx.id !== 'default') {
+      url.searchParams.set('ruleset', record.ruleSets.quantumultx.id!);
+    }
+
+    return url.toString();
+  } else if (record.ruleSets?.loon) {
+    const url = new URL(baseUrl);
+    url.searchParams.set('target', 'loon');
+
+    if (record.ruleSets.loon.type === 'built-in' && record.ruleSets.loon.id !== 'default') {
+      url.searchParams.set('ruleset', record.ruleSets.loon.id!);
+    }
+
+    return url.toString();
+  } else if (record.ruleSets?.singbox) {
+    const url = new URL(baseUrl);
+    url.searchParams.set('target', 'singbox');
+
+    if (record.ruleSets.singbox.type === 'built-in' && record.ruleSets.singbox.id !== 'default') {
+      url.searchParams.set('ruleset', record.ruleSets.singbox.id!);
+    }
+
+    return url.toString();
+  }
+
+  return baseUrl;
 };
 
 const fetchProfiles = async () => {
