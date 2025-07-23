@@ -242,30 +242,67 @@ async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
     }
 }
 
+function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): Node[] {
+  if (!rules || rules.length === 0) {
+    return nodes;
+  }
+
+  let filteredNodes = nodes;
+
+  const includeRules = rules.filter(r => r.type === 'include');
+  const excludeRules = rules.filter(r => r.type === 'exclude');
+
+  // 应用包含规则 (如果存在)
+  if (includeRules.length > 0) {
+    filteredNodes = filteredNodes.filter(node => {
+      return includeRules.some(rule => {
+        const regex = new RegExp(rule.pattern, 'i');
+        return regex.test(node[rule.field]);
+      });
+    });
+  }
+
+  // 应用排除规则
+  if (excludeRules.length > 0) {
+    filteredNodes = filteredNodes.filter(node => {
+      return !excludeRules.some(rule => {
+        const regex = new RegExp(rule.pattern, 'i');
+        return regex.test(node[rule.field]);
+      });
+    });
+  }
+
+  return filteredNodes;
+}
+
 async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const KV = env.KV;
     const nodeIds = profile.nodes || [];
-    const subIds = profile.subscriptions || [];
+    const profileSubs = profile.subscriptions || []; // 现在是 ProfileSubscription[]
 
-    // 获取手动添加的节点
+    // 获取手动添加的节点 (逻辑不变)
     const allNodesJson = await KV.get('ALL_NODES');
     const allManualNodes: Record<string, Node> = allNodesJson ? JSON.parse(allNodesJson) : {};
-    const manualNodes = nodeIds
-        .map(id => allManualNodes[id])
-        .filter(Boolean);
+    const manualNodes = nodeIds.map(id => allManualNodes[id]).filter(Boolean);
 
-    // 获取订阅中的节点
+    // 获取订阅中的节点 (逻辑需要修改)
     const allSubsJson = await KV.get('ALL_SUBSCRIPTIONS');
     const allSubscriptions: Record<string, Subscription> = allSubsJson ? JSON.parse(allSubsJson) : {};
-    const subscriptions = subIds.map(id => allSubscriptions[id]).filter(Boolean);
 
-    const subNodesPromises = subscriptions.map(sub => fetchNodesFromSubscription(sub.url));
-    const subNodesArrays = await Promise.all(subNodesPromises);
-    const parsedSubNodes = subNodesArrays.flat();
+    let allSubNodes: Node[] = [];
 
-    return [...manualNodes, ...parsedSubNodes];
+    for (const profileSub of profileSubs) {
+        const subscription = allSubscriptions[profileSub.id];
+        if (subscription) {
+            let nodesFromSub = await fetchNodesFromSubscription(subscription.url);
+            // 在这里应用规则！
+            let processedNodes = applySubscriptionRules(nodesFromSub, profileSub.rules);
+            allSubNodes = allSubNodes.concat(processedNodes);
+        }
+    }
+
+    return [...manualNodes, ...allSubNodes];
 }
-
 
 
 // --- Main Handler ---

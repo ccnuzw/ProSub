@@ -1,6 +1,8 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { generateSubscriptionResponse } from '@shared/subscription-generator';
-import { Env, Profile } from '@shared/types'; // Import types
+import { Env, Profile } from '@shared/types';
+
+const CACHE_TTL_SECONDS = 600; // 缓存 10 分钟
 
 async function getProfile(KV: KVNamespace, profileId: string): Promise<Profile | null> {
   const profileJson = await KV.get(`profile:${profileId}`);
@@ -20,16 +22,33 @@ async function recordTraffic(KV: KVNamespace, profileId: string, alias?: string)
 export async function handleSubscribe(request: Request, env: Env, profile_id: string, alias?: string): Promise<Response> {
   try {
     const KV = env.KV;
+    const cacheKey = `sub_cache:${profile_id}:${request.headers.get('User-Agent') || 'default'}`;
+
+    // 1. 尝试从缓存中读取
+    const cachedResponse = await KV.get(cacheKey, 'text');
+    if (cachedResponse) {
+      // 如果找到缓存，直接返回
+      return new Response(cachedResponse, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
+
+    // 2. 如果没有缓存，执行生成逻辑
     const profile = await getProfile(KV, profile_id);
-    if (!profile) return errorResponse('Profile not found', 404);
+    if (!profile) return new Response('Profile not found', { status: 404 });
 
     await recordTraffic(KV, profile_id, alias);
 
-    // Ensure the 'env' object is passed to the generator
-    return await generateSubscriptionResponse(request, profile, env);
+    const response = await generateSubscriptionResponse(request, profile, env);
+    const responseBody = await response.text();
+
+    // 3. 将生成的内容写入缓存，并设置 TTL
+    // 使用 ctx.waitUntil 确保即使在返回响应后，写入操作也能完成
+    // 注意: Cloudflare Pages Functions 可能没有 ctx，可以直接 await
+    await KV.put(cacheKey, responseBody, { expirationTtl: CACHE_TTL_SECONDS });
+
+    return new Response(responseBody, { headers: response.headers });
 
   } catch (error) {
-    console.error(`Failed to generate subscription for profile ${profile_id}:`, error);
-    return errorResponse('Failed to generate subscription');
+    console.error(`为配置文件 ${profile_id} 生成订阅失败:`, error);
+    return new Response('Failed to generate subscription', { status: 500 });
   }
 }

@@ -41,12 +41,23 @@ export interface Subscription {
   error?: string; // 新增：更新失败时的错误信息
 }
 
+export interface SubscriptionRule {
+  type: 'include' | 'exclude'; // 规则类型：包含或排除
+  field: 'name'; // 作用字段，目前只支持名称，未来可扩展
+  pattern: string; // 匹配的正则表达式或关键字
+}
+
+export interface ProfileSubscription {
+  id: string; // 订阅的 ID
+  rules?: SubscriptionRule[]; // 应用于该订阅的规则列表
+}
+
 export interface Profile {
   id: string;
   name: string;
-  alias?: string; // <-- Added this line
-  nodes: string[];
-  subscriptions: string[];
+  alias?: string;
+  nodes: string[]; // 手动选择的节点ID列表
+  subscriptions: ProfileSubscription[]; // 修改：现在是包含规则的对象列表
   updatedAt: string;
 }
 
