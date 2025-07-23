@@ -128,11 +128,15 @@ const checkNodeHealth = async (node: Node) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ server: node.server, port: node.port, nodeId: node.id })
     })
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Unknown error');
+    }
     const data = (await res.json()) as HealthStatus
     nodeStatus.value = { ...nodeStatus.value, [node.id]: data }
   } catch (error) {
     console.error('Failed to check node health:', error)
-    nodeStatus.value = { ...nodeStatus.value, [node.id]: { status: 'offline', timestamp: new Date().toISOString() } }
+    nodeStatus.value = { ...nodeStatus.value, [node.id]: { status: 'offline', timestamp: new Date().toISOString(), error: error instanceof Error ? error.message : String(error) } }
   }
 }
 
