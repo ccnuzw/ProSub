@@ -2,6 +2,7 @@
   <a-card
     title="添加新订阅"
     :extra="h(RouterLink, { to: '/subscriptions' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
+    class="w-full"
   >
     <SubscriptionForm />
   </a-card>

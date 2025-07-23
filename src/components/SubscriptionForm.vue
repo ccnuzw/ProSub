@@ -8,6 +8,7 @@
       name="name"
       label="名称"
       :rules="[{ required: true, message: '请输入订阅名称' }]"
+      class="mb-4"
     >
       <a-input v-model:value="formState.name" />
     </a-form-item>
@@ -15,6 +16,7 @@
       name="url"
       label="订阅链接 (URL)"
       :rules="[{ required: true, message: '请输入订阅链接' }, { type: 'url', message: '请输入有效的 URL' }]"
+      class="mb-4"
     >
       <a-input v-model:value="formState.url" type="url" />
     </a-form-item>

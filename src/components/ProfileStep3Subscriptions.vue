@@ -1,10 +1,10 @@
 <template>
-  <a-typography-title :level="5" style="margin-top: 24px">选择订阅</a-typography-title>
-  <div style="display: flex; align-items: center; gap: 16px">
-    <div style="flex: 1; min-width: 0">
+  <a-typography-title :level="5" class="mt-6">选择订阅</a-typography-title>
+  <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+    <div class="flex-1 w-full sm:w-auto min-w-0">
       <a-card :title="`可选订阅 (${availableSubs.length})`" size="small">
         <template #extra>
-          <a-input-search placeholder="搜索..." v-model:value="subSearchTerm" style="width: 200px" />
+          <a-input-search placeholder="搜索..." v-model:value="subSearchTerm" class="w-full sm:w-48" />
         </template>
         <a-list style="height: 200px; overflow: auto" :data-source="availableSubs">
           <template #renderItem="{ item: sub }">
@@ -13,7 +13,7 @@
                 <a-list-item-meta>
                    <template #avatar><WifiOutlined /></template>
                   <template #title>
-                    <a-typography-text style="display: inline-block; max-width: 250px" :ellipsis="{ tooltip: sub.name }">{{ sub.name }}</a-typography-text>
+                    <a-typography-text class="inline-block max-w-full sm:max-w-xs" :ellipsis="{ tooltip: sub.name }">{{ sub.name }}</a-typography-text>
                   </template>
                 </a-list-item-meta>
               </a-checkbox>
@@ -26,14 +26,14 @@
       </a-card>
     </div>
     
-    <a-space direction="vertical">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-2 my-4 sm:my-0">
       <a-button :icon="h(ArrowRightOutlined)" @click="moveCheckedSubs" :disabled="checkedSubIds.filter((id) => !selectedSubIds.map(s => s.id).includes(id)).length === 0" />
       <a-button :icon="h(ArrowLeftOutlined)" @click="removeCheckedSubs" :disabled="checkedSubIds.filter((id) => selectedSubIds.map(s => s.id).includes(id)).length === 0" />
-    </a-space>
+    </div>
     
-    <div style="flex: 1; min-width: 0">
+    <div class="flex-1 w-full sm:w-auto min-w-0">
       <a-card :title="`已选订阅 (${selectedSubs.length})`" size="small">
-        <div style="height: 32px; margin-bottom: 8px;"></div>
+        <div class="h-8 mb-2"></div>
         <a-list style="height: 200px; overflow: auto" :data-source="selectedSubs">
           <template #renderItem="{ item: sub }">
             <a-list-item>
@@ -41,7 +41,7 @@
                 <a-list-item-meta>
                    <template #avatar><WifiOutlined /></template>
                   <template #title>
-                    <a-typography-text style="display: inline-block; max-width: 250px" :ellipsis="{ tooltip: sub.name }">{{ sub.name }}</a-typography-text>
+                    <a-typography-text class="inline-block max-w-full sm:max-w-xs" :ellipsis="{ tooltip: sub.name }">{{ sub.name }}</a-typography-text>
                   </template>
                 </a-list-item-meta>
               </a-checkbox>

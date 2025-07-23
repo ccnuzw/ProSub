@@ -1,12 +1,12 @@
 <template>
-  <a-steps :current="currentStep">
+  <a-steps :current="currentStep" class="text-xs sm:text-base">
     <a-step title="基本信息" />
     <a-step title="节点选择" />
     <a-step title="订阅选择" />
     <a-step title="客户端规则" />
   </a-steps>
 
-  <a-form :model="formState" layout="vertical" @finish="onFinish" style="margin-top: 24px;">
+  <a-form :model="formState" layout="vertical" @finish="onFinish" class="mt-4 sm:mt-6">
     <div v-show="currentStep === 0">
       <ProfileStep1Basic :form-state="formState" />
     </div>
@@ -32,8 +32,8 @@
       <ProfileStep4ClientRules :form-state="formState" />
     </div>
 
-    <div style="margin-top: 24px;">
-      <a-button v-if="currentStep > 0" style="margin-right: 8px" @click="prevStep">
+    <div class="mt-4 sm:mt-6">
+      <a-button v-if="currentStep > 0" class="mr-2" @click="prevStep">
         上一步
       </a-button>
       <a-button v-if="currentStep < 3" type="primary" @click="nextStep">

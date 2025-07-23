@@ -1,21 +1,14 @@
 import { Node } from './types';
 
 function base64Decode(str: string): string {
-    try {
-        let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-        while (base64.length % 4) {
-            base64 += '=';
-        }
-        const binaryString = atob(base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return new TextDecoder('utf-8').decode(bytes);
-    } catch (e) {
-        console.error('Base64 解码失败:', str, e);
-        return '';
-    }
+  // First, decode URI component to handle any URL-encoded characters
+  const uriDecodedStr = decodeURIComponent(str);
+  // Replace non-standard Base64 characters
+  const base64 = uriDecodedStr.replace(/_/g, '/').replace(/-/g, '+');
+  // Pad with '=' if necessary
+  const padded = base64.length % 4 === 0 ? base64 : base64 + '='.repeat(4 - (base64.length % 4));
+  const binaryString = atob(padded);
+  return decodeURIComponent(escape(binaryString));
 }
 
 export function parseNodeLink(link: string): Partial<Node> | null {

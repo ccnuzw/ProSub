@@ -2,16 +2,17 @@
   <a-card
     title="编辑节点"
     :extra="h(RouterLink, { to: '/nodes' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
+    class="w-full"
   >
     <a-spin :spinning="loading">
-      <a-row :gutter="[16, 16]">
-        <a-col :span="12">
+      <a-row :gutter="[16, 16]" class="flex flex-col sm:flex-row">
+        <a-col :xs="24" :sm="12">
           <NodeForm v-if="node" :node="node" />
           <p v-else-if="!loading">节点数据加载失败或不存在。</p>
         </a-col>
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-card title="原始节点信息" v-if="node">
-            <pre style="background-color: #f0f0f0; padding: 10px; border-radius: 4px;">{{ JSON.stringify(node, null, 2) }}</pre>
+            <pre class="bg-gray-100 p-4 rounded-md overflow-auto text-sm">{{ JSON.stringify(node, null, 2) }}</pre>
           </a-card>
         </a-col>
       </a-row>

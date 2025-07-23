@@ -1,15 +1,17 @@
 <template>
   <a-card>
-    <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center">
-      <a-typography-title :level="3" style="margin: 0">配置文件管理</a-typography-title>
-      <router-link to="/profiles/new">
-        <a-button type="primary">
+    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+      <a-typography-title :level="3" class="mb-2 sm:mb-0">配置文件管理</a-typography-title>
+      <router-link to="/profiles/new" class="w-full sm:w-auto">
+        <a-button type="primary" class="w-full sm:w-auto">
           <template #icon><PlusOutlined /></template>
           添加配置文件
         </a-button>
       </router-link>
     </div>
-    <a-table :columns="tableColumns" :data-source="profiles" row-key="id" :loading="loading">
+
+    <!-- Desktop Table View -->
+    <a-table v-if="!isMobile" :columns="tableColumns" :data-source="profiles" row-key="id" :loading="loading" :scroll="{ x: 'max-content' }">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'nodes'">
           <a-space align="center">
@@ -36,7 +38,7 @@
           </a-space>
         </template>
         <template v-else-if="column.key === 'action'">
-          <a-space size="middle">
+          <a-space :size="isMobile ? 'small' : 'middle'" :direction="isMobile ? 'vertical' : 'horizontal'">
             <router-link :to="`/profiles/${record.id}`">
               <a-button>
                 <template #icon><EditOutlined /></template>
@@ -59,8 +61,27 @@
       </template>
     </a-table>
 
+    <!-- Mobile Card View -->
+    <div v-else class="grid grid-cols-1 gap-4">
+      <a-card v-for="profile in profiles" :key="profile.id" :title="profile.name" size="small">
+        <p><strong>节点数:</strong> {{ profile.nodes?.length || 0 }}</p>
+        <p><strong>订阅数:</strong> {{ profile.subscriptions?.length || 0 }}</p>
+        <p v-if="profile.alias"><strong>别名:</strong> /sub/{{ profile.alias }}</p>
+        <template #actions>
+          <a-button type="text" :icon="h(CopyOutlined)" @click="handleCopy(getSubscriptionUrl(profile))">复制链接</a-button>
+          <a-button type="text" :icon="h(QrcodeOutlined)" @click="showQrCode(getSubscriptionUrl(profile))">二维码</a-button>
+          <router-link :to="`/profiles/${profile.id}`">
+            <a-button type="text" :icon="h(EditOutlined)">编辑</a-button>
+          </router-link>
+          <a-popconfirm title="确定要删除这个配置文件吗？" @confirm="handleDelete(profile.id)" ok-text="确定" cancel-text="取消">
+            <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
+          </a-popconfirm>
+        </template>
+      </a-card>
+    </div>
+
     <a-modal title="订阅二维码" v-model:open="isQrCodeModalVisible" :footer="null" centered>
-      <div style="text-align: center; margin-top: 20px">
+      <div class="flex justify-center items-center mt-5">
         <qrcode-vue :value="qrCodeUrl" :size="256" level="H" />
       </div>
     </a-modal>
@@ -68,9 +89,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, h, onBeforeUnmount } from 'vue';
 import { RouterLink } from 'vue-router';
-import { message, Modal, Space, Tooltip, Button, Popconfirm } from 'ant-design-vue';
+import { message, Modal, Space, Tooltip, Button, Popconfirm, Card } from 'ant-design-vue';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -90,12 +111,32 @@ const origin = ref('');
 const isQrCodeModalVisible = ref(false);
 const qrCodeUrl = ref('');
 
+const isMobile = ref(window.innerWidth < 640); // Tailwind's sm breakpoint is 640px
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 640;
+};
+
 const tableColumns: TableProps<Profile>['columns'] = [
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '节点数', dataIndex: 'nodes', key: 'nodes' },
   { title: '订阅数', dataIndex: 'subscriptions', key: 'subscriptions' },
   { title: '订阅链接', key: 'subscribe_url' },
-  { title: '操作', key: 'action' },
+  {
+    title: '操作',
+    key: 'action',
+    fixed: 'right',
+    width: 120,
+    customRender: ({ record }) => (
+      h(Space, { size: isMobile.value ? 'small' : 'middle', direction: isMobile.value ? 'vertical' : 'horizontal' }, () => [
+        h(RouterLink, { to: `/profiles/${record.id}` }, () => h(Button, { icon: h(EditOutlined) }, () => '编辑')),
+        h(Popconfirm,
+          { title: '确定要删除这个配置文件吗？', onConfirm: () => handleDelete(record.id), okText: '确定', cancelText: '取消' },
+          () => h(Button, { danger: true, icon: h(DeleteOutlined) }, () => '删除')
+        ),
+      ])
+    ),
+  },
 ];
 
 onMounted(() => {
@@ -103,6 +144,11 @@ onMounted(() => {
     origin.value = window.location.origin;
   }
   fetchProfiles();
+  window.addEventListener('resize', handleResize);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
 });
 
 const getSubscriptionUrl = (record: Profile) => {
