@@ -1,7 +1,7 @@
 <template>
-  <a-row type="flex" justify="center" align="middle" style="min-height: 100vh;">
-    <a-col :span="8">
-      <a-card title="登录">
+  <a-row type="flex" justify="center" align="middle" class="min-h-screen px-4">
+    <a-col :xs="24" :sm="16" :md="12" :lg="8">
+      <a-card title="登录" class="w-full">
         <a-form
           :model="formState"
           @finish="onFinish"
