@@ -147,7 +147,8 @@ const toggleSubSelection = (id: string) => {
 };
 
 const openRuleModal = (subscription: ProfileSubscription) => {
-  editingSubscription.value = subscription;
+  // 创建一个深拷贝，确保编辑的是独立副本
+  editingSubscription.value = JSON.parse(JSON.stringify(subscription));
   isRuleModalVisible.value = true;
 };
 
@@ -159,8 +160,9 @@ const saveSubscriptionRules = (newRules: SubscriptionRule[]) => {
   if (editingSubscription.value) {
     const index = props.selectedSubIds.findIndex(s => s.id === editingSubscription.value!.id);
     if (index !== -1) {
-      const updatedSelectedSubIds = [...props.selectedSubIds];
-      updatedSelectedSubIds[index] = { ...updatedSelectedSubIds[index], rules: newRules };
+      const updatedSelectedSubIds = props.selectedSubIds.map(sub => 
+        sub.id === editingSubscription.value!.id ? { ...sub, rules: newRules } : sub
+      );
       emit('update:selectedSubIds', updatedSelectedSubIds);
     }
   }

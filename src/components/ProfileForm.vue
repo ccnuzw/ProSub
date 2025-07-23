@@ -143,7 +143,7 @@ onMounted(async () => {
         const template = JSON.parse(route.query.template as string);
         Object.assign(formState, template);
         formState.subscriptions = (template.subscriptions || []).map(sub =>
-            typeof sub === 'string' ? { id: sub, rules: [] } : sub
+            reactive(typeof sub === 'string' ? { id: sub, rules: [] } : sub)
         );
         if (!formState.ruleSets) { // 兼容旧数据
             formState.ruleSets = { 

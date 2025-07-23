@@ -8,8 +8,28 @@
             <a-statistic
               title="节点总数"
               :value="nodeCount"
-              :prefix="$slots.clusterOutlined ? $slots.clusterOutlined() : ''"
+              :prefix="h(ClusterOutlined)"
               :value-style="{ color: '#3f8600' }"
+            />
+          </a-card>
+        </a-col>
+        <a-col :xs="24" :sm="12" :md="6">
+          <a-card :bordered="false">
+            <a-statistic
+              title="在线节点"
+              :value="onlineNodeCount"
+              :prefix="h(CheckCircleOutlined)"
+              :value-style="{ color: '#52c41a' }"
+            />
+          </a-card>
+        </a-col>
+        <a-col :xs="24" :sm="12" :md="6">
+          <a-card :bordered="false">
+            <a-statistic
+              title="离线节点"
+              :value="offlineNodeCount"
+              :prefix="h(CloseCircleOutlined)"
+              :value-style="{ color: '#eb2f96' }"
             />
           </a-card>
         </a-col>
@@ -18,8 +38,8 @@
             <a-statistic
               title="订阅总数"
               :value="subscriptionCount"
-              :prefix="$slots.fileTextOutlined ? $slots.fileTextOutlined() : ''"
-              :value-style="{ color: '#cf1322' }"
+              :prefix="h(WifiOutlined)"
+              :value-style="{ color: '#1890ff' }"
             />
           </a-card>
         </a-col>
@@ -28,8 +48,8 @@
             <a-statistic
               title="配置文件总数"
               :value="profileCount"
-              :prefix="$slots.usergroupAddOutlined ? $slots.usergroupAddOutlined() : ''"
-              :value-style="{ color: '#0050b3' }"
+              :prefix="h(FileTextOutlined)"
+              :value-style="{ color: '#faad14' }"
             />
           </a-card>
         </a-col>
@@ -38,8 +58,8 @@
             <a-statistic
               title="累计订阅请求"
               :value="totalTrafficCount"
-              :prefix="$slots.lineChartOutlined ? $slots.lineChartOutlined() : ''"
-              :value-style="{ color: '#eb2f96' }"
+              :prefix="h(LineChartOutlined)"
+              :value-style="{ color: '#722ed1' }"
             />
           </a-card>
         </a-col>
@@ -47,7 +67,6 @@
         <a-col :xs="24" :lg="12">
           <a-card
             :bordered="false"
-            :title="$slots.barChartOutlined ? $slots.barChartOutlined() : ''"
           >
             <template #title>
               <a-space>
@@ -90,7 +109,6 @@
         <a-col :xs="24" :lg="12">
           <a-card
             :bordered="false"
-            :title="$slots.tableOutlined ? $slots.tableOutlined() : ''"
           >
             <template #title>
               <a-space>
@@ -112,23 +130,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, h } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   ClusterOutlined,
   FileTextOutlined,
-  UsergroupAddOutlined,
+  WifiOutlined,
   LineChartOutlined,
   BarChartOutlined,
   TableOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons-vue'
 import type { TableProps } from 'ant-design-vue'
-import { Node, Subscription, Profile, ProfileTrafficData } from '../types'
+import { Node, Subscription, Profile, ProfileTrafficData, HealthStatus } from '@shared/types'
 
 const nodeCount = ref<number>(0)
 const subscriptionCount = ref<number>(0)
 const profileCount = ref<number>(0)
 const totalTrafficCount = ref<number>(0)
+const onlineNodeCount = ref<number>(0)
+const offlineNodeCount = ref<number>(0)
 const profileTraffic = ref<Record<string, number>>({})
 const trafficTrend = ref<{ date: string; count: number }[]>([])
 const loading = ref(true)
@@ -139,39 +161,41 @@ const selectedProfileForTrend = ref<string | undefined>(undefined)
 const fetchData = async () => {
   loading.value = true
   try {
-    const [nodesRes, subsRes, profilesRes] = await Promise.all([
+    const [nodesRes, subsRes, profilesRes, nodeStatusesRes] = await Promise.all([
       fetch('/api/nodes'),
       fetch('/api/subscriptions'),
       fetch('/api/profiles'),
+      fetch('/api/node-statuses'),
     ])
 
-    if (!nodesRes.ok || !subsRes.ok || !profilesRes.ok) {
+    if (!nodesRes.ok || !subsRes.ok || !profilesRes.ok || !nodeStatusesRes.ok) {
       throw new Error('Failed to fetch initial dashboard data')
     }
 
     const nodes: Node[] = await nodesRes.json()
     const subscriptions: Subscription[] = await subsRes.json()
     const profilesData: Profile[] = await profilesRes.json()
+    const nodeStatuses: Record<string, HealthStatus> = await nodeStatusesRes.json()
 
     nodeCount.value = nodes.length
     subscriptionCount.value = subscriptions.length
     profileCount.value = profilesData.length
     profiles.value = profilesData
 
+    onlineNodeCount.value = nodes.filter(node => nodeStatuses[node.id]?.status === 'online').length;
+    offlineNodeCount.value = nodes.filter(node => nodeStatuses[node.id]?.status === 'offline').length;
+
     const trendUrl = `/api/traffic?granularity=${trafficGranularity.value}${selectedProfileForTrend.value ? `&profileId=${selectedProfileForTrend.value}` : ''}`
     const trendRes = await fetch(trendUrl)
     if (!trendRes.ok) throw new Error('Failed to fetch traffic trend data')
-    const trafficTrendData: { date: string; count: number }[] = await trendRes.json()
+    const trafficTrendData: { date: string; count: number; profileId?: string }[] = await trendRes.json()
     trafficTrend.value = trafficTrendData
 
     let recentTrafficCount = 0
     const trafficByProfile: Record<string, number> = {}
 
-    const allTrafficRes = await fetch('/api/traffic?granularity=day')
-    if (!allTrafficRes.ok) throw new Error('Failed to fetch all traffic data')
-    const allTrafficRecords: { date: string; count: number; profileId: string }[] = await allTrafficRes.json()
-
-    allTrafficRecords.forEach((record) => {
+    // Aggregate total traffic and traffic by profile from the trend data
+    trafficTrendData.forEach((record) => {
       recentTrafficCount += record.count
       if (record.profileId) {
         trafficByProfile[record.profileId] = (trafficByProfile[record.profileId] || 0) + record.count
