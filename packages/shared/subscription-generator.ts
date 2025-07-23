@@ -398,7 +398,7 @@ async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
             let decodedContent = '';
             try {
                 // 尝试进行 Base64 解码
-                decodedContent = atob(content.replace(/_/g, '/').replace(/-/g, '+'));
+                    decodedContent = atob(decodeURIComponent(content.replace(/_/g, '/').replace(/-/g, '+')));
             } catch (e) {
                 // 如果解码失败，说明内容不是 Base64，直接作为纯文本处理
                 decodedContent = content;

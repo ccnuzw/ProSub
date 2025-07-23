@@ -2,6 +2,7 @@
   <a-card
     title="编辑订阅"
     :extra="h(RouterLink, { to: '/subscriptions' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
+    class="w-full"
   >
     <a-spin :spinning="loading">
       <SubscriptionForm v-if="subscription" :subscription="subscription" />

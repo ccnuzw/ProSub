@@ -1,13 +1,13 @@
 <template>
-  <a-typography-title :level="5" style="margin-top: 24px">选择节点</a-typography-title>
-  <div style="display: flex; align-items: center; gap: 16px">
-    <div style="flex: 1; min-width: 0">
+  <a-typography-title :level="5" class="mt-6">选择节点</a-typography-title>
+  <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+    <div class="flex-1 w-full sm:w-auto min-w-0">
       <a-card :title="`可选节点 (${availableNodes.length})`" size="small">
         <template #extra>
           <a-input-search
             placeholder="搜索..."
             v-model:value="nodeSearchTerm"
-            style="width: 200px"
+            class="w-full sm:w-48"
           />
         </template>
         <a-list style="height: 400px; overflow: auto" :data-source="availableNodes">
@@ -21,7 +21,7 @@
                   <template #avatar><ClusterOutlined /></template>
                   <template #title>
                     <a-typography-text
-                      style="display: inline-block; max-width: 250px"
+                      class="inline-block max-w-full sm:max-w-xs"
                       :ellipsis="{ tooltip: node.name }"
                       >{{ node.name }}</a-typography-text
                     >
@@ -53,7 +53,7 @@
         </a-list>
       </a-card>
     </div>
-    <a-space direction="vertical">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-2 my-4 sm:my-0">
       <a-button
         :icon="h(ArrowRightOutlined)"
         @click="moveCheckedNodes"
@@ -64,10 +64,10 @@
         @click="removeCheckedNodes"
         :disabled="checkedNodeIds.filter((id) => selectedNodeIds.includes(id)).length === 0"
       />
-    </a-space>
-    <div style="flex: 1; min-width: 0">
+    </div>
+    <div class="flex-1 w-full sm:w-auto min-w-0">
       <a-card :title="`已选节点 (${selectedNodes.length})`" size="small">
-        <div style="height: 32px; margin-bottom: 8px"></div>
+        <div class="h-8 mb-2"></div>
         <a-list style="height: 400px; overflow: auto" :data-source="selectedNodes">
           <template #renderItem="{ item: node }">
             <a-list-item>
@@ -79,7 +79,7 @@
                   <template #avatar><ClusterOutlined /></template>
                   <template #title>
                     <a-typography-text
-                      style="display: inline-block; max-width: 250px"
+                      class="inline-block max-w-full sm:max-w-xs"
                       :ellipsis="{ tooltip: node.name }"
                       >{{ node.name }}</a-typography-text
                     >

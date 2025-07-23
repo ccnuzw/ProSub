@@ -2,6 +2,7 @@
   <a-card
     title="添加新节点"
     :extra="h(RouterLink, { to: '/nodes' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
+    class="w-full"
   >
     <NodeForm />
   </a-card>

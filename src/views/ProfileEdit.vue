@@ -2,6 +2,7 @@
   <a-card
     title="编辑配置文件"
     :extra="h(RouterLink, { to: '/profiles' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
+    class="w-full"
   >
     <a-spin :spinning="loading">
       <ProfileForm v-if="profile" :profile="profile" />

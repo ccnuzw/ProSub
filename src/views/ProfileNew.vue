@@ -2,6 +2,7 @@
   <a-card
     title="添加新配置文件"
     :extra="h(RouterLink, { to: '/profiles' }, () => h(Button, { icon: h(ArrowLeftOutlined) }, () => '返回列表'))"
+    class="w-full"
   >
     <ProfileForm />
   </a-card>

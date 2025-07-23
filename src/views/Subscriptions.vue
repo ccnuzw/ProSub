@@ -1,39 +1,96 @@
 <template>
   <a-card>
-    <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center">
-      <a-typography-title :level="3" style="margin: 0">订阅管理</a-typography-title>
-      <a-space>
-        <a-button type="default" :icon="$slots.syncOutlined ? $slots.syncOutlined() : ''" @click="handleUpdateAll" :loading="updatingAll">全部更新</a-button>
-        <a-button type="default" :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">导入订阅</a-button>
-        <router-link to="/subscriptions/new">
-          <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''">添加订阅</a-button>
+    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+      <a-typography-title :level="3" class="mb-2 sm:mb-0">订阅管理</a-typography-title>
+      <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
+        <div class="flex flex-col sm:flex-row gap-2">
+          <a-button type="default" :icon="$slots.syncOutlined ? $slots.syncOutlined() : ''" @click="handleUpdateAll" :loading="updatingAll">全部更新</a-button>
+          <a-button type="default" :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">导入订阅</a-button>
+        </div>
+        <router-link to="/subscriptions/new" class="w-full sm:w-auto">
+          <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''" class="w-full sm:w-auto">添加订阅</a-button>
         </router-link>
-      </a-space>
+      </div>
     </div>
+
+    <!-- Desktop Table View -->
     <a-table
+      v-if="!isMobile"
       :columns="columns"
       :data-source="subscriptions"
       row-key="id"
       :loading="loading"
+      :scroll="{ x: 'max-content' }"
     >
       <template #emptyText>
         <a-empty
           :image="Empty.PRESENTED_IMAGE_SIMPLE"
           description="暂无订阅，快去添加一个吧！"
         >
-          <a-space>
-            <router-link to="/subscriptions/new">
-              <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''">手动添加</a-button>
+          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <router-link to="/subscriptions/new" class="w-full sm:w-auto">
+              <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''" class="w-full sm:w-auto">手动添加</a-button>
             </router-link>
-            <a-button :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">从剪贴板导入</a-button>
-          </a-space>
+            <a-button :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true" class="w-full sm:w-auto">从剪贴板导入</a-button>
+          </div>
         </a-empty>
       </template>
     </a-table>
 
+    <!-- Mobile Card View -->
+    <div v-else class="grid grid-cols-1 gap-4">
+      <a-card v-for="sub in subscriptions" :key="sub.id" :title="sub.name" size="small">
+        <p><strong>节点数:</strong> {{ statuses[sub.id]?.nodeCount ?? 'N/A' }}</p>
+        <p><strong>最后更新:</strong>
+          <template v-if="statuses[sub.id]">
+            <template v-if="statuses[sub.id].status === 'error'">
+              <a-tooltip :title="statuses[sub.id].error">
+                <a-tag :icon="h(CloseCircleOutlined)" color="error">更新失败</a-tag>
+              </a-tooltip>
+            </template>
+            <template v-else>
+              {{ formatTime(statuses[sub.id].lastUpdated) }}
+            </template>
+          </template>
+          <template v-else>
+            N/A
+          </template>
+        </p>
+        <template #actions>
+          <a-button type="text" :icon="h(EyeOutlined)" @click="handlePreview(sub)">预览</a-button>
+          <a-button type="text" :icon="h(SyncOutlined)" @click="handleUpdate(sub.id)" :loading="statuses[sub.id]?.status === 'updating'">更新</a-button>
+          <router-link :to="`/subscriptions/${sub.id}`">
+            <a-button type="text" :icon="h(EditOutlined)">编辑</a-button>
+          </router-link>
+          <a-popconfirm title="确定要删除这个订阅吗？" @confirm="handleDelete(sub.id)" ok-text="确定" cancel-text="取消">
+            <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
+          </a-popconfirm>
+        </template>
+      </a-card>
+    </div>
+
     <a-modal :title="`预览订阅: ${previewSubName}`" v-model:open="isPreviewModalVisible" :footer="null" width="60%">
       <a-spin :spinning="previewLoading">
-        <a-table size="small" :columns="previewColumns" :data-source="previewNodes" :row-key="(record, index) => `${record.server}-${index}`" :pagination="{ pageSize: 10 }"/>
+        <!-- Desktop Table View for Preview -->
+        <a-table v-if="!isMobile" size="small" :columns="previewColumns" :data-source="previewNodes" :row-key="(record, index) => `${record.server}-${index}`" :pagination="{ pageSize: 10 }"/>
+
+        <!-- Mobile Card View for Preview -->
+        <div v-else class="grid grid-cols-1 gap-4">
+          <a-card v-for="node in paginatedPreviewNodes" :key="`${node.server}-${node.port}`" size="small">
+            <p><strong>名称:</strong> {{ node.name }}</p>
+            <p><strong>类型:</strong> {{ node.type }}</p>
+            <p><strong>服务器:</strong> {{ node.server }}</p>
+            <p><strong>端口:</strong> {{ node.port }}</p>
+          </a-card>
+          <a-pagination
+            v-if="previewNodes.length > previewPageSize"
+            v-model:current="currentPreviewPage"
+            :page-size="previewPageSize"
+            :total="previewNodes.length"
+            show-less-items
+            class="mt-4 text-center"
+          />
+        </div>
       </a-spin>
     </a-modal>
     <a-modal title="从剪贴板导入订阅" v-model:open="isImportModalVisible" @ok="handleBatchImport" @cancel="isImportModalVisible = false" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
@@ -44,9 +101,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, h } from 'vue'
+import { ref, onMounted, watch, computed, h, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
-import { message, Modal, Tag, Tooltip, Empty, Button, Space, Popconfirm } from 'ant-design-vue'
+import { message, Modal, Tag, Tooltip, Empty, Button, Space, Popconfirm, Card } from 'ant-design-vue'
 import {
   EditOutlined,
   DeleteOutlined,
@@ -82,6 +139,21 @@ const isImportModalVisible = ref(false)
 const importUrls = ref('')
 const importing = ref(false)
 
+const currentPreviewPage = ref(1)
+const previewPageSize = ref(5) // Adjust as needed
+
+const paginatedPreviewNodes = computed(() => {
+  const start = (currentPreviewPage.value - 1) * previewPageSize.value
+  const end = start + previewPageSize.value
+  return previewNodes.value.slice(start, end)
+})
+
+const isMobile = ref(window.innerWidth < 640) // Tailwind's sm breakpoint is 640px
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth < 640
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
@@ -102,6 +174,11 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
 })
 
 const handleUpdate = async (id: string) => {
@@ -155,6 +232,7 @@ const handlePreview = async (sub: Subscription) => {
   isPreviewModalVisible.value = true
   previewLoading.value = true
   previewSubName.value = sub.name
+  currentPreviewPage.value = 1 // Reset page to 1 when new preview data loads
   try {
       const res = await fetch(`/api/subscriptions/preview/${sub.id}`)
       const data = (await res.json()) as { nodes?: Node[], error?: string }
@@ -224,8 +302,10 @@ const columns: TableProps<Subscription>['columns'] = [
   {
     title: '操作',
     key: 'action',
+    fixed: 'right',
+    width: 120,
     customRender: ({ record }) => (
-      h(Space, { size: 'middle' }, () => [
+      h(Space, { size: isMobile.value ? 'small' : 'middle', direction: isMobile.value ? 'vertical' : 'horizontal' }, () => [
         h(Button, { icon: h(EyeOutlined), onClick: () => handlePreview(record) }, () => '预览'),
         h(Button, { icon: h(SyncOutlined), onClick: () => handleUpdate(record.id), loading: statuses.value[record.id]?.status === 'updating' }, () => '更新'),
         h(RouterLink, { to: `/subscriptions/${record.id}` }, () => h(Button, { icon: h(EditOutlined) }, () => '编辑')),
