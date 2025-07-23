@@ -1,106 +1,121 @@
 <template>
-  <a-card title="修改密码">
-    <a-form
-      :model="formState"
-      name="changePassword"
-      @finish="onFinish"
-      :label-col="{ span: 6 }"
-      :wrapper-col="{ span: 14 }"
-    >
-      <a-form-item
-        label="旧密码"
-        name="oldPassword"
-        :rules="[{ required: true, message: '请输入旧密码' }]"
-      >
-        <a-input-password v-model:value="formState.oldPassword" />
-      </a-form-item>
+  <a-row type="flex" justify="center" align="middle" style="min-height: 100vh;">
+    <a-col :span="8">
+      <a-card title="修改密码">
+        <a-form
+          :model="formState"
+          @finish="onFinish"
+          layout="vertical"
+        >
+          <a-form-item
+            label="旧密码"
+            name="oldPassword"
+            :rules="[{ required: true, message: '请输入旧密码' }]"
+            v-if="currentUser && currentUser.defaultPasswordChanged"
+          >
+            <a-input-password v-model:value="formState.oldPassword" />
+          </a-form-item>
 
-      <a-form-item
-        label="新密码"
-        name="newPassword"
-        :rules="[{ required: true, message: '请输入新密码' }]"
-      >
-        <a-input-password v-model:value="formState.newPassword" />
-      </a-form-item>
+          <a-form-item
+            label="新密码"
+            name="newPassword"
+            :rules="[
+              { required: true, message: '请输入新密码' },
+              { min: 6, message: '密码至少需要6个字符' },
+            ]"
+          >
+            <a-input-password v-model:value="formState.newPassword" />
+          </a-form-item>
 
-      <a-form-item
-        label="确认新密码"
-        name="confirmPassword"
-        :rules="[
-          { required: true, message: '请确认新密码' },
-          { validator: validateConfirmPassword, trigger: 'blur' },
-        ]"
-      >
-        <a-input-password v-model:value="formState.confirmPassword" />
-      </a-form-item>
+          <a-form-item
+            label="确认新密码"
+            name="confirmPassword"
+            :rules="[
+              { required: true, message: '请确认新密码' },
+              { validator: validateConfirmPassword, trigger: 'blur' },
+            ]"
+          >
+            <a-input-password v-model:value="formState.confirmPassword" />
+          </a-form-item>
 
-      <a-form-item :wrapper-col="{ offset: 6, span: 14 }">
-        <a-button type="primary" html-type="submit" :loading="loading">
-          修改密码
-        </a-button>
-      </a-form-item>
-    </a-form>
-  </a-card>
+          <a-form-item>
+            <a-button type="primary" html-type="submit" :loading="loading" block>
+              修改密码
+            </a-button>
+          </a-form-item>
+        </a-form>
+      </a-card>
+    </a-col>
+  </a-row>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { message } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+import { reactive, ref, computed } from 'vue';
+import { message } from 'ant-design-vue';
+import { useRouter } from 'vue-router';
+import { User } from '@shared/types';
 
-const router = useRouter()
-const loading = ref(false)
+const router = useRouter();
+const loading = ref(false);
 
-interface ChangePasswordForm {
-  oldPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-}
+// This would typically come from a global state or prop if user data is fetched elsewhere
+const currentUser = ref<User | null>(null); // Placeholder for current user data
 
-const formState = reactive<ChangePasswordForm>({
+// Fetch current user to determine if old password is required
+const fetchCurrentUser = async () => {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (res.ok) {
+      currentUser.value = await res.json();
+    } else {
+      currentUser.value = null;
+    }
+  } catch (error) {
+    console.error('Failed to fetch current user:', error);
+    currentUser.value = null;
+  }
+};
+
+fetchCurrentUser();
+
+const formState = reactive({
   oldPassword: '',
   newPassword: '',
   confirmPassword: '',
-})
+});
 
-const validateConfirmPassword = async (_rule: any, value: string) => {
+const validateConfirmPassword = (_rule: any, value: string) => {
   if (value === '') {
-    return Promise.reject('请确认新密码')
+    return Promise.reject('请确认新密码');
+  } else if (value !== formState.newPassword) {
+    return Promise.reject('两次输入的密码不一致');
+  } else {
+    return Promise.resolve();
   }
-  if (value !== formState.newPassword) {
-    return Promise.reject('两次输入的密码不一致')
-  }
-  return Promise.resolve()
-}
+};
 
-const onFinish = async (values: ChangePasswordForm) => {
-  loading.value = true
+const onFinish = async (values: typeof formState) => {
+  loading.value = true;
   try {
     const res = await fetch('/api/users/change-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        oldPassword: values.oldPassword,
+        oldPassword: currentUser.value?.defaultPasswordChanged ? values.oldPassword : undefined,
         newPassword: values.newPassword,
       }),
-    })
-
+    });
     if (res.ok) {
-      message.success('密码修改成功，请重新登录')
-      router.push('/user/login')
+      message.success('密码修改成功');
+      router.push('/dashboard'); // Redirect to dashboard after password change
     } else {
-      const errorData = (await res.json()) as { message: string }
-      message.error(errorData.message || '修改密码失败')
+      const errorData = await res.json();
+      throw new Error(errorData.message || '密码修改失败');
     }
   } catch (error) {
-    console.error('Change password failed:', error)
-    message.error('网络错误，请重试')
+    if (error instanceof Error) message.error(error.message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
-
-<style scoped>
-/* 可以根据需要添加样式 */
-</style>

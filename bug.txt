@@ -1,0 +1,33 @@
+PS E:\Cloudflare\prosub> npm run dev
+
+> prosub@0.1.0 dev
+> npm run build && wrangler pages dev dist --kv=KV
+
+
+> prosub@0.1.0 build
+> vite build
+
+vite v5.4.19 building for production...
+✓ 387 modules transformed.
+x Build failed in 1.76s
+error during build:
+[vite:vue] [vue/compiler-sfc] Unexpected token, expected "," (56:1)
+
+E:/Cloudflare/prosub/src/components/ProfileForm.vue
+330|      singbox: { type: 'built-in', id: 'default' },
+331|    },
+332|  });
+   |   ^
+333|  });
+334|
+file: E:/Cloudflare/prosub/src/components/ProfileForm.vue:56:1
+    at constructor (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:367:19)
+    at TypeScriptParserMixin.raise (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:6627:19)
+    at TypeScriptParserMixin.unexpected (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:6647:16)
+    at TypeScriptParserMixin.expect (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:6927:12)
+    at TypeScriptParserMixin.parseObjectLike (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:11821:14)
+    at TypeScriptParserMixin.parseExprAtom (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:11334:23)
+    at TypeScriptParserMixin.parseExprSubscripts (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:11076:23)
+    at TypeScriptParserMixin.parseUpdate (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:11061:21)
+    at TypeScriptParserMixin.parseMaybeUnary (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:11041:23)
+    at TypeScriptParserMixin.parseMaybeUnary (E:\Cloudflare\prosub\node_modules\@babel\parser\lib\index.js:9852:18)

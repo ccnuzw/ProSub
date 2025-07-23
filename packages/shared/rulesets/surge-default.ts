@@ -1,5 +1,5 @@
-// src/lib/surge-proxy-groups.ts
-import { Node } from '@/types';
+// packages/shared/rulesets/surge-default.ts
+import { Node } from '../types';
 
 // Helper function to filter nodes by keyword for Surge
 const filterNodes = (nodes: Node[], keyword: string | RegExp): string[] => {
@@ -7,7 +7,7 @@ const filterNodes = (nodes: Node[], keyword: string | RegExp): string[] => {
   return nodes.filter(node => regex.test(node.name)).map(node => node.name);
 };
 
-export const getSurgeProxyGroups = (nodes: Node[]) => {
+export const getSurgeDefaultRules = (nodes: Node[]) => {
   const nodeNames = nodes.map(n => n.name);
 
   // Region-specific node groups
@@ -20,7 +20,7 @@ export const getSurgeProxyGroups = (nodes: Node[]) => {
 
   const allProxies = ['🚀 节点选择', '♻️ 自动选择', 'DIRECT', ...nodeNames].join(', ');
 
-  const groups = [
+  const proxyGroups = [
     `🚀 节点选择 = select, ${allProxies}`,
     `☑️ 手动切换 = select, ${nodeNames.join(', ')}`,
     `♻️ 自动选择 = url-test, ${nodeNames.join(', ')}, url = http://www.gstatic.com/generate_204, interval=300`,
@@ -44,5 +44,43 @@ export const getSurgeProxyGroups = (nodes: Node[]) => {
     `🇰🇷 韩国节点 = url-test, ${(krNodes.length > 0 ? krNodes : nodeNames).join(', ')}, url = http://www.gstatic.com/generate_204, interval=300`,
   ];
 
-  return groups;
+  const rules = [
+    '# > Advertising',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/BanAD.list,🛑 广告拦截',
+    '',
+    '# > Microsoft',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Microsoft.list,Ⓜ️ 微软服务',
+    '',
+    '# > Apple',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Apple.list,🍎 苹果服务',
+    '',
+    '# > Telegram',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Telegram.list,📲 电报消息',
+    '',
+    '# > OpenAI',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/OpenAi.list,🤖 OpenAi',
+    '',
+    '# > Streaming Media',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/YouTube.list,📹 油管视频',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/Netflix.list,🎥 奈飞视频',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ProxyMedia.list,🌍 国外媒体',
+    '',
+    '# > China Media',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaMedia.list,🌏 国内媒体',
+    '',
+    '# > GFW',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ProxyGFWlist.list,🚀 节点选择',
+    '',
+    '# > China',
+    'RULE-SET,https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaDomain.list,🎯 全球直连',
+    'GEOIP,CN,🎯 全球直连',
+    '',
+    '# > Final',
+    'FINAL,🐟 漏网之鱼'
+  ];
+
+  return {
+    'proxy-groups': proxyGroups,
+    'rules': rules,
+  };
 };

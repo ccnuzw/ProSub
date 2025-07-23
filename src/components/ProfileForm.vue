@@ -1,200 +1,53 @@
 <template>
-  <a-form :model="formState" layout="vertical" @finish="onFinish">
-    <a-form-item
-      name="name"
-      label="配置文件名称"
-      :rules="[{ required: true, message: '请输入配置文件名称' }]"
-    >
-      <a-input v-model:value="formState.name" placeholder="例如：主力配置" />
-    </a-form-item>
+  <a-steps :current="currentStep">
+    <a-step title="基本信息" />
+    <a-step title="节点选择" />
+    <a-step title="订阅选择" />
+    <a-step title="客户端规则" />
+  </a-steps>
 
-    <a-form-item
-      label="Custom Subscription Path"
-      name="alias"
-      tooltip="Create a short, memorable link like /sub/my-best-nodes. Use only letters, numbers, hyphen, and underscore."
-    >
-      <a-input v-model:value="formState.alias" addon-before="/sub/" />
-    </a-form-item>
-
-    <a-typography-title :level="5" style="margin-top: 24px">选择节点</a-typography-title>
-    <div style="display: flex; align-items: center; gap: 16px">
-      <div style="flex: 1; min-width: 0">
-        <a-card :title="`可选节点 (${availableNodes.length})`" size="small">
-          <template #extra>
-            <a-input-search
-              placeholder="搜索..."
-              v-model:value="nodeSearchTerm"
-              style="width: 200px"
-            />
-          </template>
-          <a-list style="height: 400px; overflow: auto" :data-source="availableNodes">
-            <template #renderItem="{ item: node }">
-              <a-list-item>
-                <a-checkbox
-                  :checked="checkedNodeIds.includes(node.id)"
-                  @change="(e) => handleNodeCheckChange(node.id, e.target.checked)"
-                >
-                  <a-list-item-meta>
-                    <template #avatar><ClusterOutlined /></template>
-                    <template #title>
-                      <a-typography-text
-                        style="display: inline-block; max-width: 250px"
-                        :ellipsis="{ tooltip: node.name }"
-                        >{{ node.name }}</a-typography-text
-                      >
-                    </template>
-                    <template #description>
-                      <a-space>
-                        <a-tag :color="getNodeStatusColor(node)">{{
-                          getNodeStatusText(node)
-                        }}</a-tag>
-                        <a-tag>{{ node.type }}</a-tag>
-                      </a-space>
-                    </template>
-                  </a-list-item-meta>
-                </a-checkbox>
-                <template #actions>
-                  <a-button
-                    shape="circle"
-                    size="small"
-                    :icon="
-                      selectedNodeIds.includes(node.id)
-                        ? h(ArrowLeftOutlined)
-                        : h(ArrowRightOutlined)
-                    "
-                    @click="() => toggleNodeSelection(node.id)"
-                  />
-                </template>
-              </a-list-item>
-            </template>
-          </a-list>
-        </a-card>
-      </div>
-      <a-space direction="vertical">
-        <a-button
-          :icon="h(ArrowRightOutlined)"
-          @click="moveCheckedNodes"
-          :disabled="checkedNodeIds.filter((id) => !selectedNodeIds.includes(id)).length === 0"
-        />
-        <a-button
-          :icon="h(ArrowLeftOutlined)"
-          @click="removeCheckedNodes"
-          :disabled="checkedNodeIds.filter((id) => selectedNodeIds.includes(id)).length === 0"
-        />
-      </a-space>
-      <div style="flex: 1; min-width: 0">
-        <a-card :title="`已选节点 (${selectedNodes.length})`" size="small">
-          <div style="height: 32px; margin-bottom: 8px"></div>
-          <a-list style="height: 400px; overflow: auto" :data-source="selectedNodes">
-            <template #renderItem="{ item: node }">
-              <a-list-item>
-                <a-checkbox
-                  :checked="checkedNodeIds.includes(node.id)"
-                  @change="(e) => handleNodeCheckChange(node.id, e.target.checked)"
-                >
-                  <a-list-item-meta>
-                    <template #avatar><ClusterOutlined /></template>
-                    <template #title>
-                      <a-typography-text
-                        style="display: inline-block; max-width: 250px"
-                        :ellipsis="{ tooltip: node.name }"
-                        >{{ node.name }}</a-typography-text
-                      >
-                    </template>
-                    <template #description>
-                      <a-space>
-                        <a-tag :color="getNodeStatusColor(node)">{{
-                          getNodeStatusText(node)
-                        }}</a-tag>
-                        <a-tag>{{ node.type }}</a-tag>
-                      </a-space>
-                    </template>
-                  </a-list-item-meta>
-                </a-checkbox>
-                <template #actions>
-                  <a-button
-                    shape="circle"
-                    size="small"
-                    :icon="
-                      selectedNodeIds.includes(node.id)
-                        ? h(ArrowLeftOutlined)
-                        : h(ArrowRightOutlined)
-                    "
-                    @click="() => toggleNodeSelection(node.id)"
-                  />
-                </template>
-              </a-list-item>
-            </template>
-          </a-list>
-        </a-card>
-      </div>
+  <a-form :model="formState" layout="vertical" @finish="onFinish" style="margin-top: 24px;">
+    <div v-show="currentStep === 0">
+      <ProfileStep1Basic :form-state="formState" />
     </div>
 
-
-    <a-typography-title :level="5" style="margin-top: 24px">选择订阅</a-typography-title>
-    <div style="display: flex; align-items: center; gap: 16px">
-      <div style="flex: 1; min-width: 0">
-        <a-card :title="`可选订阅 (${availableSubs.length})`" size="small">
-          <template #extra>
-            <a-input-search placeholder="搜索..." v-model:value="subSearchTerm" style="width: 200px" />
-          </template>
-          <a-list style="height: 200px; overflow: auto" :data-source="availableSubs">
-            <template #renderItem="{ item: sub }">
-              <a-list-item>
-                <a-checkbox :checked="checkedSubIds.includes(sub.id)" @change="(e) => handleSubCheckChange(sub.id, e.target.checked)">
-                  <a-list-item-meta>
-                    <template #avatar><WifiOutlined /></template>
-                    <template #title>
-                      <a-typography-text style="display: inline-block; max-width: 250px" :ellipsis="{ tooltip: sub.name }">{{ sub.name }}</a-typography-text>
-                    </template>
-                  </a-list-item-meta>
-                </a-checkbox>
-                <template #actions>
-                  <a-button shape="circle" size="small" :icon="h(ArrowRightOutlined)" @click="() => toggleSubSelection(sub.id)" />
-                </template>
-              </a-list-item>
-            </template>
-          </a-list>
-        </a-card>
-      </div>
-      
-      <a-space direction="vertical">
-        <a-button :icon="h(ArrowRightOutlined)" @click="moveCheckedSubs" :disabled="checkedSubIds.filter((id) => !selectedSubIds.map(s => s.id).includes(id)).length === 0" />
-        <a-button :icon="h(ArrowLeftOutlined)" @click="removeCheckedSubs" :disabled="checkedSubIds.filter((id) => selectedSubIds.map(s => s.id).includes(id)).length === 0" />
-      </a-space>
-      
-      <div style="flex: 1; min-width: 0">
-        <a-card :title="`已选订阅 (${selectedSubs.length})`" size="small">
-          <div style="height: 32px; margin-bottom: 8px;"></div>
-          <a-list style="height: 200px; overflow: auto" :data-source="selectedSubs">
-            <template #renderItem="{ item: sub }">
-              <a-list-item>
-                <a-checkbox :checked="checkedSubIds.includes(sub.id)" @change="(e) => handleSubCheckChange(sub.id, e.target.checked)">
-                  <a-list-item-meta>
-                     <template #avatar><WifiOutlined /></template>
-                    <template #title>
-                      <a-typography-text style="display: inline-block; max-width: 250px" :ellipsis="{ tooltip: sub.name }">{{ sub.name }}</a-typography-text>
-                    </template>
-                  </a-list-item-meta>
-                </a-checkbox>
-                <template #actions>
-                  <a-badge :count="sub.rules?.length || 0" size="small">
-                    <a-button size="small" @click="() => openRuleModal(sub)">规则</a-button>
-                  </a-badge>
-                  <a-button shape="circle" size="small" :icon="h(ArrowLeftOutlined)" @click="() => toggleSubSelection(sub.id)" />
-                </template>
-              </a-list-item>
-            </template>
-          </a-list>
-        </a-card>
-      </div>
+    <div v-show="currentStep === 1">
+      <ProfileStep2Nodes 
+        :all-nodes="allNodes"
+        :node-statuses="nodeStatuses"
+        :selected-node-ids="formState.nodes"
+        @update:selected-node-ids="(ids) => formState.nodes = ids"
+      />
     </div>
 
-    <a-form-item style="margin-top: 24px">
-      <a-button type="primary" html-type="submit" :loading="loading" size="large">
+    <div v-show="currentStep === 2">
+      <ProfileStep3Subscriptions
+        :all-subscriptions="allSubscriptions"
+        :selected-sub-ids="formState.subscriptions"
+        @update:selected-sub-ids="(subs) => formState.subscriptions = subs"
+      />
+    </div>
+
+    <div v-show="currentStep === 3">
+      <ProfileStep4ClientRules :form-state="formState" />
+    </div>
+
+    <div style="margin-top: 24px;">
+      <a-button v-if="currentStep > 0" style="margin-right: 8px" @click="prevStep">
+        上一步
+      </a-button>
+      <a-button v-if="currentStep < 3" type="primary" @click="nextStep">
+        下一步
+      </a-button>
+      <a-button
+        v-if="currentStep === 3"
+        type="primary"
+        html-type="submit"
+        :loading="loading"
+      >
         {{ profile ? '更新配置文件' : '创建配置文件' }}
       </a-button>
-    </a-form-item>
+    </div>
   </a-form>
 
   <SubscriptionRuleModal
@@ -207,51 +60,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, h } from 'vue';
-import { message, Empty, Badge } from 'ant-design-vue';
+import { ref, reactive, onMounted, computed } from 'vue';
+import { message } from 'ant-design-vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Profile, Node, Subscription, HealthStatus, ProfileSubscription, SubscriptionRule } from '@shared/types';
-import {
-  ArrowRightOutlined,
-  ArrowLeftOutlined,
-  ClusterOutlined,
-  WifiOutlined,
-} from '@ant-design/icons-vue';
-import SubscriptionRuleModal from './SubscriptionRuleModal.vue'; // 导入新组件
+import { Profile, Node, Subscription, HealthStatus, ProfileSubscription, RuleSetConfig } from '@shared/types';
+
+// 导入步骤组件
+import ProfileStep1Basic from './ProfileStep1Basic.vue';
+import ProfileStep2Nodes from './ProfileStep2Nodes.vue';
+import ProfileStep3Subscriptions from './ProfileStep3Subscriptions.vue';
+import ProfileStep4ClientRules from './ProfileStep4ClientRules.vue';
+import SubscriptionRuleModal from './SubscriptionRuleModal.vue';
 
 const props = defineProps<{ profile?: Profile }>();
 
 const router = useRouter();
-const route = useRoute(); // <-- 添加 useRoute
+const route = useRoute();
 const loading = ref(false);
+
+const currentStep = ref(0);
 
 const allNodes = ref<Node[]>([]);
 const allSubscriptions = ref<Subscription[]>([]);
 const nodeStatuses = ref<Record<string, HealthStatus>>({});
 
-// --- 状态变更 ---
-const selectedNodeIds = ref<string[]>([]);
-const selectedSubIds = ref<ProfileSubscription[]>([]); // 修改：存储 ProfileSubscription 对象
-
-const nodeSearchTerm = ref('');
-const subSearchTerm = ref('');
-
-const checkedNodeIds = ref<string[]>([]);
-const checkedSubIds = ref<string[]>([]); // 保持为 string[], 只用于勾选
-
 // --- 规则模态框状态 ---
 const isRuleModalVisible = ref(false);
 const editingSubscription = ref<ProfileSubscription | null>(null);
 
-
 interface ProfileFormValues {
   name: string;
   alias?: string;
+  nodes: string[];
+  subscriptions: ProfileSubscription[];
+  ruleSets: Record<string, RuleSetConfig>;
 }
 
 const formState = reactive<ProfileFormValues>({
   name: '',
   alias: '',
+  nodes: [],
+  subscriptions: [],
+  ruleSets: {
+    clash: { type: 'built-in', id: 'default' },
+    surge: { type: 'built-in', id: 'default' },
+    quantumultx: { type: 'built-in', id: 'default' },
+    loon: { type: 'built-in', id: 'default' },
+    singbox: { type: 'built-in', id: 'default' },
+  },
 });
 
 const fetchData = async () => {
@@ -269,19 +125,35 @@ onMounted(async () => {
   await fetchData();
   if (props.profile) {
     Object.assign(formState, props.profile);
-    selectedNodeIds.value = props.profile.nodes || [];
     // 兼容旧数据结构
-    selectedSubIds.value = (props.profile.subscriptions || []).map(sub => 
+    formState.subscriptions = (props.profile.subscriptions || []).map(sub => 
         typeof sub === 'string' ? { id: sub, rules: [] } : sub
     );
+    if (!formState.ruleSets) { // 兼容旧数据
+        formState.ruleSets = { 
+          clash: { type: 'built-in', id: 'default' },
+          surge: { type: 'built-in', id: 'default' },
+          quantumultx: { type: 'built-in', id: 'default' },
+          loon: { type: 'built-in', id: 'default' },
+          singbox: { type: 'built-in', id: 'default' },
+        };
+    }
   } else if (route.query.template) { // 复制逻辑
     try {
         const template = JSON.parse(route.query.template as string);
         Object.assign(formState, template);
-        selectedNodeIds.value = template.nodes || [];
-        selectedSubIds.value = (template.subscriptions || []).map(sub =>
+        formState.subscriptions = (template.subscriptions || []).map(sub =>
             typeof sub === 'string' ? { id: sub, rules: [] } : sub
         );
+        if (!formState.ruleSets) { // 兼容旧数据
+            formState.ruleSets = { 
+              clash: { type: 'built-in', id: 'default' },
+              surge: { type: 'built-in', id: 'default' },
+              quantumultx: { type: 'built-in', id: 'default' },
+              loon: { type: 'built-in', id: 'default' },
+              singbox: { type: 'built-in', id: 'default' },
+            };
+        }
         message.success('已从副本加载配置');
     } catch (e) {
         console.error("无法解析配置文件模板:", e);
@@ -289,7 +161,20 @@ onMounted(async () => {
   }
 });
 
-const onFinish = async (values: ProfileFormValues) => {
+const nextStep = () => {
+  // 在这里可以添加每个步骤的验证逻辑
+  if (currentStep.value < 3) {
+    currentStep.value++;
+  }
+};
+
+const prevStep = () => {
+  if (currentStep.value > 0) {
+    currentStep.value--;
+  }
+};
+
+const onFinish = async () => {
   loading.value = true;
   const method = props.profile ? 'PUT' : 'POST';
   const url = props.profile
@@ -297,10 +182,11 @@ const onFinish = async (values: ProfileFormValues) => {
     : '/api/profiles';
   
   const dataToSend = {
-    name: values.name,
-    alias: values.alias,
-    nodes: selectedNodeIds.value,
-    subscriptions: selectedSubIds.value, // 直接发送对象数组
+    name: formState.name,
+    alias: formState.alias,
+    nodes: formState.nodes,
+    subscriptions: formState.subscriptions,
+    ruleSets: formState.ruleSets,
   };
 
   try {
@@ -323,180 +209,20 @@ const onFinish = async (values: ProfileFormValues) => {
   }
 };
 
-const availableNodes = computed(() => {
-  // ... (此函数无需修改)
-   const statusOrder: Record<string, number> = {
-    online: 1,
-    checking: 2,
-    unknown: 3,
-    offline: 4,
-  };
-
-  return allNodes.value
-    .filter((node) => !selectedNodeIds.value.includes(node.id))
-    .filter((node) => {
-      const term = nodeSearchTerm.value.toLowerCase();
-      return (
-        node.name.toLowerCase().includes(term) ||
-        node.server.toLowerCase().includes(term) ||
-        node.type.toLowerCase().includes(term)
-      );
-    })
-    .sort((a, b) => {
-      const statusA = nodeStatuses.value[a.id] || { status: 'unknown' };
-      const statusB = nodeStatuses.value[b.id] || { status: 'unknown' };
-      const orderA = statusOrder[statusA.status] || 99;
-      const orderB = statusOrder[statusB.status] || 99;
-      if (orderA !== orderB) return orderA - orderB;
-      const latencyA = statusA.latency ?? Infinity;
-      const latencyB = statusB.latency ?? Infinity;
-      if (latencyA !== latencyB) return latencyA - latencyB;
-      return a.name.localeCompare(b.name);
-    });
-});
-
-const selectedNodes = computed(() => {
-    // ... (此函数无需修改)
-    return allNodes.value.filter((node) => selectedNodeIds.value.includes(node.id));
-});
-
-// --- 订阅列表逻辑修改 ---
-const selectedSubIdSet = computed(() => new Set(selectedSubIds.value.map(s => s.id)));
-
-const availableSubs = computed(() => {
-  return allSubscriptions.value
-    .filter((sub) => !selectedSubIdSet.value.has(sub.id)) // 修改
-    .filter(
-      (sub) =>
-        sub.name.toLowerCase().includes(subSearchTerm.value.toLowerCase()) ||
-        sub.url.toLowerCase().includes(subSearchTerm.value.toLowerCase())
-    );
-});
-
-const selectedSubs = computed(() => {
-  return selectedSubIds.value.map(profileSub => {
-    const subInfo = allSubscriptions.value.find(s => s.id === profileSub.id);
-    return {
-      ...profileSub,
-      name: subInfo?.name || '未知订阅',
-    };
-  });
-});
-
-// ... (handleNodeCheckChange, moveCheckedNodes, removeCheckedNodes, toggleNodeSelection 无需修改)
-const handleNodeCheckChange = (id: string, checked: boolean) => {
-  if (checked) {
-    checkedNodeIds.value.push(id);
-  } else {
-    checkedNodeIds.value = checkedNodeIds.value.filter((i) => i !== id);
-  }
-};
-
-const moveCheckedNodes = () => {
-  const toMove = checkedNodeIds.value.filter(
-    (id) => !selectedNodeIds.value.includes(id)
-  );
-  selectedNodeIds.value = [...selectedNodeIds.value, ...toMove];
-  checkedNodeIds.value = [];
-};
-
-const removeCheckedNodes = () => {
-  const toKeep = selectedNodeIds.value.filter(
-    (id) => !checkedNodeIds.value.includes(id)
-  );
-  selectedNodeIds.value = toKeep;
-  checkedNodeIds.value = [];
-};
-
-const toggleNodeSelection = (id: string) => {
-  if (selectedNodeIds.value.includes(id)) {
-    selectedNodeIds.value = selectedNodeIds.value.filter(
-      (nodeId) => nodeId !== id
-    );
-  } else {
-    selectedNodeIds.value = [...selectedNodeIds.value, id];
-  }
-};
-
-
-// --- 订阅操作逻辑修改 ---
-const handleSubCheckChange = (id: string, checked: boolean) => {
-  if (checked) {
-    checkedSubIds.value.push(id);
-  } else {
-    checkedSubIds.value = checkedSubIds.value.filter((i) => i !== id);
-  }
-};
-
-const moveCheckedSubs = () => {
-  const toMove = checkedSubIds.value
-    .filter((id) => !selectedSubIdSet.value.has(id))
-    .map(id => ({ id, rules: [] })); // 转换为对象
-  selectedSubIds.value = [...selectedSubIds.value, ...toMove];
-  checkedSubIds.value = [];
-};
-
-const removeCheckedSubs = () => {
-  const checkedSet = new Set(checkedSubIds.value);
-  selectedSubIds.value = selectedSubIds.value.filter((sub) => !checkedSet.has(sub.id));
-  checkedSubIds.value = [];
-};
-
-const toggleSubSelection = (id: string) => {
-  if (selectedSubIdSet.value.has(id)) {
-    selectedSubIds.value = selectedSubIds.value.filter(
-      (sub) => sub.id !== id
-    );
-  } else {
-    selectedSubIds.value = [...selectedSubIds.value, { id, rules: [] }]; // 添加为对象
-  }
-};
-
-// --- 规则模态框逻辑 ---
-const openRuleModal = (subscription: ProfileSubscription) => {
-  editingSubscription.value = subscription;
-  isRuleModalVisible.value = true;
-};
-
 const getSubscriptionName = (id: string) => {
   return allSubscriptions.value.find(s => s.id === id)?.name || '未知';
 }
 
 const saveSubscriptionRules = (newRules: SubscriptionRule[]) => {
   if (editingSubscription.value) {
-    const index = selectedSubIds.value.findIndex(s => s.id === editingSubscription.value!.id);
+    const index = formState.subscriptions.findIndex(s => s.id === editingSubscription.value!.id);
     if (index !== -1) {
-      selectedSubIds.value[index].rules = newRules;
+      const updatedSubscriptions = [...formState.subscriptions];
+      updatedSubscriptions[index] = { ...updatedSubscriptions[index], rules: newRules };
+      formState.subscriptions = updatedSubscriptions;
     }
   }
   isRuleModalVisible.value = false;
   editingSubscription.value = null;
-};
-
-
-// ... (getNodeStatusColor, getNodeStatusText 无需修改)
-const getNodeStatusColor = (node: Node) => {
-  const status = nodeStatuses.value[node.id];
-  if (!status) return 'default';
-  if (status.status === 'offline') return 'error';
-  if (status.status === 'online') {
-    const latency = status.latency;
-    if (latency && latency > 1000) return 'error';
-    if (latency && latency > 500) return 'warning';
-    return 'success';
-  }
-  return 'default';
-};
-
-const getNodeStatusText = (node: Node) => {
-  const status = nodeStatuses.value[node.id];
-  if (!status) return '未知';
-  if (status.status === 'checking') return '检查中...';
-  if (status.status === 'offline') return '离线';
-  if (status.status === 'online') {
-    const latency = status.latency;
-    return latency ? `${latency}ms` : '在线';
-  }
-  return '未知';
 };
 </script>

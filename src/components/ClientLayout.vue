@@ -13,6 +13,9 @@
         <a-button v-if="isClient && !loadingUser && currentUser" type="primary" @click="handleLogout">
           登出 ({{ currentUser.name }})
         </a-button>
+        <a-button v-else-if="isClient && !loadingUser && !currentUser" type="primary" @click="router.push('/user/login')">
+          登录
+        </a-button>
       </div>
     </a-layout-header>
     <a-layout-content style="padding: 24px 50px">
@@ -30,7 +33,7 @@
 import { ref, onMounted, watch, computed, h } from 'vue'
 import { Layout, Menu, Button, message, theme } from 'ant-design-vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User } from '../types'
+import { User } from '@shared/types'
 import {
   DashboardOutlined,
   ClusterOutlined,
@@ -121,7 +124,6 @@ const menuItems = computed(() => {
   ]
 
   if (isClient.value && currentUser.value) {
-    items.push({ key: 'user', label: '用户管理', icon: () => h(TeamOutlined), onClick: () => router.push('/user') })
     items.push({ key: 'profile', label: '我的资料', icon: () => h(UserOutlined), onClick: () => router.push('/user/profile') })
   } else if (isClient.value && !currentUser.value) {
     items.push({ key: 'login', label: '登录', icon: () => h(LoginOutlined), onClick: () => router.push('/user/login') })
@@ -137,7 +139,6 @@ const selectedKey = computed(() => {
   if (path.startsWith('/profiles')) return 'profiles'
   if (path.startsWith('/user/login')) return 'login'
   if (path.startsWith('/user/profile')) return 'profile'
-  if (path.startsWith('/user')) return 'user'
   return 'dashboard'
 })
 

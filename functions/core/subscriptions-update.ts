@@ -123,19 +123,16 @@ function clashProxyToNode(proxy: any): Node | null {
 }
 
 export async function handleSubscriptionsUpdate(request: Request, env: Env, id: string): Promise<Response> {
-  console.log(`[Preview] Starting handleSubscriptionsUpdate for ID: ${id}`);
   const cookies = parse(request.headers.get('Cookie') || '');
   const token = cookies.auth_token;
 
   if (!token) {
-    console.log('[Preview] Unauthorized: No token');
     return errorResponse('未授权', 401);
   }
 
-  const userJson = await env.KV.get(`user:${token}`);
+  const userId = await env.KV.get(`user_session:${token}`);
 
-  if (!userJson) {
-    console.log('[Preview] Unauthorized: User not found for token');
+  if (!userId) {
     return errorResponse('未授权', 401);
   }
 

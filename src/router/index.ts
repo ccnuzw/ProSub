@@ -25,11 +25,6 @@ const routes = [
     component: () => import('../views/Subscriptions.vue'),
   },
   {
-    path: '/user',
-    name: 'Users',
-    component: () => import('../views/Users.vue'),
-  },
-  {
     path: '/user/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
@@ -40,24 +35,9 @@ const routes = [
     component: () => import('../views/UserChangePassword.vue'),
   },
   {
-    path: '/user/:id',
-    name: 'UserEdit',
-    component: () => import('../views/UserEdit.vue'),
-  },
-  {
-    path: '/user/new',
-    name: 'UserNew',
-    component: () => import('../views/UserNew.vue'),
-  },
-  {
     path: '/user/profile',
     name: 'UserProfile',
     component: () => import('../views/UserProfile.vue'),
-  },
-  {
-    path: '/user/subscription',
-    name: 'UserSubscription',
-    component: () => import('../views/UserSubscription.vue'),
   },
   {
     path: '/nodes/:id',

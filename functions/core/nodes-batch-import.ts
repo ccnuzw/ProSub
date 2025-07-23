@@ -21,7 +21,7 @@ export async function handleNodesBatchImport(request: Request, env: Env): Promis
     return errorResponse('未授权', 401);
   }
 
-  const userJson = await env.KV.get(`user:${token}`);
+  const userJson = await env.KV.get(`user_session:${token}`);
 
   if (!userJson) {
     return errorResponse('未授权', 401);

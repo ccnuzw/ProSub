@@ -8,6 +8,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ABadge: typeof import('ant-design-vue/es')['Badge']
     AButton: typeof import('ant-design-vue/es')['Button']
     ACard: typeof import('ant-design-vue/es')['Card']
     ACheckbox: typeof import('ant-design-vue/es')['Checkbox']
@@ -31,12 +32,16 @@ declare module 'vue' {
     AMenu: typeof import('ant-design-vue/es')['Menu']
     AModal: typeof import('ant-design-vue/es')['Modal']
     APopconfirm: typeof import('ant-design-vue/es')['Popconfirm']
+    ARadioButton: typeof import('ant-design-vue/es')['RadioButton']
+    ARadioGroup: typeof import('ant-design-vue/es')['RadioGroup']
     ARow: typeof import('ant-design-vue/es')['Row']
     ASelect: typeof import('ant-design-vue/es')['Select']
     ASelectOption: typeof import('ant-design-vue/es')['SelectOption']
     ASpace: typeof import('ant-design-vue/es')['Space']
     ASpin: typeof import('ant-design-vue/es')['Spin']
     AStatistic: typeof import('ant-design-vue/es')['Statistic']
+    AStep: typeof import('ant-design-vue/es')['Step']
+    ASteps: typeof import('ant-design-vue/es')['Steps']
     ATable: typeof import('ant-design-vue/es')['Table']
     ATag: typeof import('ant-design-vue/es')['Tag']
     ATextarea: typeof import('ant-design-vue/es')['Textarea']
@@ -47,9 +52,14 @@ declare module 'vue' {
     NodeForm: typeof import('./src/components/NodeForm.vue')['default']
     NodeImportModal: typeof import('./src/components/NodeImportModal.vue')['default']
     ProfileForm: typeof import('./src/components/ProfileForm.vue')['default']
+    ProfileStep1Basic: typeof import('./src/components/ProfileStep1Basic.vue')['default']
+    ProfileStep2Nodes: typeof import('./src/components/ProfileStep2Nodes.vue')['default']
+    ProfileStep3Subscriptions: typeof import('./src/components/ProfileStep3Subscriptions.vue')['default']
+    ProfileStep4ClientRules: typeof import('./src/components/ProfileStep4ClientRules.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SubscriptionForm: typeof import('./src/components/SubscriptionForm.vue')['default']
+    SubscriptionRuleModal: typeof import('./src/components/SubscriptionRuleModal.vue')['default']
     UserForm: typeof import('./src/components/UserForm.vue')['default']
   }
 }
