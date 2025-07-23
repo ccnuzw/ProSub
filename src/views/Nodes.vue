@@ -52,7 +52,7 @@
       <!-- Mobile Card View -->
       <div v-else class="grid grid-cols-1 gap-4">
         <a-card v-for="node in paginatedNodes" :key="node.id" :title="node.name" size="small">
-          <p><strong>类型:</strong> {{ node.type }}</p>
+          <p><strong>类型:</strong> <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag></p>
           <p><strong>服务器:</strong> {{ node.server }}</p>
           <p><strong>端口:</strong> {{ node.port }}</p>
           <p><strong>状态:</strong>
@@ -349,9 +349,41 @@ const rowSelection = computed(() => ({
 
 const hasSelected = computed(() => selectedRowKeys.value.length > 0)
 
+const getNodeTypeColor = (type: string) => {
+  switch (type) {
+    case 'ss':
+    case 'ssr':
+      return 'blue';
+    case 'vmess':
+      return 'green';
+    case 'vless':
+    case 'vless-reality':
+      return 'purple';
+    case 'trojan':
+      return 'red';
+    case 'socks5':
+      return 'orange';
+    case 'anytls':
+      return 'cyan';
+    case 'tuic':
+      return 'geekblue';
+    case 'hysteria':
+    case 'hysteria2':
+      return 'volcano';
+    default:
+      return 'default';
+  }
+}
+
 const columns: TableProps<Node>['columns'] = [
   { title: '名称', dataIndex: 'name', key: 'name', width: '25%' },
-  { title: '类型', dataIndex: 'type', key: 'type', width: '10%' },
+  { 
+    title: '类型',
+    dataIndex: 'type',
+    key: 'type',
+    width: '10%',
+    customRender: ({ text: type }) => h(Tag, { color: getNodeTypeColor(type) }, () => type),
+  },
   { title: '服务器', dataIndex: 'server', key: 'server', width: '25%' },
   { title: '端口', dataIndex: 'port', key: 'port', width: '10%' },
   { 

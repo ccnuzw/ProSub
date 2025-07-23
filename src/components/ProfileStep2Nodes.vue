@@ -31,7 +31,7 @@
                       <a-tag :color="getNodeStatusColor(node)">{{
                         getNodeStatusText(node)
                       }}</a-tag>
-                      <a-tag>{{ node.type }}</a-tag>
+                      <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag>
                     </a-space>
                   </template>
                 </a-list-item-meta>
@@ -89,7 +89,7 @@
                       <a-tag :color="getNodeStatusColor(node)">{{
                         getNodeStatusText(node)
                       }}</a-tag>
-                      <a-tag>{{ node.type }}</a-tag>
+                      <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag>
                     </a-space>
                   </template>
                 </a-list-item-meta>
@@ -228,5 +228,31 @@ const getNodeStatusText = (node: Node) => {
     return latency ? `${latency}ms` : '在线';
   }
   return '未知';
+};
+
+const getNodeTypeColor = (type: string) => {
+  switch (type) {
+    case 'ss':
+    case 'ssr':
+      return 'blue';
+    case 'vmess':
+      return 'green';
+    case 'vless':
+    case 'vless-reality':
+      return 'purple';
+    case 'trojan':
+      return 'red';
+    case 'socks5':
+      return 'orange';
+    case 'anytls':
+      return 'cyan';
+    case 'tuic':
+      return 'geekblue';
+    case 'hysteria':
+    case 'hysteria2':
+      return 'volcano';
+    default:
+      return 'default';
+  }
 };
 </script>

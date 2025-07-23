@@ -78,7 +78,7 @@
         <div v-else class="grid grid-cols-1 gap-4">
           <a-card v-for="node in paginatedPreviewNodes" :key="`${node.server}-${node.port}`" size="small">
             <p><strong>名称:</strong> {{ node.name }}</p>
-            <p><strong>类型:</strong> {{ node.type }}</p>
+            <p><strong>类型:</strong> <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag></p>
             <p><strong>服务器:</strong> {{ node.server }}</p>
             <p><strong>端口:</strong> {{ node.port }}</p>
           </a-card>
@@ -280,11 +280,37 @@ const formatTime = (isoString?: string) => {
   }
 }
 
+const getNodeTypeColor = (type: string) => {
+  switch (type) {
+    case 'ss':
+    case 'ssr':
+      return 'blue';
+    case 'vmess':
+      return 'green';
+    case 'vless':
+    case 'vless-reality':
+      return 'purple';
+    case 'trojan':
+      return 'red';
+    case 'socks5':
+      return 'orange';
+    case 'anytls':
+      return 'cyan';
+    case 'tuic':
+      return 'geekblue';
+    case 'hysteria':
+    case 'hysteria2':
+      return 'volcano';
+    default:
+      return 'default';
+  }
+}
+
 const previewColumns: TableProps<ParsedNode>['columns'] = [
   { title: '节点名称', dataIndex: 'name', key: 'name' },
   { title: '服务器', dataIndex: 'server', key: 'server' },
   { title: '端口', dataIndex: 'port', key: 'port' },
-  { title: '类型', dataIndex: 'type', key: 'type', customRender: ({ text: type }) => h(Tag, null, () => type) },
+  { title: '类型', dataIndex: 'type', key: 'type', customRender: ({ text: type }) => h(Tag, { color: getNodeTypeColor(type) }, () => type) },
 ]
 
 const columns: TableProps<Subscription>['columns'] = [
