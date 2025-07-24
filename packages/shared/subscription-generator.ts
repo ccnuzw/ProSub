@@ -4,6 +4,7 @@ import * as ruleSets from './rulesets';
 import { parseClashYaml } from './clash-parser';
 import { parseNodeLink } from './node-parser';
 
+
 // Helper to encode base64 in a URL-safe way
 function base64Encode(str: string): string {
     // For SSR, which uses a specific URL-safe Base64 variant
@@ -101,20 +102,13 @@ async function fetchRemoteRules(url: string): Promise<any> {
 
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
-        const proxy: any = {
-            name: node.name,
-            type: node.type,
-            server: node.server,
-            port: node.port,
-        };
-
+        const proxy: any = { name: node.name, type: node.type, server: node.server, port: node.port, };
         switch (node.type) {
             case 'ss':
                 proxy.password = node.password;
                 proxy.cipher = node.params?.method;
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
-
             case 'ssr':
                 proxy.password = node.password;
                 proxy.cipher = node.params?.method;
@@ -123,7 +117,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.obfs = node.params?.obfs;
                 proxy['obfs-param'] = node.params?.obfsparam;
                 break;
-
             case 'vmess':
                 proxy.uuid = node.password;
                 proxy.alterId = node.params?.aid ?? 0;
@@ -131,55 +124,41 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
                 proxy.network = node.params?.net;
                 if (proxy.network === 'ws') {
-                    proxy['ws-opts'] = {
-                        path: node.params?.path || '/',
-                        headers: { Host: node.params?.host || node.server },
-                    };
+                    proxy['ws-opts'] = { path: node.params?.path || '/', headers: { Host: node.params?.host || node.server }, };
                 }
                 if(proxy.tls) {
                     proxy.servername = node.params?.host || node.server;
                 }
                 break;
-
             case 'vless':
             case 'vless-reality':
-                proxy.type = 'vless'; // Clash 中统一为 vless
+                proxy.type = 'vless';
                 proxy.uuid = node.password;
                 proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
                 proxy.network = node.params?.net;
                 proxy.flow = node.params?.flow;
                  if (proxy.network === 'ws') {
-                    proxy['ws-opts'] = {
-                        path: node.params?.path || '/',
-                        headers: { Host: node.params?.host || node.server },
-                    };
+                    proxy['ws-opts'] = { path: node.params?.path || '/', headers: { Host: node.params?.host || node.server }, };
                 }
-
                 if (node.type === 'vless-reality') {
                     proxy.servername = node.params?.sni;
-                    proxy['client-fingerprint'] = 'chrome'; // 常用指纹
-                    proxy['reality-opts'] = {
-                        'public-key': node.params?.pbk,
-                        'short-id': node.params?.sid || '',
-                    };
+                    proxy['client-fingerprint'] = 'chrome';
+                    proxy['reality-opts'] = { 'public-key': node.params?.pbk, 'short-id': node.params?.sid || '', };
                 } else if(proxy.tls) {
                      proxy.servername = node.params?.sni || node.server;
                 }
                 break;
-
             case 'trojan':
                 proxy.password = node.password;
                 proxy.sni = node.params?.sni || node.server;
                 proxy['skip-cert-verify'] = node.params?.allowInsecure === 'true' || node.params?.skipCertVerify === true;
                 break;
-
             case 'hysteria2':
                  proxy.type = 'hysteria2';
                  proxy.password = node.password;
                  proxy.sni = node.params?.sni || node.server;
                  proxy['skip-cert-verify'] = node.params?.skipCertVerify === true;
                  break;
-
             case 'tuic':
                 proxy.type = 'tuic';
                 proxy.uuid = node.password;
@@ -187,60 +166,47 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.sni = node.params?.sni || node.server;
                 proxy['skip-cert-verify'] = node.params?.skipCertVerify === true;
                 break;
-            
             default:
                 return null;
         }
-        
         Object.keys(proxy).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy[key]);
         if (proxy['ws-opts']) {
           Object.keys(proxy['ws-opts']).forEach(key => (proxy['ws-opts'][key] === undefined || proxy['ws-opts'][key] === null) && delete proxy['ws-opts'][key]);
         }
-        
         return proxy;
     }).filter(p => p !== null);
 
-    let configRules;
+    // ** FIX: Simplified and corrected config assembly logic **
+    let baseConfig = {};
+
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
-        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
-        if (fetchedRules && typeof fetchedRules === 'object') {
-            configRules = fetchedRules;
-            configRules.proxies = [...(configRules.proxies || []), ...proxies];
-            if (configRules['proxy-groups'] && Array.isArray(configRules['proxy-groups'])) {
-                configRules['proxy-groups'].forEach(group => {
-                    if (group.proxies && group.proxies.includes('auto')) {
-                         group.proxies = [...group.proxies, ...nodes.map(n => n.name)];
-                    }
-                });
-            }
+        const remoteConfig = await fetchRemoteRules(ruleConfig.url);
+        if (remoteConfig && typeof remoteConfig === 'object') {
+            baseConfig = remoteConfig;
+            // Smartly merge proxies
+            const existingProxies = new Set((baseConfig.proxies || []).map(p => p.name));
+            const newProxies = proxies.filter(p => !existingProxies.has(p.name));
+            baseConfig.proxies = [...(baseConfig.proxies || []), ...newProxies];
         } else {
-            configRules = ruleSets.getClashDefaultRules(nodes);
-            console.warn(`远程 Clash 规则获取失败或格式不正确，已回退至内置规则。`);
+            console.warn(`远程 Clash 规则获取失败，已回退至内置规则。`);
+            baseConfig = ruleSets.getClashDefaultRules(nodes);
         }
     } else if (ruleConfig?.id === 'lite') {
-        configRules = ruleSets.getClashLiteRules(nodes);
+        baseConfig = ruleSets.getClashLiteRules(nodes);
     } else {
-        configRules = ruleSets.getClashDefaultRules(nodes);
+        baseConfig = ruleSets.getClashDefaultRules(nodes);
     }
-
-    const finalProxies = configRules.proxies && configRules.proxies.length > 0 ? configRules.proxies : proxies;
-
+    
     const clashConfig = {
         'port': 7890,
         'socks-port': 7891,
-        'allow-lan': false,
+        'allow-lan': true,
         'mode': 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        ...configRules,
-        'proxies': finalProxies,
+        ...baseConfig,
+        'proxies': proxies,
     };
-
-    if (!(ruleConfig?.type === 'remote' && configRules.rules)) {
-        const defaultRules = ruleConfig?.id === 'lite' ? ruleSets.getClashLiteRules(nodes) : ruleSets.getClashDefaultRules(nodes);
-        clashConfig['proxy-groups'] = defaultRules['proxy-groups'];
-        clashConfig['rules'] = defaultRules['rules'];
-    }
 
     const yamlString = yaml.dump(clashConfig, { sortKeys: false, lineWidth: -1 });
     return new Response(yamlString, {

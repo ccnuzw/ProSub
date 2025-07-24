@@ -107,7 +107,6 @@ const clashRules = [
 export const getClashDefaultRules = (nodes: Node[]) => {
   const nodeNames = nodes.map(n => n.name);
 
-  // Region-specific node groups
   const hkNodes = filterNodes(nodes, /港|HK|Hong Kong/i);
   const twNodes = filterNodes(nodes, /台|TW|Taiwan/i);
   const sgNodes = filterNodes(nodes, /新|SG|Singapore/i);
@@ -115,12 +114,11 @@ export const getClashDefaultRules = (nodes: Node[]) => {
   const usNodes = filterNodes(nodes, /美|US|United States/i);
   const krNodes = filterNodes(nodes, /韩|KR|Korea/i);
 
-  // ** FIX: Removed self-reference from the main selector group **
   const proxyGroups = [
     {
       name: '🚀 节点选择',
       type: 'select',
-      proxies: ['♻️ 自动选择', 'DIRECT', ...nodeNames], // Corrected proxies list
+      proxies: ['♻️ 自动选择', 'DIRECT', ...nodeNames],
     },
     {
       name: '☑️ 手动切换',
@@ -137,7 +135,7 @@ export const getClashDefaultRules = (nodes: Node[]) => {
     {
         name: '🐟 漏网之鱼',
         type: 'select',
-        proxies: ['🚀 节点选择', 'DIRECT'], // Corrected to allow fallback
+        proxies: ['🚀 节点选择', 'DIRECT'],
     },
     {
         name: '🛑 广告拦截',
@@ -189,7 +187,6 @@ export const getClashDefaultRules = (nodes: Node[]) => {
         type: 'select',
         proxies: ['DIRECT', '🚀 节点选择'],
     },
-    // Region-specific auto-test groups
     {
       name: '🇭🇰 香港节点',
       type: 'url-test',
