@@ -8,9 +8,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
-    "baseUrl": "./functions",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@shared/*": ["./packages/shared/*"]
     }
   },
   "include": ["functions/**/*.ts"]
