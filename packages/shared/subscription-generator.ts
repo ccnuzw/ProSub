@@ -24,15 +24,11 @@ function convertNodeToUri(node: Node): string {
                     path: node.params?.path ?? "", tls: node.params?.tls ?? ""
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
-
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
-                const serverAddress = node.server.includes(':')
-                    ? `[${node.server}]`
-                    : node.server;
+                const serverAddress = node.server.includes(':') ? `[${node.server}]` : node.server;
                 return `ss://${encodedCreds}@${serverAddress}:${node.port}#${encodedName}`;
-
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
                 const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
@@ -68,7 +64,6 @@ function convertNodeToUri(node: Node): string {
     }
 }
 
-// --- Subscription Generators ---
 function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
     if (nodeLinks.length === 0) return new Response('', { status: 200 });
@@ -82,16 +77,11 @@ async function fetchRemoteRules(url: string): Promise<any> {
         const response = await fetch(url);
         if (!response.ok) return null;
         const text = await response.text();
-        try {
-            return yaml.load(text);
-        } catch (e) {
-            return text; // Return as plain text if YAML parsing fails
-        }
+        try { return yaml.load(text); } catch (e) { return text; }
     } catch (e) {
         return null;
     }
 }
-
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
         const proxy: any = {
@@ -106,7 +96,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 const cipher = node.params?.cipher || node.params?.method;
                 const password = node.password || node.params?.password;
                 if (!cipher || !password) {
-                    console.warn(`跳过无效的 SS 节点 (缺少 cipher 或 password): ${node.name}`);
                     return null;
                 }
                 proxy.password = password;
@@ -114,7 +103,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
             case 'ssr':
-                 proxy.password = node.password || node.params?.password;
+                proxy.password = node.password || node.params?.password;
                 proxy.cipher = node.params?.cipher || node.params?.method;
                 proxy.protocol = node.params?.protocol;
                 proxy['protocol-param'] = node.params?.protoparam;
@@ -151,6 +140,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                     };
                 }
                 if (node.type === 'vless-reality' || node.params?.security === 'reality') {
+                    proxy.tls = true; // REALITY requires TLS
                     proxy.servername = node.params?.servername || node.params?.sni;
                     proxy['client-fingerprint'] = node.params?.['client-fingerprint'] || 'chrome';
                     proxy['reality-opts'] = {
@@ -190,10 +180,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             default:
                 return null;
         }
-        Object.keys(proxy).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy[key]);
-        if (proxy['ws-opts']) {
-          Object.keys(proxy['ws-opts']).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy['ws-opts'][key]);
-        }
         return proxy;
     }).filter(p => p !== null);
     
@@ -225,10 +211,10 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             headers: { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': `attachment; filename="prosub_clash.yaml"` }
         });
     } catch (error) {
-        console.error("YAML DUMP FAILED:", error);
         return new Response(`Server error: Failed to generate YAML configuration. ${error.message}`, { status: 500 });
     }
 }
+
 
 async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxyLines = nodes.map(node => {
