@@ -11,7 +11,18 @@
     </div>
 
     <!-- Desktop Table View -->
-    <a-table v-if="!isMobile" :columns="tableColumns" :data-source="profiles" row-key="id" :loading="loading" :scroll="{ x: 'max-content' }">
+    <a-table v-if="!isMobile" :columns="tableColumns" :data-source="paginatedProfiles" row-key="id" :loading="loading" :scroll="{ x: 'max-content' }"
+      :pagination="{
+        current: currentProfilePage,
+        pageSize: profilePageSize,
+        total: profiles.length,
+        showSizeChanger: true,
+        showQuickJumper: true,
+        showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+        onShowSizeChange: (current, size) => { profilePageSize = size; currentProfilePage = 1; },
+        onChange: (page) => { currentProfilePage = page; },
+      }"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'nodes'">
           <a-space align="center">
@@ -63,7 +74,7 @@
 
     <!-- Mobile Card View -->
     <div v-else class="grid grid-cols-1 gap-4">
-      <a-card v-for="profile in profiles" :key="profile.id" :title="profile.name" size="small">
+      <a-card v-for="profile in paginatedProfiles" :key="profile.id" :title="profile.name" size="small">
         <p><strong>节点数:</strong> {{ profile.nodes?.length || 0 }}</p>
         <p><strong>订阅数:</strong> {{ profile.subscriptions?.length || 0 }}</p>
         <p v-if="profile.alias"><strong>别名:</strong> /sub/{{ profile.alias }}</p>
@@ -78,6 +89,14 @@
           </a-popconfirm>
         </template>
       </a-card>
+      <a-pagination
+        v-if="profiles.length > profilePageSize"
+        v-model:current="currentProfilePage"
+        :page-size="profilePageSize"
+        :total="profiles.length"
+        show-less-items
+        class="mt-4 text-center"
+      />
     </div>
 
     <a-modal title="订阅二维码" v-model:open="isQrCodeModalVisible" :footer="null" centered>
@@ -89,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h, onBeforeUnmount } from 'vue';
+import { ref, onMounted, h, onBeforeUnmount, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { message, Modal, Space, Tooltip, Button, Popconfirm, Card } from 'ant-design-vue';
 import {
@@ -111,13 +130,28 @@ const origin = ref('');
 const isQrCodeModalVisible = ref(false);
 const qrCodeUrl = ref('');
 
+const currentProfilePage = ref(1);
+const profilePageSize = computed(() => isMobile.value ? 5 : 10);
+
 const isMobile = ref(window.innerWidth < 640); // Tailwind's sm breakpoint is 640px
 
 const handleResize = () => {
   isMobile.value = window.innerWidth < 640;
 };
 
+const paginatedProfiles = computed(() => {
+  const start = (currentProfilePage.value - 1) * profilePageSize.value;
+  const end = start + profilePageSize.value;
+  return profiles.value.slice(start, end);
+});
+
 const tableColumns: TableProps<Profile>['columns'] = [
+  {
+    title: '序号',
+    key: 'index',
+    width: '5%',
+    customRender: ({ index }) => (currentProfilePage.value - 1) * profilePageSize.value + index + 1,
+  },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '节点数', dataIndex: 'nodes', key: 'nodes' },
   { title: '订阅数', dataIndex: 'subscriptions', key: 'subscriptions' },
@@ -211,6 +245,7 @@ const getSubscriptionUrl = (record: Profile) => {
 
 const fetchProfiles = async () => {
   loading.value = true;
+  currentProfilePage.value = 1; // Reset page to 1 when fetching new data
   try {
     const res = await fetch('/api/profiles');
     if (!res.ok) throw new Error(`Failed to fetch profiles: ${res.statusText}`);

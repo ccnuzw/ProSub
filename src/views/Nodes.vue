@@ -47,7 +47,25 @@
       </div>
 
       <!-- Desktop Table View -->
-      <a-table v-if="!isMobile" :row-selection="rowSelection" :columns="columns" :data-source="filteredAndSortedNodes" row-key="id" :loading="loading" :scroll="{ x: 'max-content' }" />
+      <a-table
+      v-if="!isMobile"
+      :row-selection="rowSelection"
+      :columns="columns"
+      :data-source="paginatedNodes"
+      row-key="id"
+      :loading="loading"
+      :scroll="{ x: 'max-content' }"
+      :pagination="{
+        current: currentNodesPage,
+        pageSize: nodesPageSize,
+        total: filteredAndSortedNodes.length,
+        showSizeChanger: true,
+        showQuickJumper: true,
+        showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+        onShowSizeChange: (current, size) => { nodesPageSize = size; currentNodesPage = 1; },
+        onChange: (page) => { currentNodesPage = page; },
+      }"
+    />
 
       <!-- Mobile Card View -->
       <div v-else class="grid grid-cols-1 gap-4">
@@ -84,7 +102,7 @@
           show-less-items
           class="mt-4 text-center"
         />
-      </div>
+        </div>
     </template>
     <template v-else>
       <a-empty
@@ -142,7 +160,7 @@ const searchTerm = ref('')
 const hasUnsavedChanges = ref(false)
 
 const currentNodesPage = ref(1)
-const nodesPageSize = ref(5) // Adjust as needed
+const nodesPageSize = computed(() => isMobile.value ? 5 : 10);
 
 const isMobile = ref(window.innerWidth < 640) // Tailwind's sm breakpoint is 640px
 
@@ -376,7 +394,13 @@ const getNodeTypeColor = (type: string) => {
 }
 
 const columns: TableProps<Node>['columns'] = [
-  { title: '名称', dataIndex: 'name', key: 'name', width: '25%' },
+  {
+    title: '序号',
+    key: 'index',
+    width: '5%',
+    customRender: ({ index }) => (currentNodesPage.value - 1) * nodesPageSize.value + index + 1,
+  },
+  { title: '名称', dataIndex: 'name', key: 'name', width: '20%' },
   { 
     title: '类型',
     dataIndex: 'type',
