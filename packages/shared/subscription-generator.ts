@@ -99,7 +99,6 @@ async function fetchRemoteRules(url: string): Promise<any> {
         return null;
     }
 }
-
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
         const proxy: any = {
@@ -108,6 +107,9 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             server: node.server,
             port: node.port,
         };
+
+        // ** CORE FIX: Use || to check for both 'net' (from YAML) and 'type' (from URL) **
+        const network = node.params?.net || node.params?.type;
 
         switch (node.type) {
             case 'ss':
@@ -128,7 +130,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.alterId = node.params?.alterId ?? node.params?.aid ?? 0;
                 proxy.cipher = node.params?.cipher ?? 'auto';
                 proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
-                proxy.network = node.params?.network || node.params?.net;
+                proxy.network = network;
                 if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
                         path: node.params?.['ws-path'] || node.params?.path || '/',
@@ -144,7 +146,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.type = 'vless';
                 proxy.uuid = node.password || node.params?.uuid;
                 proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
-                proxy.network = node.params?.network || node.params?.net;
+                proxy.network = network;
                 proxy.flow = node.params?.flow;
                  if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
@@ -152,7 +154,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                         headers: node.params?.['ws-headers'] || { Host: node.params?.host || node.server },
                     };
                 }
-                if (node.type === 'vless-reality') {
+                if (node.type === 'vless-reality' || node.params?.security === 'reality') {
                     proxy.servername = node.params?.servername || node.params?.sni;
                     proxy['client-fingerprint'] = node.params?.['client-fingerprint'] || 'chrome';
                     proxy['reality-opts'] = {
@@ -166,7 +168,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             case 'trojan':
                 proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.server;
-                proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? node.params?.allowInsecure === 'true';
+                proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? node.params?.allowInsecure === '1' || node.params?.allowInsecure === true;
                 break;
             case 'hysteria2':
                  proxy.type = 'hysteria2';
@@ -216,20 +218,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         'proxies': proxies,
     };
     
-    // Ensure proxy-groups exist and correctly reference nodes
-    if (finalConfig['proxy-groups'] && Array.isArray(finalConfig['proxy-groups'])) {
-        const nodeNames = nodes.map(n => n.name);
-        finalConfig['proxy-groups'].forEach(group => {
-            if (group.proxies) {
-                // This is a simple replacement, more complex logic might be needed if you want to merge
-                const placeholderIndex = group.proxies.indexOf('auto'); // A placeholder to indicate where nodes should go
-                if (placeholderIndex > -1) {
-                    group.proxies.splice(placeholderIndex, 1, ...nodeNames);
-                }
-            }
-        });
-    }
-
     try {
         const yamlString = yaml.dump(finalConfig, { sortKeys: false, lineWidth: -1 });
         return new Response(yamlString, {
@@ -244,6 +232,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         return new Response(`Server error: Failed to generate YAML configuration. ${error.message}`, { status: 500 });
     }
 }
+
 
 async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxyLines = nodes.map(node => {
