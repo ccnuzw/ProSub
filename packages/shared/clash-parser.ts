@@ -12,32 +12,30 @@ export function parseClashYaml(content: string): Node[] {
         }
 
         const baseNode: Partial<Node> = {
-          id: `${proxy.name}-${proxy.server}-${proxy.port}-${Math.random()}`, // Add random to ensure uniqueness
+          id: `${proxy.name}-${proxy.server}-${proxy.port}-${Math.random()}`,
           name: proxy.name,
           server: proxy.server,
           port: proxy.port,
           type: proxy.type as Node['type'],
-          params: { ...proxy }, // Store all original proxy parameters as a backup
+          params: { ...proxy },
         };
 
-        // Map specific fields from Clash proxy to generic Node fields
+        // ** CORE FIX: Map Clash-specific fields back to our generic Node fields **
         switch (proxy.type) {
           case 'ss':
-          case 'trojan':
-            baseNode.password = proxy.password;
-            break;
-          case 'vmess':
-          case 'vless':
-            baseNode.password = proxy.uuid; // Map uuid to password
-            break;
           case 'ssr':
+          case 'trojan':
           case 'hysteria2':
           case 'tuic':
             baseNode.password = proxy.password;
             break;
+          case 'vmess':
+          case 'vless':
+            baseNode.password = proxy.uuid; // Map uuid back to password
+            break;
         }
 
-        // Remove redundant fields from params that are now top-level
+        // Clean up redundant fields from params
         delete baseNode.params?.name;
         delete baseNode.params?.type;
         delete baseNode.params?.server;
@@ -49,7 +47,7 @@ export function parseClashYaml(content: string): Node[] {
       }).filter(Boolean) as Node[];
     }
   } catch (e) {
-    // It's not a valid YAML or doesn't have proxies, which is fine.
+    // Not a valid YAML, which is fine.
   }
   return [];
 }
