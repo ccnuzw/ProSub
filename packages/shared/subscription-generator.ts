@@ -4,7 +4,6 @@ import * as ruleSets from './rulesets';
 import { parseClashYaml } from './clash-parser';
 import { parseNodeLink } from './node-parser';
 
-
 // Helper to encode base64 in a URL-safe way
 function base64Encode(str: string): string {
     // For SSR, which uses a specific URL-safe Base64 variant
@@ -99,6 +98,7 @@ async function fetchRemoteRules(url: string): Promise<any> {
         return null;
     }
 }
+
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
         const proxy: any = {
@@ -108,7 +108,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             port: node.port,
         };
 
-        // ** CORE FIX: Use || to check for both 'net' (from YAML) and 'type' (from URL) **
         const network = node.params?.net || node.params?.type;
 
         switch (node.type) {
@@ -168,7 +167,8 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             case 'trojan':
                 proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.server;
-                proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? node.params?.allowInsecure === '1' || node.params?.allowInsecure === true;
+                // ** FINAL FIX: Added parentheses to resolve build error **
+                proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? (node.params?.allowInsecure === '1' || node.params?.allowInsecure === true);
                 break;
             case 'hysteria2':
                  proxy.type = 'hysteria2';
