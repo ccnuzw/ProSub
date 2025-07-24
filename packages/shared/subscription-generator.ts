@@ -1,12 +1,14 @@
 import { Profile, Node, Env, Subscription, SubscriptionRule, RuleSetConfig } from './types';
 import { parseClashYaml } from './clash-parser';
 import { parseNodeLink } from './node-parser';
-import { generateClashSubscription } from './generators/clash';
-import { generateSurgeSubscription } from './generators/surge';
-import { generateQuantumultXSubscription } from './generators/quantumultx';
-import { generateLoonSubscription } from './generators/loon';
-import { generateSingBoxSubscription } from './generators/singbox';
-import { convertNodeToUri } from './generators/utils';
+import {
+    generateClashSubscription,
+    generateLoonSubscription,
+    generateQuantumultXSubscription,
+    generateSingBoxSubscription,
+    generateSurgeSubscription,
+    convertNodeToUri
+} from './generators';
 
 function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
