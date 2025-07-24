@@ -17,10 +17,20 @@
     <a-table
       v-if="!isMobile"
       :columns="columns"
-      :data-source="subscriptions"
+      :data-source="paginatedSubscriptions"
       row-key="id"
       :loading="loading"
       :scroll="{ x: 'max-content' }"
+      :pagination="{
+        current: currentSubscriptionPage,
+        pageSize: subscriptionPageSize,
+        total: subscriptions.length,
+        showSizeChanger: true,
+        showQuickJumper: true,
+        showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+        onShowSizeChange: (current, size) => { subscriptionPageSize = size; currentSubscriptionPage = 1; },
+        onChange: (page) => { currentSubscriptionPage = page; },
+      }"
     >
       <template #emptyText>
         <a-empty
@@ -39,7 +49,7 @@
 
     <!-- Mobile Card View -->
     <div v-else class="grid grid-cols-1 gap-4">
-      <a-card v-for="sub in subscriptions" :key="sub.id" :title="sub.name" size="small">
+      <a-card v-for="sub in paginatedSubscriptions" :key="sub.id" :title="sub.name" size="small">
         <p><strong>节点数:</strong> {{ statuses[sub.id]?.nodeCount ?? 'N/A' }}</p>
         <p><strong>最后更新:</strong>
           <template v-if="statuses[sub.id]">
@@ -67,6 +77,14 @@
           </a-popconfirm>
         </template>
       </a-card>
+      <a-pagination
+        v-if="subscriptions.length > subscriptionPageSize"
+        v-model:current="currentSubscriptionPage"
+        :page-size="subscriptionPageSize"
+        :total="subscriptions.length"
+        show-less-items
+        class="mt-4 text-center"
+      />
     </div>
 
     <a-modal :title="`预览订阅: ${previewSubName}`" v-model:open="isPreviewModalVisible" :footer="null" width="60%">
@@ -139,6 +157,9 @@ const isImportModalVisible = ref(false)
 const importUrls = ref('')
 const importing = ref(false)
 
+const currentSubscriptionPage = ref(1)
+const subscriptionPageSize = computed(() => isMobile.value ? 5 : 10);
+
 const currentPreviewPage = ref(1)
 const previewPageSize = ref(5) // Adjust as needed
 
@@ -146,6 +167,12 @@ const paginatedPreviewNodes = computed(() => {
   const start = (currentPreviewPage.value - 1) * previewPageSize.value
   const end = start + previewPageSize.value
   return previewNodes.value.slice(start, end)
+})
+
+const paginatedSubscriptions = computed(() => {
+  const start = (currentSubscriptionPage.value - 1) * subscriptionPageSize.value
+  const end = start + subscriptionPageSize.value
+  return subscriptions.value.slice(start, end)
 })
 
 const isMobile = ref(window.innerWidth < 640) // Tailwind's sm breakpoint is 640px
@@ -156,6 +183,7 @@ const handleResize = () => {
 
 const fetchData = async () => {
   loading.value = true
+  currentSubscriptionPage.value = 1; // Reset page to 1 when fetching new data
   try {
     const [subsRes, statusesRes] = await Promise.all([
       fetch('/api/subscriptions'),
@@ -314,6 +342,12 @@ const previewColumns: TableProps<ParsedNode>['columns'] = [
 ]
 
 const columns: TableProps<Subscription>['columns'] = [
+  {
+    title: '序号',
+    key: 'index',
+    width: '5%',
+    customRender: ({ index }) => (currentSubscriptionPage.value - 1) * subscriptionPageSize.value + index + 1,
+  },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '节点数', key: 'nodeCount', customRender: ({ record }) => statuses.value[record.id]?.nodeCount ?? 'N/A' },
   { title: '最后更新', key: 'lastUpdated', customRender: ({ record }) => {
