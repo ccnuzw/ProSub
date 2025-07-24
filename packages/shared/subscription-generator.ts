@@ -25,24 +25,6 @@ function convertNodeToUri(node: Node): string {
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
 
-            case 'vless':
-            case 'vless-reality':
-            case 'trojan':
-            case 'socks5':
-            case 'tuic':
-            case 'hysteria':
-            case 'hysteria2':
-            case 'anytls':
-                const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
-                const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
-                url.hash = encodedName;
-                if (node.params) {
-                    for (const key in node.params) {
-                        url.searchParams.set(key, node.params[key]);
-                    }
-                }
-                return url.toString();
-
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
@@ -54,17 +36,15 @@ function convertNodeToUri(node: Node): string {
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
                 const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
-
                 const params = new URLSearchParams();
                 params.set('remarks', base64Encode(node.name));
                 if (node.params?.obfsparam) params.set('obfsparam', base64Encode(node.params.obfsparam));
                 if (node.params?.protoparam) params.set('protoparam', base64Encode(node.params.protoparam));
-
                 const fullInfo = `${mainInfo}/?${params.toString()}`;
                 return `ssr://${base64Encode(fullInfo)}`;
 
             default:
-                // Fallback for other types or handle them specifically
+                // This default case correctly handles vless, trojan, etc.
                 const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
                 const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
                 url.hash = encodedName;
@@ -197,9 +177,14 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         return proxy;
     }).filter(p => p !== null);
     
-    let baseConfig: any;
+    let baseConfig: any = {};
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
-        baseConfig = await fetchRemoteRules(ruleConfig.url) || ruleSets.getClashDefaultRules(nodes);
+        const remoteConfig = await fetchRemoteRules(ruleConfig.url);
+        if (remoteConfig && typeof remoteConfig === 'object') {
+            baseConfig = remoteConfig;
+        } else {
+            baseConfig = ruleSets.getClashDefaultRules(nodes);
+        }
     } else if (ruleConfig?.id === 'lite') {
         baseConfig = ruleSets.getClashLiteRules(nodes);
     } else {
@@ -214,13 +199,16 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
         ...baseConfig,
-        'proxies': proxies, // Explicitly overwrite proxies with the generated list
+        'proxies': proxies,
     };
     
     try {
         const yamlString = yaml.dump(finalConfig, { sortKeys: false, lineWidth: -1 });
         return new Response(yamlString, {
-            headers: { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': `attachment; filename="prosub_clash.yaml"` }
+            headers: {
+                'Content-Type': 'text/yaml; charset=utf-8',
+                'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
+            }
         });
     } catch (error) {
         console.error("YAML DUMP FAILED:", error);
@@ -228,6 +216,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         return new Response(`Server error: Failed to generate YAML configuration. ${error.message}`, { status: 500 });
     }
 }
+
 
 
 async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
@@ -399,14 +388,11 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const KV = env.KV;
     const nodeIds = profile.nodes || [];
     const profileSubs = profile.subscriptions || [];
-
     const allNodesJson = await KV.get('ALL_NODES');
     const allManualNodes: Record<string, Node> = allNodesJson ? JSON.parse(allNodesJson) : {};
     const manualNodes = nodeIds.map(id => allManualNodes[id]).filter(Boolean);
-
     const allSubsJson = await KV.get('ALL_SUBSCRIPTIONS');
     const allSubscriptions: Record<string, Subscription> = allSubsJson ? JSON.parse(allSubsJson) : {};
-
     const subscriptionFetchPromises = profileSubs.map(async (profileSub) => {
         const subscription = allSubscriptions[profileSub.id];
         if (subscription) {
@@ -415,48 +401,31 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
         }
         return [];
     });
-    
     const results = await Promise.all(subscriptionFetchPromises);
     const allSubNodes = results.flat();
-
-    // 智能重命名与去重逻辑
     const combinedNodes = [...manualNodes, ...allSubNodes];
     const finalNodes: Node[] = [];
     const nameCount: Record<string, number> = {};
     const usedNames = new Set<string>();
-
-    // 第一次遍历，预先记录所有已存在的名称
     combinedNodes.forEach(node => {
         usedNames.add(node.name);
     });
-
-    // 第二次遍历，处理重名并生成最终列表
     combinedNodes.forEach(originalNode => {
-        let node = { ...originalNode }; // 创建副本以修改名称
+        let node = { ...originalNode };
         const baseName = node.name;
-        
-        // 增加节点名的计数
         nameCount[baseName] = (nameCount[baseName] || 0) + 1;
-
         if (nameCount[baseName] > 1) {
-            // 如果是第2个或更多的同名节点，开始寻找新的唯一名称
-            let suffix = 2; // 从2开始尝试
+            let suffix = 2;
             let newName;
-
-            // 循环直到找到一个未被使用的名称
             do {
                 newName = `${baseName} ${suffix}`;
                 suffix++;
             } while (usedNames.has(newName));
-            
             node.name = newName;
             usedNames.add(newName);
         }
-        
         finalNodes.push(node);
     });
-
-    // 第三次遍历，去重完全相同的节点 (server, port, password, type)
     const uniqueNodesMap = new Map<string, Node>();
     finalNodes.forEach(node => {
         const uniqueKey = `${node.server}:${node.port}:${node.password || ''}:${node.type}`;
@@ -464,57 +433,57 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
             uniqueNodesMap.set(uniqueKey, node);
         }
     });
-
     return Array.from(uniqueNodesMap.values());
 }
 
 // --- Main Handler ---
 export async function generateSubscriptionResponse(request: Request, profile: Profile, env: Env): Promise<Response> {
-    const allNodes = await fetchAllNodes(profile, env);
-    const url = new URL(request.url);
-    const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
-    let targetClient = url.searchParams.get('target')?.toLowerCase();
+    try {
+        const allNodes = await fetchAllNodes(profile, env);
+        const url = new URL(request.url);
+        const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
+        let targetClient = url.searchParams.get('target')?.toLowerCase();
 
-    if (url.searchParams.has('clash')) {
-        targetClient = 'clash';
-    } else if (url.searchParams.has('surge')) {
-        targetClient = 'surge';
-    } else if (url.searchParams.has('quantumultx')) {
-        targetClient = 'quantumultx';
-    } else if (url.searchParams.has('loon')) {
-        targetClient = 'loon';
-    } else if (url.searchParams.has('sing-box')) {
-        targetClient = 'sing-box';
-    } else if (url.searchParams.has('base64')) {
-        targetClient = 'base64';
-    }
-    if (!targetClient) {
-        if (userAgent.includes('clash')) targetClient = 'clash';
-        else if (userAgent.includes('surge')) targetClient = 'surge';
-        else if (userAgent.includes('quantumult x')) targetClient = 'quantumultx';
-        else if (userAgent.includes('loon')) targetClient = 'loon';
-        else if (userAgent.includes('sing-box')) targetClient = 'sing-box';
-        else if (userAgent.includes('shadowrocket')) targetClient = 'shadowrocket';
-        else targetClient = 'base64';
-    }
+        if (url.searchParams.has('clash')) {
+            targetClient = 'clash';
+        } else if (url.searchParams.has('surge')) {
+            targetClient = 'surge';
+        } else if (url.searchParams.has('quantumultx')) {
+            targetClient = 'quantumultx';
+        } else if (url.searchParams.has('loon')) {
+            targetClient = 'loon';
+        } else if (url.searchParams.has('sing-box')) {
+            targetClient = 'sing-box';
+        } else if (url.searchParams.has('base64')) {
+            targetClient = 'base64';
+        }
+         if (!targetClient) {
+            if (userAgent.includes('clash')) targetClient = 'clash';
+            else if (userAgent.includes('surge')) targetClient = 'surge';
+            else targetClient = 'base64';
+        }
 
-    const ruleConfig = profile.ruleSets ? profile.ruleSets[targetClient] : undefined;
+        const ruleConfig = profile.ruleSets ? profile.ruleSets[targetClient] : undefined;
 
-    switch (targetClient) {
-        case 'clash':
-        case 'mihomo':
-            return await generateClashSubscription(allNodes, ruleConfig);
-        case 'surge':
-            return await generateSurgeSubscription(allNodes, ruleConfig);
-        case 'quantumultx':
-            return await generateQuantumultXSubscription(allNodes, ruleConfig);
-        case 'loon':
-            return await generateLoonSubscription(allNodes, ruleConfig);
-        case 'sing-box':
-            return await generateSingBoxSubscription(allNodes, ruleConfig);
-        case 'shadowrocket':
-            return generateBase64Subscription(allNodes);
-        default:
-            return generateBase64Subscription(allNodes);
+        switch (targetClient) {
+            case 'clash':
+            case 'mihomo':
+                return await generateClashSubscription(allNodes, ruleConfig);
+            case 'surge':
+                return await generateSurgeSubscription(allNodes, ruleConfig);
+            case 'quantumultx':
+                return await generateQuantumultXSubscription(allNodes, ruleConfig);
+            case 'loon':
+                return await generateLoonSubscription(allNodes, ruleConfig);
+            case 'sing-box':
+                return await generateSingBoxSubscription(allNodes, ruleConfig);
+            case 'shadowrocket':
+                return generateBase64Subscription(allNodes);
+            default:
+                return generateBase64Subscription(allNodes);
+        }
+    } catch (error) {
+        console.error("Unhandled error in generateSubscriptionResponse:", error);
+        return new Response(`An unexpected server error occurred. ${error.message}`, { status: 500 });
     }
 }
