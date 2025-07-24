@@ -102,69 +102,84 @@ async function fetchRemoteRules(url: string): Promise<any> {
 
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
-        const proxy: any = { name: node.name, type: node.type, server: node.server, port: node.port, };
+        const proxy: any = {
+            name: node.name,
+            type: node.type,
+            server: node.server,
+            port: node.port,
+        };
+
         switch (node.type) {
             case 'ss':
-                proxy.password = node.password;
-                proxy.cipher = node.params?.method;
+                proxy.password = node.password || node.params?.password;
+                proxy.cipher = node.params?.cipher || node.params?.method;
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
             case 'ssr':
-                proxy.password = node.password;
-                proxy.cipher = node.params?.method;
+                proxy.password = node.password || node.params?.password;
+                proxy.cipher = node.params?.cipher || node.params?.method;
                 proxy.protocol = node.params?.protocol;
                 proxy['protocol-param'] = node.params?.protoparam;
                 proxy.obfs = node.params?.obfs;
                 proxy['obfs-param'] = node.params?.obfsparam;
                 break;
             case 'vmess':
-                proxy.uuid = node.password;
-                proxy.alterId = node.params?.aid ?? 0;
+                proxy.uuid = node.password || node.params?.uuid;
+                proxy.alterId = node.params?.alterId ?? node.params?.aid ?? 0;
                 proxy.cipher = node.params?.cipher ?? 'auto';
                 proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
-                proxy.network = node.params?.net;
+                proxy.network = node.params?.network || node.params?.net;
                 if (proxy.network === 'ws') {
-                    proxy['ws-opts'] = { path: node.params?.path || '/', headers: { Host: node.params?.host || node.server }, };
+                    proxy['ws-opts'] = {
+                        path: node.params?.['ws-path'] || node.params?.path || '/',
+                        headers: node.params?.['ws-headers'] || { Host: node.params?.host || node.server },
+                    };
                 }
                 if(proxy.tls) {
-                    proxy.servername = node.params?.host || node.server;
+                    proxy.servername = node.params?.servername || node.params?.host || node.server;
                 }
                 break;
             case 'vless':
             case 'vless-reality':
                 proxy.type = 'vless';
-                proxy.uuid = node.password;
+                proxy.uuid = node.password || node.params?.uuid;
                 proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
-                proxy.network = node.params?.net;
+                proxy.network = node.params?.network || node.params?.net;
                 proxy.flow = node.params?.flow;
                  if (proxy.network === 'ws') {
-                    proxy['ws-opts'] = { path: node.params?.path || '/', headers: { Host: node.params?.host || node.server }, };
+                    proxy['ws-opts'] = {
+                        path: node.params?.['ws-path'] || node.params?.path || '/',
+                        headers: node.params?.['ws-headers'] || { Host: node.params?.host || node.server },
+                    };
                 }
                 if (node.type === 'vless-reality') {
-                    proxy.servername = node.params?.sni;
-                    proxy['client-fingerprint'] = 'chrome';
-                    proxy['reality-opts'] = { 'public-key': node.params?.pbk, 'short-id': node.params?.sid || '', };
+                    proxy.servername = node.params?.servername || node.params?.sni;
+                    proxy['client-fingerprint'] = node.params?.['client-fingerprint'] || 'chrome';
+                    proxy['reality-opts'] = {
+                        'public-key': node.params?.['reality-opts']?.['public-key'] || node.params?.pbk,
+                        'short-id': node.params?.['reality-opts']?.['short-id'] || node.params?.sid || '',
+                    };
                 } else if(proxy.tls) {
-                     proxy.servername = node.params?.sni || node.server;
+                     proxy.servername = node.params?.servername || node.params?.sni || node.server;
                 }
                 break;
             case 'trojan':
-                proxy.password = node.password;
+                proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.server;
-                proxy['skip-cert-verify'] = node.params?.allowInsecure === 'true' || node.params?.skipCertVerify === true;
+                proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? node.params?.allowInsecure === 'true';
                 break;
             case 'hysteria2':
                  proxy.type = 'hysteria2';
-                 proxy.password = node.password;
+                 proxy.password = node.password || node.params?.password;
                  proxy.sni = node.params?.sni || node.server;
-                 proxy['skip-cert-verify'] = node.params?.skipCertVerify === true;
+                 proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] === true;
                  break;
             case 'tuic':
                 proxy.type = 'tuic';
-                proxy.uuid = node.password;
-                proxy.password = node.params?.password || '';
+                proxy.password = node.password || node.params?.password;
+                proxy.uuid = node.params?.uuid;
                 proxy.sni = node.params?.sni || node.server;
-                proxy['skip-cert-verify'] = node.params?.skipCertVerify === true;
+                proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] === true;
                 break;
             default:
                 return null;
@@ -175,20 +190,13 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         }
         return proxy;
     }).filter(p => p !== null);
-
-    // ** FIX: Simplified and corrected config assembly logic **
-    let baseConfig = {};
-
+    
+    let baseConfig: any = {};
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
         const remoteConfig = await fetchRemoteRules(ruleConfig.url);
         if (remoteConfig && typeof remoteConfig === 'object') {
             baseConfig = remoteConfig;
-            // Smartly merge proxies
-            const existingProxies = new Set((baseConfig.proxies || []).map(p => p.name));
-            const newProxies = proxies.filter(p => !existingProxies.has(p.name));
-            baseConfig.proxies = [...(baseConfig.proxies || []), ...newProxies];
         } else {
-            console.warn(`远程 Clash 规则获取失败，已回退至内置规则。`);
             baseConfig = ruleSets.getClashDefaultRules(nodes);
         }
     } else if (ruleConfig?.id === 'lite') {
@@ -197,7 +205,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         baseConfig = ruleSets.getClashDefaultRules(nodes);
     }
     
-    const clashConfig = {
+    const finalConfig = {
         'port': 7890,
         'socks-port': 7891,
         'allow-lan': true,
@@ -207,14 +215,34 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         ...baseConfig,
         'proxies': proxies,
     };
+    
+    // Ensure proxy-groups exist and correctly reference nodes
+    if (finalConfig['proxy-groups'] && Array.isArray(finalConfig['proxy-groups'])) {
+        const nodeNames = nodes.map(n => n.name);
+        finalConfig['proxy-groups'].forEach(group => {
+            if (group.proxies) {
+                // This is a simple replacement, more complex logic might be needed if you want to merge
+                const placeholderIndex = group.proxies.indexOf('auto'); // A placeholder to indicate where nodes should go
+                if (placeholderIndex > -1) {
+                    group.proxies.splice(placeholderIndex, 1, ...nodeNames);
+                }
+            }
+        });
+    }
 
-    const yamlString = yaml.dump(clashConfig, { sortKeys: false, lineWidth: -1 });
-    return new Response(yamlString, {
-        headers: {
-            'Content-Type': 'text/yaml; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
-        }
-    });
+    try {
+        const yamlString = yaml.dump(finalConfig, { sortKeys: false, lineWidth: -1 });
+        return new Response(yamlString, {
+            headers: {
+                'Content-Type': 'text/yaml; charset=utf-8',
+                'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
+            }
+        });
+    } catch (error) {
+        console.error("YAML DUMP FAILED:", error);
+        console.error("Problematic Config Object:", JSON.stringify(finalConfig, null, 2));
+        return new Response(`Server error: Failed to generate YAML configuration. ${error.message}`, { status: 500 });
+    }
 }
 
 async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {

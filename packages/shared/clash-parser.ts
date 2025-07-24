@@ -6,136 +6,50 @@ export function parseClashYaml(content: string): Node[] {
     const doc = yaml.load(content) as any;
 
     if (doc && doc.proxies && Array.isArray(doc.proxies)) {
-      const nodes: Node[] = [];
-      for (const proxy of doc.proxies) {
+      return doc.proxies.map((proxy: any) => {
+        if (!proxy || !proxy.name || !proxy.type || !proxy.server || !proxy.port) {
+          return null;
+        }
+
+        const baseNode: Partial<Node> = {
+          id: `${proxy.name}-${proxy.server}-${proxy.port}-${Math.random()}`, // Add random to ensure uniqueness
+          name: proxy.name,
+          server: proxy.server,
+          port: proxy.port,
+          type: proxy.type as Node['type'],
+          params: { ...proxy }, // Store all original proxy parameters as a backup
+        };
+
+        // Map specific fields from Clash proxy to generic Node fields
         switch (proxy.type) {
           case 'ss':
-            nodes.push({
-              id: `${proxy.name}-${proxy.server}-${proxy.port}`,
-              type: 'ss',
-              name: proxy.name || 'Unknown SS',
-              server: proxy.server,
-              port: proxy.port,
-              password: proxy.password,
-              params: {
-                cipher: proxy.cipher,
-                udp: proxy.udp,
-                tfo: proxy.tfo,
-              },
-            });
+          case 'trojan':
+            baseNode.password = proxy.password;
             break;
           case 'vmess':
-            nodes.push({
-              id: `${proxy.name}-${proxy.server}-${proxy.port}`,
-              type: 'vmess',
-              name: proxy.name || 'Unknown VMess',
-              server: proxy.server,
-              port: proxy.port,
-              params: {
-                uuid: proxy.uuid,
-                alterId: proxy.alterId,
-                cipher: proxy.cipher,
-                network: proxy.network,
-                tls: proxy.tls,
-                'ws-path': proxy['ws-path'],
-                'ws-headers': proxy['ws-headers'],
-              },
-            });
-            break;
           case 'vless':
-            nodes.push({
-              id: `${proxy.name}-${proxy.server}-${proxy.port}`,
-              type: 'vless',
-              name: proxy.name || 'Unknown VLESS',
-              server: proxy.server,
-              port: proxy.port,
-              params: {
-                uuid: proxy.uuid,
-                network: proxy.network,
-                tls: proxy.tls,
-                udp: proxy.udp,
-                flow: proxy.flow,
-                xver: proxy.xver,
-                servername: proxy.servername,
-                realityOpts: proxy['reality-opts'],
-                clientFingerprint: proxy['client-fingerprint'],
-                shortId: proxy.shortId,
-                spiderX: proxy.spiderX,
-                'ws-path': proxy['ws-path'],
-                'ws-headers': proxy['ws-headers'],
-              },
-            });
+            baseNode.password = proxy.uuid; // Map uuid to password
             break;
-          case 'trojan':
-            nodes.push({
-              id: `${proxy.name}-${proxy.server}-${proxy.port}`,
-              type: 'trojan',
-              name: proxy.name || 'Unknown Trojan',
-              server: proxy.server,
-              port: proxy.port,
-              password: proxy.password,
-              params: {
-                network: proxy.network,
-                tls: proxy.tls,
-                udp: proxy.udp,
-                sni: proxy.sni,
-                skipCertVerify: proxy['skip-cert-verify'],
-                alpn: proxy.alpn,
-                'ws-path': proxy['ws-path'],
-                'ws-headers': proxy['ws-headers'],
-              },
-            });
-            break;
+          case 'ssr':
           case 'hysteria2':
-            nodes.push({
-              id: `${proxy.name}-${proxy.server}-${proxy.port}`,
-              type: 'hysteria2',
-              name: proxy.name || 'Unknown Hysteria2',
-              server: proxy.server,
-              port: proxy.port,
-              password: proxy.password,
-              params: {
-                obfs: proxy.obfs,
-                obfsPassword: proxy['obfs-password'],
-                tls: proxy.tls,
-                sni: proxy.sni,
-                skipCertVerify: proxy['skip-cert-verify'],
-                alpn: proxy.alpn,
-                fastOpen: proxy['fast-open'],
-                udp: proxy.udp,
-                auth: proxy.auth,
-              },
-            });
-            break;
           case 'tuic':
-            nodes.push({
-              id: `${proxy.name}-${proxy.server}-${proxy.port}`,
-              type: 'tuic',
-              name: proxy.name || 'Unknown TUIC',
-              server: proxy.server,
-              port: proxy.port,
-              password: proxy.password,
-              params: {
-                uuid: proxy.uuid,
-                version: proxy.version,
-                congestionController: proxy['congestion-controller'],
-                udpRelayMode: proxy['udp-relay-mode'],
-                zeroRttHandshake: proxy['zero-rtt-handshake'],
-                tls: proxy.tls,
-                sni: proxy.sni,
-                skipCertVerify: proxy['skip-cert-verify'],
-                alpn: proxy.alpn,
-                disableSni: proxy['disable-sni'],
-              },
-            });
-            break;
-          default:
+            baseNode.password = proxy.password;
             break;
         }
-      }
-      return nodes;
+
+        // Remove redundant fields from params that are now top-level
+        delete baseNode.params?.name;
+        delete baseNode.params?.type;
+        delete baseNode.params?.server;
+        delete baseNode.params?.port;
+        delete baseNode.params?.password;
+        delete baseNode.params?.uuid;
+        
+        return baseNode as Node;
+      }).filter(Boolean) as Node[];
     }
   } catch (e) {
+    // It's not a valid YAML or doesn't have proxies, which is fine.
   }
   return [];
 }
