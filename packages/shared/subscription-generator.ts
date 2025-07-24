@@ -211,7 +211,10 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
     try {
         const yamlString = yaml.dump(finalConfig, { sortKeys: false, lineWidth: -1 });
         return new Response(yamlString, {
-            headers: { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': `attachment; filename="prosub_clash.yaml"` }
+            headers: {
+                'Content-Type': 'text/yaml; charset=utf-8',
+                'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
+            }
         });
     } catch (error) {
         console.error("YAML DUMP FAILED:", error);
@@ -356,12 +359,22 @@ export async function generateSubscriptionResponse(request: Request, profile: Pr
             case 'clash':
             case 'mihomo':
                 return await generateClashSubscription(allNodes, ruleConfig);
-            // ... other cases like surge, loon, etc. can be added here
+            case 'surge':
+                return await generateSurgeSubscription(allNodes, ruleConfig);
+            case 'quantumultx':
+                return await generateQuantumultXSubscription(allNodes, ruleConfig);
+            case 'loon':
+                return await generateLoonSubscription(allNodes, ruleConfig);
+            case 'sing-box':
+                return await generateSingBoxSubscription(allNodes, ruleConfig);
+            case 'shadowrocket':
+                return generateBase64Subscription(allNodes);
             default:
                 return generateBase64Subscription(allNodes);
         }
     } catch (error) {
         console.error("Unhandled error in generateSubscriptionResponse:", error);
-        return new Response(`An unexpected server error occurred: ${error.message}`, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return new Response(`An unexpected server error occurred. ${errorMessage}`, { status: 500 });
     }
 }
