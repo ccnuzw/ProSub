@@ -35,7 +35,7 @@ function convertNodeToUri(node: Node): string {
 
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
-                const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
+                const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base_64}`;
                 const params = new URLSearchParams();
                 params.set('remarks', base64Encode(node.name));
                 if (node.params?.obfsparam) params.set('obfsparam', base64Encode(node.params.obfsparam));
@@ -57,7 +57,7 @@ function convertNodeToUri(node: Node): string {
                 url.hash = encodedName;
                 if (node.params) {
                     for (const key in node.params) {
-                        url.searchParams.set(key, node.params[key]);
+                        url.searchParams.set(key, String(node.params[key]));
                     }
                 }
                 return url.toString();
@@ -85,7 +85,7 @@ async function fetchRemoteRules(url: string): Promise<any> {
         try {
             return yaml.load(text);
         } catch (e) {
-            return text;
+            return text; // Return as plain text if YAML parsing fails
         }
     } catch (e) {
         return null;
@@ -108,7 +108,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
             case 'ssr':
-                 proxy.password = node.password || node.params?.password;
+                proxy.password = node.password || node.params?.password;
                 proxy.cipher = node.params?.cipher || node.params?.method;
                 proxy.protocol = node.params?.protocol;
                 proxy['protocol-param'] = node.params?.protoparam;
@@ -119,7 +119,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.uuid = node.password || node.params?.uuid;
                 proxy.alterId = node.params?.alterId ?? node.params?.aid ?? 0;
                 proxy.cipher = node.params?.cipher ?? 'auto';
-                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
+                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none' && node.params.tls !== false);
                 proxy.network = network;
                 if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
@@ -128,14 +128,14 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                     };
                 }
                 if(proxy.tls) {
-                    proxy.servername = node.params?.servername || node.params?.host || node.server;
+                    proxy.servername = node.params?.servername || node.params?.host || node.params?.sni || node.server;
                 }
                 break;
             case 'vless':
             case 'vless-reality':
                 proxy.type = 'vless';
                 proxy.uuid = node.password || node.params?.uuid;
-                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
+                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none' && node.params.tls !== false);
                 proxy.network = network;
                 proxy.flow = node.params?.flow;
                  if (proxy.network === 'ws') {
@@ -159,8 +159,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.server;
                 proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? (node.params?.allowInsecure === '1' || node.params?.allowInsecure === true);
-                
-                // ** FIX: Added WebSocket support for Trojan **
                 if (network === 'ws') {
                     proxy.network = 'ws';
                     proxy['ws-opts'] = {
@@ -187,23 +185,18 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         }
         Object.keys(proxy).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy[key]);
         if (proxy['ws-opts']) {
-          Object.keys(proxy['ws-opts']).forEach(key => (proxy['ws-opts'][key] === undefined || proxy['ws-opts'][key] === null) && delete proxy['ws-opts'][key]);
+          Object.keys(proxy['ws-opts']).forEach(key => (proxy['ws-opts'][key] === undefined || proxy[key] === null) && delete proxy['ws-opts'][key]);
         }
         return proxy;
     }).filter(p => p !== null);
     
-    let baseConfig: any = {};
+    let ruleset;
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
-        const remoteConfig = await fetchRemoteRules(ruleConfig.url);
-        if (remoteConfig && typeof remoteConfig === 'object') {
-            baseConfig = remoteConfig;
-        } else {
-            baseConfig = ruleSets.getClashDefaultRules(nodes);
-        }
+        ruleset = await fetchRemoteRules(ruleConfig.url) || ruleSets.getClashDefaultRules(nodes);
     } else if (ruleConfig?.id === 'lite') {
-        baseConfig = ruleSets.getClashLiteRules(nodes);
+        ruleset = ruleSets.getClashLiteRules(nodes);
     } else {
-        baseConfig = ruleSets.getClashDefaultRules(nodes);
+        ruleset = ruleSets.getClashDefaultRules(nodes);
     }
     
     const finalConfig = {
@@ -213,36 +206,169 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         'mode': 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        ...baseConfig,
         'proxies': proxies,
+        'proxy-groups': ruleset['proxy-groups'] || [],
+        'rules': ruleset['rules'] || [],
+        'rule-providers': ruleset['rule-providers'],
     };
     
     try {
         const yamlString = yaml.dump(finalConfig, { sortKeys: false, lineWidth: -1 });
         return new Response(yamlString, {
-            headers: {
-                'Content-Type': 'text/yaml; charset=utf-8',
-                'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
-            }
+            headers: { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': `attachment; filename="prosub_clash.yaml"` }
         });
     } catch (error) {
         console.error("YAML DUMP FAILED:", error);
-        console.error("Problematic Config Object:", JSON.stringify(finalConfig, null, 2));
         return new Response(`Server error: Failed to generate YAML configuration. ${error.message}`, { status: 500 });
     }
 }
 
-// --- Data Fetching Logic ---
+async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
+    const proxyLines = nodes.map(node => {
+        let line = `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`;
+        if(node.type === 'ss') line += `, method=${node.params?.method}`;
+        if(node.params?.tls) line += `, tls=true`;
+        if(node.params?.net === 'ws') line += `, ws=true, ws-path=${node.params.path}, ws-headers=Host:${node.params.host}`;
+        return line;
+    });
+
+    let remoteRules: any = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        remoteRules = fetchedRules || ruleSets.getSurgeDefaultRules(nodes);
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getSurgeLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getSurgeDefaultRules(nodes);
+    }
+
+    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${(remoteRules['proxy-groups'] || []).join('\n')}\n\n[Rule]\n${(remoteRules['rules'] || []).join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+async function generateQuantumultXSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
+    const serverLines = nodes.map(node => {
+        let line = '';
+        const remark = `remark=${node.name}`;
+        const tag = `tag=${node.name}`;
+        switch (node.type) {
+            case 'ss':
+                line = `shadowsocks=${node.server}:${node.port}, method=${node.params?.method}, password=${node.password}, ${remark}`;
+                break;
+            case 'vmess':
+                const tls = (node.params?.tls) ? ', obfs=wss' : '';
+                line = `vmess=${node.server}:${node.port}, method=aes-128-gcm, password=${node.password}, obfs=ws, obfs-uri=${node.params?.path}, obfs-header="Host: ${node.params?.host}"${tls}, ${remark}`;
+                break;
+            case 'trojan':
+                line = `trojan=${node.server}:${node.port}, password=${node.password}, ${remark}`;
+                break;
+        }
+        return line ? `${line}, ${tag}` : '';
+    }).filter(Boolean);
+
+    let remoteRules: any = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        remoteRules = fetchedRules || ruleSets.getQuantumultXDefaultRules(nodes);
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getQuantumultXLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getQuantumultXDefaultRules(nodes);
+    }
+
+    const content = `[server_local]\n${serverLines.join('\n')}\n\n[filter_remote]\n${(remoteRules['filter_remote'] || []).join('\n')}\n\n[policy]\n${(remoteRules['policy'] || []).join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+async function generateLoonSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
+    const proxyLines = nodes.map(node => `${node.name} = ${node.type}, ${node.server}, ${node.port}, password=${node.password}`);
+
+    let remoteRules: any = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        remoteRules = fetchedRules || ruleSets.getLoonDefaultRules(nodes);
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getLoonLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getLoonDefaultRules(nodes);
+    }
+
+    const content = `[Proxy]\n${proxyLines.join('\n')}\n\n[Proxy Group]\n${(remoteRules['proxy-groups'] || []).join('\n')}\n\n[Rule]\n${(remoteRules['rules'] || []).join('\n')}`;
+    return new Response(content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
+
+async function generateSingBoxSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
+    const nodeOutbounds = nodes.map(node => {
+        const baseOutbound: any = {
+            tag: node.name,
+            type: node.type,
+            server: node.server,
+            server_port: node.port,
+        };
+        switch (node.type) {
+            case 'ss':
+                baseOutbound.method = node.params?.method;
+                baseOutbound.password = node.password;
+                break;
+            case 'vmess':
+                baseOutbound.uuid = node.password;
+                baseOutbound.security = 'auto';
+                baseOutbound.alter_id = 0;
+                break;
+            case 'vless':
+                baseOutbound.uuid = node.password;
+                baseOutbound.flow = node.params?.flow || '';
+                break;
+            case 'trojan':
+                baseOutbound.password = node.password;
+                break;
+        }
+        if (node.params?.net === 'ws') {
+            baseOutbound.transport = {
+                type: 'ws',
+                path: node.params.path || '/',
+                headers: { Host: node.params.host || node.server },
+            };
+        }
+        if (node.params?.tls === 'tls' || node.params?.tls === true) {
+            baseOutbound.tls = {
+                enabled: true,
+                server_name: node.params.host || node.server,
+                insecure: node.params.allowInsecure === 'true',
+            };
+        }
+        return baseOutbound;
+    });
+
+    let remoteRules: any = {};
+    if (ruleConfig?.type === 'remote' && ruleConfig.url) {
+        const fetchedRules = await fetchRemoteRules(ruleConfig.url);
+        remoteRules = fetchedRules || ruleSets.getSingBoxDefaultRules(nodes);
+    } else if (ruleConfig?.id === 'lite') {
+        remoteRules = ruleSets.getSingBoxLiteRules(nodes);
+    } else {
+        remoteRules = ruleSets.getSingBoxDefaultRules(nodes);
+    }
+
+    const singboxConfig = {
+        log: { level: 'info' },
+        dns: { servers: [{ address: 'https://dns.google/dns-query' }] },
+        inbounds: [
+            { type: 'tun', tag: 'tun-in', interface_name: 'tun0' },
+            { type: 'mixed', tag: 'mixed-in', listen: '0.0.0.0', listen_port: 7890 }
+        ],
+        outbounds: [...nodeOutbounds, ...(remoteRules.outbounds || [])],
+        route: remoteRules.route,
+    };
+    return new Response(JSON.stringify(singboxConfig, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
+}
+
 async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
-        if (!response.ok) {
-            console.error(`从 ${url} 获取订阅失败，状态码: ${response.status}`);
-            return [];
-        }
+        if (!response.ok) { return []; }
         const content = await response.text();
-        let nodes: Node[] = [];
-        nodes = parseClashYaml(content);
+        let nodes: Node[] = parseClashYaml(content);
         if (nodes.length === 0) {
             let decodedContent = '';
             try {
@@ -261,21 +387,21 @@ async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
 }
 
 function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): Node[] {
-  if (!rules || rules.length === 0) return nodes;
-  let filteredNodes = nodes;
-  const includeRules = rules.filter(r => r.type === 'include');
-  const excludeRules = rules.filter(r => r.type === 'exclude');
-  if (includeRules.length > 0) {
-    filteredNodes = filteredNodes.filter(node => 
-      includeRules.some(rule => new RegExp(rule.pattern, 'i').test(node[rule.field]))
-    );
-  }
-  if (excludeRules.length > 0) {
-    filteredNodes = filteredNodes.filter(node => 
-      !excludeRules.some(rule => new RegExp(rule.pattern, 'i').test(node[rule.field]))
-    );
-  }
-  return filteredNodes;
+    if (!rules || rules.length === 0) return nodes;
+    let filteredNodes = nodes;
+    const includeRules = rules.filter(r => r.type === 'include');
+    const excludeRules = rules.filter(r => r.type === 'exclude');
+    if (includeRules.length > 0) {
+        filteredNodes = filteredNodes.filter(node => 
+        includeRules.some(rule => new RegExp(rule.pattern, 'i').test(node[rule.field]))
+        );
+    }
+    if (excludeRules.length > 0) {
+        filteredNodes = filteredNodes.filter(node => 
+        !excludeRules.some(rule => new RegExp(rule.pattern, 'i').test(node[rule.field]))
+        );
+    }
+    return filteredNodes;
 }
 
 async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
