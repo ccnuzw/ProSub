@@ -1,4 +1,4 @@
-import { Profile, Node, Env, RuleSetConfig } from './types';
+import { Profile, Node, Env, RuleSetConfig, Subscription, SubscriptionRule } from './types';
 import * as yaml from 'js-yaml';
 import * as ruleSets from './rulesets';
 import { parseClashYaml } from './clash-parser';
@@ -6,7 +6,11 @@ import { parseNodeLink } from './node-parser';
 
 // Helper to encode base64 in a URL-safe way
 function base64Encode(str: string): string {
-    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    // For SSR, which uses a specific URL-safe Base64 variant
+    return btoa(unescape(encodeURIComponent(str)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
 }
 
 function convertNodeToUri(node: Node): string {
@@ -48,7 +52,6 @@ function convertNodeToUri(node: Node): string {
                     : node.server;
                 return `ss://${encodedCreds}@${serverAddress}:${node.port}#${encodedName}`;
 
-            // *** FIX STARTS HERE: Added SSR Generator ***
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
                 const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
@@ -60,7 +63,6 @@ function convertNodeToUri(node: Node): string {
 
                 const fullInfo = `${mainInfo}/?${params.toString()}`;
                 return `ssr://${base64Encode(fullInfo)}`;
-            // *** FIX ENDS HERE ***
 
             default:
                 console.warn(`不支持的节点类型: ${node.type}`);
@@ -82,21 +84,25 @@ function generateBase64Subscription(nodes: Node[]): Response {
     return new Response(base64Content, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 }
 
-function generateShadowrocketSubscription(nodes: Node[]): Response {
-    const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
-    if (nodeLinks.length === 0) return new Response('', { status: 200 });
-    const content = nodeLinks.join('\n');
-    return new Response(content, {
-        headers: {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Content-Disposition': `attachment; filename="prosub_shadowrocket.txt"`
+async function fetchRemoteRules(url: string): Promise<any> {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const text = await response.text();
+        // 尝试解析 YAML 或 JSON
+        try {
+            return yaml.load(text);
+        } catch (e) {
+            return text; // 如果解析失败，可能是 Surge 这种纯文本格式
         }
-    });
+    } catch (e) {
+        return null;
+    }
 }
+
 
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
-        // 创建一个基础的 proxy 对象
         const proxy: any = {
             name: node.name,
             type: node.type,
@@ -104,17 +110,14 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             port: node.port,
         };
 
-        // --- 开始修改和新增逻辑 ---
-
-        // 根据不同类型处理特定参数
         switch (node.type) {
             case 'ss':
                 proxy.password = node.password;
                 proxy.cipher = node.params?.method;
+                if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
 
-            case 'ssr': // 新增：处理 SSR 节点 (兼容 Clash Meta/Verge)
-                proxy.type = 'ssr'; // 明确类型为 ssr
+            case 'ssr':
                 proxy.password = node.password;
                 proxy.cipher = node.params?.method;
                 proxy.protocol = node.params?.protocol;
@@ -127,73 +130,107 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.uuid = node.password;
                 proxy.alterId = node.params?.aid ?? 0;
                 proxy.cipher = node.params?.cipher ?? 'auto';
-                proxy.tls = !!node.params?.tls;
+                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
                 proxy.network = node.params?.net;
                 if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
-                        path: node.params?.path,
-                        headers: { Host: node.params?.host },
+                        path: node.params?.path || '/',
+                        headers: { Host: node.params?.host || node.server },
                     };
+                }
+                if(proxy.tls) {
+                    proxy.servername = node.params?.host || node.server;
                 }
                 break;
 
             case 'vless':
-            case 'vless-reality': // 合并处理 VLESS 和 REALITY
-                proxy.type = 'vless'; // Clash 中类型都是 vless
+            case 'vless-reality':
+                proxy.type = 'vless'; // Clash 中统一为 vless
                 proxy.uuid = node.password;
-                proxy.tls = !!node.params?.tls;
+                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none');
                 proxy.network = node.params?.net;
                 proxy.flow = node.params?.flow;
-
-                if (proxy.network === 'ws') {
+                 if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
-                        path: node.params?.path,
-                        headers: { Host: node.params?.host },
+                        path: node.params?.path || '/',
+                        headers: { Host: node.params?.host || node.server },
                     };
                 }
 
-                // 新增：为 vless-reality 类型添加 reality-opts
                 if (node.type === 'vless-reality') {
-                    proxy.servername = node.params?.sni; // REALITY 需要 servername
+                    proxy.servername = node.params?.sni;
+                    proxy['client-fingerprint'] = 'chrome'; // 常用指纹
                     proxy['reality-opts'] = {
                         'public-key': node.params?.pbk,
                         'short-id': node.params?.sid || '',
                     };
+                } else if(proxy.tls) {
+                     proxy.servername = node.params?.sni || node.server;
                 }
                 break;
 
             case 'trojan':
                 proxy.password = node.password;
-                proxy.sni = node.params?.sni;
-                proxy['skip-cert-verify'] = node.params?.allowInsecure === 'true';
+                proxy.sni = node.params?.sni || node.server;
+                proxy['skip-cert-verify'] = node.params?.allowInsecure === 'true' || node.params?.skipCertVerify === true;
                 break;
-        }
 
-        // 移除所有值为 undefined 的键，保持配置文件干净
-        Object.keys(proxy).forEach(key => proxy[key] === undefined && delete proxy[key]);
+            case 'hysteria2':
+                 proxy.type = 'hysteria2';
+                 proxy.password = node.password;
+                 proxy.sni = node.params?.sni || node.server;
+                 proxy['skip-cert-verify'] = node.params?.skipCertVerify === true;
+                 break;
+
+            case 'tuic':
+                proxy.type = 'tuic';
+                proxy.uuid = node.password;
+                proxy.password = node.params?.password || '';
+                proxy.sni = node.params?.sni || node.server;
+                proxy['skip-cert-verify'] = node.params?.skipCertVerify === true;
+                break;
+            
+            default:
+                // 对于不支持的类型，返回 null 以便过滤掉
+                return null;
+        }
+        
+        // 清理所有值为 undefined 的字段
+        Object.keys(proxy).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy[key]);
         if (proxy['ws-opts']) {
-          Object.keys(proxy['ws-opts']).forEach(key => proxy['ws-opts'][key] === undefined && delete proxy['ws-opts'][key]);
+          Object.keys(proxy['ws-opts']).forEach(key => (proxy['ws-opts'][key] === undefined || proxy['ws-opts'][key] === null) && delete proxy['ws-opts'][key]);
         }
-
+        
         return proxy;
-
-    // 过滤掉无法处理的节点类型
-    }).filter(p => p.type && ['ss', 'ssr', 'vmess', 'vless', 'trojan'].includes(p.type));
+    }).filter(p => p !== null); // 过滤掉不支持的节点类型
 
     let configRules;
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
         const fetchedRules = await fetchRemoteRules(ruleConfig.url);
-        if (fetchedRules) {
+        if (fetchedRules && typeof fetchedRules === 'object') {
             configRules = fetchedRules;
+            // 合并代理节点到远程配置
+            configRules.proxies = [...(configRules.proxies || []), ...proxies];
+            // 合并代理组节点
+            if (configRules['proxy-groups'] && Array.isArray(configRules['proxy-groups'])) {
+                configRules['proxy-groups'].forEach(group => {
+                    if (group.proxies && group.proxies.includes('auto')) {
+                         group.proxies = [...group.proxies, ...nodes.map(n => n.name)];
+                    }
+                });
+            }
         } else {
             configRules = ruleSets.getClashDefaultRules(nodes);
-            console.warn(`远程 Clash 规则获取失败，已回退至内置规则。`);
+            console.warn(`远程 Clash 规则获取失败或格式不正确，已回退至内置规则。`);
         }
     } else if (ruleConfig?.id === 'lite') {
         configRules = ruleSets.getClashLiteRules(nodes);
     } else {
         configRules = ruleSets.getClashDefaultRules(nodes);
     }
+
+    // 如果是远程规则，proxies 已经在上面合并了；否则，在这里设置
+    const finalProxies = configRules.proxies && configRules.proxies.length > 0 ? configRules.proxies : proxies;
 
     const clashConfig = {
         'port': 7890,
@@ -202,10 +239,19 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         'mode': 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        'proxies': proxies, // 使用处理过的 proxies
-        ...configRules,
+        ...configRules, // 展开规则集，包含 rules, proxy-groups 等
+        'proxies': finalProxies,
     };
-    const yamlString = yaml.dump(clashConfig, { sortKeys: false });
+
+    // 如果是远程规则，可能已经有 rules, proxy-groups 等，不需要再从内置规则获取
+    if (!(ruleConfig?.type === 'remote' && configRules.rules)) {
+        const defaultRules = ruleConfig?.id === 'lite' ? ruleSets.getClashLiteRules(nodes) : ruleSets.getClashDefaultRules(nodes);
+        clashConfig['proxy-groups'] = defaultRules['proxy-groups'];
+        clashConfig['rules'] = defaultRules['rules'];
+    }
+
+
+    const yamlString = yaml.dump(clashConfig, { sortKeys: false, lineWidth: -1 });
     return new Response(yamlString, {
         headers: {
             'Content-Type': 'text/yaml; charset=utf-8',
@@ -213,6 +259,9 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         }
     });
 }
+
+
+// 其他客户端的生成函数 (generateSurgeSubscription, generateQuantumultXSubscription, etc.) 保持不变
 
 async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxyLines = nodes.map(node => {
@@ -398,7 +447,7 @@ async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
             let decodedContent = '';
             try {
                 // 尝试进行 Base64 解码
-                    decodedContent = atob(decodeURIComponent(content.replace(/_/g, '/').replace(/-/g, '+')));
+                decodedContent = atob(decodeURIComponent(content.replace(/_/g, '/').replace(/-/g, '+')));
             } catch (e) {
                 // 如果解码失败，说明内容不是 Base64，直接作为纯文本处理
                 decodedContent = content;
@@ -429,8 +478,13 @@ function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): 
   if (includeRules.length > 0) {
     filteredNodes = filteredNodes.filter(node => {
       return includeRules.some(rule => {
-        const regex = new RegExp(rule.pattern, 'i');
-        return regex.test(node[rule.field]);
+        try {
+          const regex = new RegExp(rule.pattern, 'i');
+          return regex.test(node[rule.field]);
+        } catch(e) {
+          // 如果正则表达式无效，则进行简单的字符串包含检查
+          return node[rule.field].toLowerCase().includes(rule.pattern.toLowerCase());
+        }
       });
     });
   }
@@ -439,8 +493,12 @@ function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): 
   if (excludeRules.length > 0) {
     filteredNodes = filteredNodes.filter(node => {
       return !excludeRules.some(rule => {
-        const regex = new RegExp(rule.pattern, 'i');
-        return regex.test(node[rule.field]);
+        try {
+          const regex = new RegExp(rule.pattern, 'i');
+          return regex.test(node[rule.field]);
+        } catch (e) {
+          return node[rule.field].toLowerCase().includes(rule.pattern.toLowerCase());
+        }
       });
     });
   }
@@ -451,28 +509,28 @@ function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): 
 async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const KV = env.KV;
     const nodeIds = profile.nodes || [];
-    const profileSubs = profile.subscriptions || []; // 现在是 ProfileSubscription[]
+    const profileSubs = profile.subscriptions || [];
 
-    // 获取手动添加的节点 (逻辑不变)
     const allNodesJson = await KV.get('ALL_NODES');
     const allManualNodes: Record<string, Node> = allNodesJson ? JSON.parse(allNodesJson) : {};
     const manualNodes = nodeIds.map(id => allManualNodes[id]).filter(Boolean);
 
-    // 获取订阅中的节点 (逻辑需要修改)
     const allSubsJson = await KV.get('ALL_SUBSCRIPTIONS');
     const allSubscriptions: Record<string, Subscription> = allSubsJson ? JSON.parse(allSubsJson) : {};
 
     let allSubNodes: Node[] = [];
 
-    for (const profileSub of profileSubs) {
+    const subscriptionFetchPromises = profileSubs.map(async (profileSub) => {
         const subscription = allSubscriptions[profileSub.id];
         if (subscription) {
             let nodesFromSub = await fetchNodesFromSubscription(subscription.url);
-            // 在这里应用规则！
-            let processedNodes = applySubscriptionRules(nodesFromSub, profileSub.rules);
-            allSubNodes = allSubNodes.concat(processedNodes);
+            return applySubscriptionRules(nodesFromSub, profileSub.rules);
         }
-    }
+        return [];
+    });
+    
+    const results = await Promise.all(subscriptionFetchPromises);
+    allSubNodes = results.flat();
 
     return [...manualNodes, ...allSubNodes];
 }
@@ -489,7 +547,10 @@ export async function generateSubscriptionResponse(request: Request, profile: Pr
     if (!targetClient) {
         if (userAgent.includes('clash')) targetClient = 'clash';
         else if (userAgent.includes('surge')) targetClient = 'surge';
-        // ... 其他 User-Agent 判断
+        else if (userAgent.includes('quantumult x')) targetClient = 'quantumultx';
+        else if (userAgent.includes('loon')) targetClient = 'loon';
+        else if (userAgent.includes('sing-box')) targetClient = 'sing-box';
+        else if (userAgent.includes('shadowrocket')) targetClient = 'shadowrocket'; // Shadowrocket 也可以使用通用订阅
         else targetClient = 'base64'; // 默认
     }
 
@@ -507,7 +568,8 @@ export async function generateSubscriptionResponse(request: Request, profile: Pr
             return await generateLoonSubscription(allNodes, ruleConfig);
         case 'sing-box':
             return await generateSingBoxSubscription(allNodes, ruleConfig);
-        // ... 未来可以为 Surge 等添加类似的 await generateSurgeSubscription(...)
+        case 'shadowrocket':
+            return generateBase64Subscription(allNodes);
         default:
             return generateBase64Subscription(allNodes);
     }
