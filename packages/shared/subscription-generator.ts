@@ -89,17 +89,15 @@ async function fetchRemoteRules(url: string): Promise<any> {
         const response = await fetch(url);
         if (!response.ok) return null;
         const text = await response.text();
-        // 尝试解析 YAML 或 JSON
         try {
             return yaml.load(text);
         } catch (e) {
-            return text; // 如果解析失败，可能是 Surge 这种纯文本格式
+            return text;
         }
     } catch (e) {
         return null;
     }
 }
-
 
 async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxies = nodes.map(node => {
@@ -191,27 +189,23 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 break;
             
             default:
-                // 对于不支持的类型，返回 null 以便过滤掉
                 return null;
         }
         
-        // 清理所有值为 undefined 的字段
         Object.keys(proxy).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy[key]);
         if (proxy['ws-opts']) {
           Object.keys(proxy['ws-opts']).forEach(key => (proxy['ws-opts'][key] === undefined || proxy['ws-opts'][key] === null) && delete proxy['ws-opts'][key]);
         }
         
         return proxy;
-    }).filter(p => p !== null); // 过滤掉不支持的节点类型
+    }).filter(p => p !== null);
 
     let configRules;
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
         const fetchedRules = await fetchRemoteRules(ruleConfig.url);
         if (fetchedRules && typeof fetchedRules === 'object') {
             configRules = fetchedRules;
-            // 合并代理节点到远程配置
             configRules.proxies = [...(configRules.proxies || []), ...proxies];
-            // 合并代理组节点
             if (configRules['proxy-groups'] && Array.isArray(configRules['proxy-groups'])) {
                 configRules['proxy-groups'].forEach(group => {
                     if (group.proxies && group.proxies.includes('auto')) {
@@ -229,7 +223,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         configRules = ruleSets.getClashDefaultRules(nodes);
     }
 
-    // 如果是远程规则，proxies 已经在上面合并了；否则，在这里设置
     const finalProxies = configRules.proxies && configRules.proxies.length > 0 ? configRules.proxies : proxies;
 
     const clashConfig = {
@@ -239,17 +232,15 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         'mode': 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        ...configRules, // 展开规则集，包含 rules, proxy-groups 等
+        ...configRules,
         'proxies': finalProxies,
     };
 
-    // 如果是远程规则，可能已经有 rules, proxy-groups 等，不需要再从内置规则获取
     if (!(ruleConfig?.type === 'remote' && configRules.rules)) {
         const defaultRules = ruleConfig?.id === 'lite' ? ruleSets.getClashLiteRules(nodes) : ruleSets.getClashDefaultRules(nodes);
         clashConfig['proxy-groups'] = defaultRules['proxy-groups'];
         clashConfig['rules'] = defaultRules['rules'];
     }
-
 
     const yamlString = yaml.dump(clashConfig, { sortKeys: false, lineWidth: -1 });
     return new Response(yamlString, {
@@ -259,9 +250,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         }
     });
 }
-
-
-// 其他客户端的生成函数 (generateSurgeSubscription, generateQuantumultXSubscription, etc.) 保持不变
 
 async function generateSurgeSubscription(nodes: Node[], ruleConfig?: RuleSetConfig): Promise<Response> {
     const proxyLines = nodes.map(node => {
@@ -428,84 +416,6 @@ async function generateSingBoxSubscription(nodes: Node[], ruleConfig?: RuleSetCo
 
 
 // --- Data Fetching Logic ---
-async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
-    try {
-        const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
-        if (!response.ok) {
-            console.error(`从 ${url} 获取订阅失败，状态码: ${response.status}`);
-            return [];
-        }
-
-        const content = await response.text();
-        let nodes: Node[] = [];
-
-        // 优先尝试将其作为 Clash YAML 格式解析
-        nodes = parseClashYaml(content);
-
-        // 如果 YAML 解析后没有节点，则回退到原有的 Base64/纯文本 链接列表方式
-        if (nodes.length === 0) {
-            let decodedContent = '';
-            try {
-                // 尝试进行 Base64 解码
-                decodedContent = atob(decodeURIComponent(content.replace(/_/g, '/').replace(/-/g, '+')));
-            } catch (e) {
-                // 如果解码失败，说明内容不是 Base64，直接作为纯文本处理
-                decodedContent = content;
-            }
-
-            const lines = decodedContent.split(/[\r\n]+/).filter(Boolean);
-            nodes = lines.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
-        }
-
-        return nodes;
-    } catch (error) {
-        console.error(`从 ${url} 获取订阅时发生错误:`, error);
-        return [];
-    }
-}
-
-function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): Node[] {
-  if (!rules || rules.length === 0) {
-    return nodes;
-  }
-
-  let filteredNodes = nodes;
-
-  const includeRules = rules.filter(r => r.type === 'include');
-  const excludeRules = rules.filter(r => r.type === 'exclude');
-
-  // 应用包含规则 (如果存在)
-  if (includeRules.length > 0) {
-    filteredNodes = filteredNodes.filter(node => {
-      return includeRules.some(rule => {
-        try {
-          const regex = new RegExp(rule.pattern, 'i');
-          return regex.test(node[rule.field]);
-        } catch(e) {
-          // 如果正则表达式无效，则进行简单的字符串包含检查
-          return node[rule.field].toLowerCase().includes(rule.pattern.toLowerCase());
-        }
-      });
-    });
-  }
-
-  // 应用排除规则
-  if (excludeRules.length > 0) {
-    filteredNodes = filteredNodes.filter(node => {
-      return !excludeRules.some(rule => {
-        try {
-          const regex = new RegExp(rule.pattern, 'i');
-          return regex.test(node[rule.field]);
-        } catch (e) {
-          return node[rule.field].toLowerCase().includes(rule.pattern.toLowerCase());
-        }
-      });
-    });
-  }
-
-  return filteredNodes;
-}
-
 async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const KV = env.KV;
     const nodeIds = profile.nodes || [];
@@ -518,8 +428,6 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const allSubsJson = await KV.get('ALL_SUBSCRIPTIONS');
     const allSubscriptions: Record<string, Subscription> = allSubsJson ? JSON.parse(allSubsJson) : {};
 
-    let allSubNodes: Node[] = [];
-
     const subscriptionFetchPromises = profileSubs.map(async (profileSub) => {
         const subscription = allSubscriptions[profileSub.id];
         if (subscription) {
@@ -530,11 +438,56 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     });
     
     const results = await Promise.all(subscriptionFetchPromises);
-    allSubNodes = results.flat();
+    const allSubNodes = results.flat();
 
-    return [...manualNodes, ...allSubNodes];
+    // 智能重命名与去重逻辑
+    const combinedNodes = [...manualNodes, ...allSubNodes];
+    const finalNodes: Node[] = [];
+    const nameCount: Record<string, number> = {};
+    const usedNames = new Set<string>();
+
+    // 第一次遍历，预先记录所有已存在的名称
+    combinedNodes.forEach(node => {
+        usedNames.add(node.name);
+    });
+
+    // 第二次遍历，处理重名并生成最终列表
+    combinedNodes.forEach(originalNode => {
+        let node = { ...originalNode }; // 创建副本以修改名称
+        const baseName = node.name;
+        
+        // 增加节点名的计数
+        nameCount[baseName] = (nameCount[baseName] || 0) + 1;
+
+        if (nameCount[baseName] > 1) {
+            // 如果是第2个或更多的同名节点，开始寻找新的唯一名称
+            let suffix = 2; // 从2开始尝试
+            let newName;
+
+            // 循环直到找到一个未被使用的名称
+            do {
+                newName = `${baseName} ${suffix}`;
+                suffix++;
+            } while (usedNames.has(newName));
+            
+            node.name = newName;
+            usedNames.add(newName);
+        }
+        
+        finalNodes.push(node);
+    });
+
+    // 第三次遍历，去重完全相同的节点 (server, port, password, type)
+    const uniqueNodesMap = new Map<string, Node>();
+    finalNodes.forEach(node => {
+        const uniqueKey = `${node.server}:${node.port}:${node.password || ''}:${node.type}`;
+        if (!uniqueNodesMap.has(uniqueKey)) {
+            uniqueNodesMap.set(uniqueKey, node);
+        }
+    });
+
+    return Array.from(uniqueNodesMap.values());
 }
-
 
 // --- Main Handler ---
 export async function generateSubscriptionResponse(request: Request, profile: Profile, env: Env): Promise<Response> {
@@ -550,8 +503,8 @@ export async function generateSubscriptionResponse(request: Request, profile: Pr
         else if (userAgent.includes('quantumult x')) targetClient = 'quantumultx';
         else if (userAgent.includes('loon')) targetClient = 'loon';
         else if (userAgent.includes('sing-box')) targetClient = 'sing-box';
-        else if (userAgent.includes('shadowrocket')) targetClient = 'shadowrocket'; // Shadowrocket 也可以使用通用订阅
-        else targetClient = 'base64'; // 默认
+        else if (userAgent.includes('shadowrocket')) targetClient = 'shadowrocket';
+        else targetClient = 'base64';
     }
 
     const ruleConfig = profile.ruleSets ? profile.ruleSets[targetClient] : undefined;
