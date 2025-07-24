@@ -159,6 +159,15 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.server;
                 proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? (node.params?.allowInsecure === '1' || node.params?.allowInsecure === true);
+                
+                // ** FIX: Added WebSocket support for Trojan **
+                if (network === 'ws') {
+                    proxy.network = 'ws';
+                    proxy['ws-opts'] = {
+                        path: node.params?.path || '/',
+                        headers: { Host: node.params?.host || node.server },
+                    };
+                }
                 break;
             case 'hysteria2':
                  proxy.type = 'hysteria2';
