@@ -115,13 +115,12 @@ export const getClashDefaultRules = (nodes: Node[]) => {
   const usNodes = filterNodes(nodes, /美|US|United States/i);
   const krNodes = filterNodes(nodes, /韩|KR|Korea/i);
 
-  const allProxies = ['🚀 节点选择', '♻️ 自动选择', 'DIRECT', ...nodeNames];
-
+  // ** FIX: Removed self-reference from the main selector group **
   const proxyGroups = [
     {
       name: '🚀 节点选择',
       type: 'select',
-      proxies: allProxies,
+      proxies: ['♻️ 自动选择', 'DIRECT', ...nodeNames], // Corrected proxies list
     },
     {
       name: '☑️ 手动切换',
@@ -138,7 +137,7 @@ export const getClashDefaultRules = (nodes: Node[]) => {
     {
         name: '🐟 漏网之鱼',
         type: 'select',
-        proxies: ['REJECT', 'DIRECT'],
+        proxies: ['🚀 节点选择', 'DIRECT'], // Corrected to allow fallback
     },
     {
         name: '🛑 广告拦截',

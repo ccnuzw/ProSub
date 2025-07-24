@@ -18,10 +18,9 @@ export const getSurgeDefaultRules = (nodes: Node[]) => {
   const usNodes = filterNodes(nodes, /美|US|United States/i);
   const krNodes = filterNodes(nodes, /韩|KR|Korea/i);
 
-  const allProxies = ['🚀 节点选择', '♻️ 自动选择', 'DIRECT', ...nodeNames].join(', ');
-
+  // ** FIX: Removed self-reference from the main selector group **
   const proxyGroups = [
-    `🚀 节点选择 = select, ${allProxies}`,
+    `🚀 节点选择 = select, ♻️ 自动选择, DIRECT, ${nodeNames.join(', ')}`, // Corrected list
     `☑️ 手动切换 = select, ${nodeNames.join(', ')}`,
     `♻️ 自动选择 = url-test, ${nodeNames.join(', ')}, url = http://www.gstatic.com/generate_204, interval=300`,
     `🐟 漏网之鱼 = select, 🚀 节点选择, ♻️ 自动选择, DIRECT`,
