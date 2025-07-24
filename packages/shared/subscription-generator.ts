@@ -6,7 +6,6 @@ import { parseNodeLink } from './node-parser';
 
 // Helper to encode base64 in a URL-safe way
 function base64Encode(str: string): string {
-    // For SSR, which uses a specific URL-safe Base64 variant
     return btoa(unescape(encodeURIComponent(str)))
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
@@ -65,8 +64,16 @@ function convertNodeToUri(node: Node): string {
                 return `ssr://${base64Encode(fullInfo)}`;
 
             default:
-                console.warn(`不支持的节点类型: ${node.type}`);
-                return '';
+                // Fallback for other types or handle them specifically
+                const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
+                const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
+                url.hash = encodedName;
+                if (node.params) {
+                    for (const key in node.params) {
+                        url.searchParams.set(key, node.params[key]);
+                    }
+                }
+                return url.toString();
         }
     } catch (e) {
         console.error(`转换节点到 URI 失败: ${node.name}`, e);
@@ -107,9 +114,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             server: node.server,
             port: node.port,
         };
-
         const network = node.params?.net || node.params?.type;
-
         switch (node.type) {
             case 'ss':
                 proxy.password = node.password || node.params?.password;
@@ -117,7 +122,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
             case 'ssr':
-                proxy.password = node.password || node.params?.password;
+                 proxy.password = node.password || node.params?.password;
                 proxy.cipher = node.params?.cipher || node.params?.method;
                 proxy.protocol = node.params?.protocol;
                 proxy['protocol-param'] = node.params?.protoparam;
@@ -167,7 +172,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             case 'trojan':
                 proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.server;
-                // ** FINAL FIX: Added parentheses to resolve build error **
                 proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? (node.params?.allowInsecure === '1' || node.params?.allowInsecure === true);
                 break;
             case 'hysteria2':
@@ -193,14 +197,9 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         return proxy;
     }).filter(p => p !== null);
     
-    let baseConfig: any = {};
+    let baseConfig: any;
     if (ruleConfig?.type === 'remote' && ruleConfig.url) {
-        const remoteConfig = await fetchRemoteRules(ruleConfig.url);
-        if (remoteConfig && typeof remoteConfig === 'object') {
-            baseConfig = remoteConfig;
-        } else {
-            baseConfig = ruleSets.getClashDefaultRules(nodes);
-        }
+        baseConfig = await fetchRemoteRules(ruleConfig.url) || ruleSets.getClashDefaultRules(nodes);
     } else if (ruleConfig?.id === 'lite') {
         baseConfig = ruleSets.getClashLiteRules(nodes);
     } else {
@@ -215,16 +214,13 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
         ...baseConfig,
-        'proxies': proxies,
+        'proxies': proxies, // Explicitly overwrite proxies with the generated list
     };
     
     try {
         const yamlString = yaml.dump(finalConfig, { sortKeys: false, lineWidth: -1 });
         return new Response(yamlString, {
-            headers: {
-                'Content-Type': 'text/yaml; charset=utf-8',
-                'Content-Disposition': `attachment; filename="prosub_clash.yaml"`
-            }
+            headers: { 'Content-Type': 'text/yaml; charset=utf-8', 'Content-Disposition': `attachment; filename="prosub_clash.yaml"` }
         });
     } catch (error) {
         console.error("YAML DUMP FAILED:", error);
@@ -475,11 +471,23 @@ async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
 // --- Main Handler ---
 export async function generateSubscriptionResponse(request: Request, profile: Profile, env: Env): Promise<Response> {
     const allNodes = await fetchAllNodes(profile, env);
-
     const url = new URL(request.url);
     const userAgent = request.headers.get('user-agent')?.toLowerCase() || '';
     let targetClient = url.searchParams.get('target')?.toLowerCase();
 
+    if (url.searchParams.has('clash')) {
+        targetClient = 'clash';
+    } else if (url.searchParams.has('surge')) {
+        targetClient = 'surge';
+    } else if (url.searchParams.has('quantumultx')) {
+        targetClient = 'quantumultx';
+    } else if (url.searchParams.has('loon')) {
+        targetClient = 'loon';
+    } else if (url.searchParams.has('sing-box')) {
+        targetClient = 'sing-box';
+    } else if (url.searchParams.has('base64')) {
+        targetClient = 'base64';
+    }
     if (!targetClient) {
         if (userAgent.includes('clash')) targetClient = 'clash';
         else if (userAgent.includes('surge')) targetClient = 'surge';
