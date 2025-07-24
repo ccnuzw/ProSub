@@ -4,6 +4,7 @@ import * as ruleSets from './rulesets';
 import { parseClashYaml } from './clash-parser';
 import { parseNodeLink } from './node-parser';
 
+// Helper to encode base64 in a URL-safe way
 function base64Encode(str: string): string {
     return btoa(unescape(encodeURIComponent(str)))
         .replace(/\+/g, '-')
@@ -23,11 +24,15 @@ function convertNodeToUri(node: Node): string {
                     path: node.params?.path ?? "", tls: node.params?.tls ?? ""
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
+
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
-                const serverAddress = node.server.includes(':') ? `[${node.server}]` : node.server;
+                const serverAddress = node.server.includes(':')
+                    ? `[${node.server}]`
+                    : node.server;
                 return `ss://${encodedCreds}@${serverAddress}:${node.port}#${encodedName}`;
+
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
                 const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
@@ -37,6 +42,15 @@ function convertNodeToUri(node: Node): string {
                 if (node.params?.protoparam) params.set('protoparam', base64Encode(node.params.protoparam));
                 const fullInfo = `${mainInfo}/?${params.toString()}`;
                 return `ssr://${base64Encode(fullInfo)}`;
+            
+            case 'vless':
+            case 'vless-reality':
+            case 'trojan':
+            case 'socks5':
+            case 'tuic':
+            case 'hysteria':
+            case 'hysteria2':
+            case 'anytls':
             default:
                 const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
                 const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
@@ -53,6 +67,8 @@ function convertNodeToUri(node: Node): string {
         return '';
     }
 }
+
+// --- Subscription Generators ---
 function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
     if (nodeLinks.length === 0) return new Response('', { status: 200 });
@@ -66,7 +82,11 @@ async function fetchRemoteRules(url: string): Promise<any> {
         const response = await fetch(url);
         if (!response.ok) return null;
         const text = await response.text();
-        try { return yaml.load(text); } catch (e) { return text; }
+        try {
+            return yaml.load(text);
+        } catch (e) {
+            return text; // Return as plain text if YAML parsing fails
+        }
     } catch (e) {
         return null;
     }
@@ -144,7 +164,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             case 'trojan':
                 proxy.password = node.password || node.params?.password;
                 proxy.sni = node.params?.sni || node.params?.host || node.server;
-                proxy.tls = true; // Trojan must have TLS
+                proxy.tls = true;
                 proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? (node.params?.allowInsecure === '1' || node.params?.allowInsecure === true);
                 if (network === 'ws') {
                     proxy.network = 'ws';
@@ -172,7 +192,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         }
         Object.keys(proxy).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy[key]);
         if (proxy['ws-opts']) {
-          Object.keys(proxy['ws-opts']).forEach(key => (proxy['ws-opts'][key] === undefined || proxy[key] === null) && delete proxy['ws-opts'][key]);
+          Object.keys(proxy['ws-opts']).forEach(key => (proxy[key] === undefined || proxy[key] === null) && delete proxy['ws-opts'][key]);
         }
         return proxy;
     }).filter(p => p !== null);
@@ -350,6 +370,7 @@ async function generateSingBoxSubscription(nodes: Node[], ruleConfig?: RuleSetCo
     return new Response(JSON.stringify(singboxConfig, null, 2), { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 }
 
+
 async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
@@ -390,6 +411,7 @@ function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): 
     }
     return filteredNodes;
 }
+
 async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const KV = env.KV;
     const nodeIds = profile.nodes || [];
