@@ -4,7 +4,6 @@ import * as ruleSets from './rulesets';
 import { parseClashYaml } from './clash-parser';
 import { parseNodeLink } from './node-parser';
 
-// Helper to encode base64 in a URL-safe way
 function base64Encode(str: string): string {
     return btoa(unescape(encodeURIComponent(str)))
         .replace(/\+/g, '-')
@@ -24,33 +23,20 @@ function convertNodeToUri(node: Node): string {
                     path: node.params?.path ?? "", tls: node.params?.tls ?? ""
                 };
                 return `vmess://${btoa(JSON.stringify(vmessConfig))}`;
-
             case 'ss':
                 const creds = `${node.params?.method}:${node.password}`;
                 const encodedCreds = btoa(creds).replace(/=+$/, '');
-                const serverAddress = node.server.includes(':')
-                    ? `[${node.server}]`
-                    : node.server;
+                const serverAddress = node.server.includes(':') ? `[${node.server}]` : node.server;
                 return `ss://${encodedCreds}@${serverAddress}:${node.port}#${encodedName}`;
-
             case 'ssr':
                 const password_base64 = base64Encode(node.password || '');
-                const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base_64}`;
+                const mainInfo = `${node.server}:${node.port}:${node.params?.protocol}:${node.params?.method}:${node.params?.obfs}:${password_base64}`;
                 const params = new URLSearchParams();
                 params.set('remarks', base64Encode(node.name));
                 if (node.params?.obfsparam) params.set('obfsparam', base64Encode(node.params.obfsparam));
                 if (node.params?.protoparam) params.set('protoparam', base64Encode(node.params.protoparam));
                 const fullInfo = `${mainInfo}/?${params.toString()}`;
                 return `ssr://${base64Encode(fullInfo)}`;
-            
-            case 'vless':
-            case 'vless-reality':
-            case 'trojan':
-            case 'socks5':
-            case 'tuic':
-            case 'hysteria':
-            case 'hysteria2':
-            case 'anytls':
             default:
                 const protocol = node.type === 'vless-reality' ? 'vless' : node.type;
                 const url = new URL(`${protocol}://${node.password || ''}@${node.server}:${node.port}`);
@@ -67,8 +53,6 @@ function convertNodeToUri(node: Node): string {
         return '';
     }
 }
-
-// --- Subscription Generators ---
 function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
     if (nodeLinks.length === 0) return new Response('', { status: 200 });
@@ -82,11 +66,7 @@ async function fetchRemoteRules(url: string): Promise<any> {
         const response = await fetch(url);
         if (!response.ok) return null;
         const text = await response.text();
-        try {
-            return yaml.load(text);
-        } catch (e) {
-            return text; // Return as plain text if YAML parsing fails
-        }
+        try { return yaml.load(text); } catch (e) { return text; }
     } catch (e) {
         return null;
     }
@@ -103,8 +83,14 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
         const network = node.params?.net || node.params?.type;
         switch (node.type) {
             case 'ss':
-                proxy.password = node.password || node.params?.password;
-                proxy.cipher = node.params?.cipher || node.params?.method;
+                const cipher = node.params?.cipher || node.params?.method;
+                const password = node.password || node.params?.password;
+                if (!cipher || !password) {
+                    console.warn(`跳过无效的 SS 节点 (缺少 cipher 或 password): ${node.name}`);
+                    return null;
+                }
+                proxy.password = password;
+                proxy.cipher = cipher;
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
             case 'ssr':
@@ -198,7 +184,6 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
     } else {
         ruleset = ruleSets.getClashDefaultRules(nodes);
     }
-    
     const finalConfig = {
         'port': 7890,
         'socks-port': 7891,

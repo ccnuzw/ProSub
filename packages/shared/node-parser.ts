@@ -8,97 +8,49 @@ function base64Decode(str: string): string {
   // Pad with '=' if necessary
   const padded = base64.length % 4 === 0 ? base64 : base64 + '='.repeat(4 - (base64.length % 4));
   const binaryString = atob(padded);
-  return decodeURIComponent(escape(binaryString));
+  // This part is crucial for handling UTF-8 characters in node names
+  try {
+    return decodeURIComponent(escape(binaryString));
+  } catch (e) {
+    return binaryString; // Fallback for non-UTF8 strings
+  }
 }
 
 export function parseNodeLink(link: string): Partial<Node> | null {
     link = link.trim();
-
-    // *** FIX STARTS HERE: Added SSR Parser ***
-    if (link.startsWith('ssr://')) {
-        try {
-            const decoded = base64Decode(link.substring(6));
-            const mainParts = decoded.split('/?');
-            const mainInfo = mainParts[0];
-            const paramsStr = mainParts.length > 1 ? mainParts[1] : '';
-
-            // SSR's main info is in the format: server:port:protocol:method:obfs:password_base64
-            // This is tricky with IPv6. We split from the right side.
-            const parts = mainInfo.split(':');
-            if (parts.length < 6) throw new Error("无效的 SSR 格式: 字段不足");
-
-            const password_base64 = parts.pop()!;
-            const obfs = parts.pop()!;
-            const method = parts.pop()!;
-            const protocol = parts.pop()!;
-            const port = parseInt(parts.pop()!, 10);
-            const server = parts.join(':'); // The rest is the server address (handles IPv6)
-            
-            const password = base64Decode(password_base64);
-
-            const params: Record<string, any> = {};
-            if (paramsStr) {
-                const searchParams = new URLSearchParams(paramsStr);
-                searchParams.forEach((value, key) => {
-                    // SSR remarks and other params are also base64 encoded
-                    params[key] = base64Decode(value);
-                });
-            }
-
-            return {
-                name: params.remarks || `${server}:${port}`,
-                server,
-                port,
-                password,
-                type: 'ssr',
-                params: {
-                    protocol,
-                    method,
-                    obfs,
-                    obfsparam: params.obfsparam,
-                    protoparam: params.protoparam,
-                },
-            };
-        } catch (e) {
-            console.error('解析 SSR 链接失败:', link, e);
-            return null;
-        }
-    }
-    // *** FIX ENDS HERE ***
-
-    if (link.startsWith('vmess://')) {
-        try {
-            const jsonStr = base64Decode(link.substring(8));
-            const config = JSON.parse(jsonStr);
-            return {
-                name: config.ps || `${config.add}:${config.port}`,
-                server: config.add,
-                port: parseInt(config.port, 10),
-                password: config.id,
-                type: 'vmess',
-                params: {
-                    net: config.net, tls: config.tls, aid: config.aid,
-                    host: config.host, path: config.path, type: config.type,
-                },
-            };
-        } catch (e) {
-            console.error('解析 VMess 链接失败:', link, e);
-            return null;
-        }
-    }
 
     if (link.startsWith('ss://')) {
         try {
             const hashIndex = link.lastIndexOf('#');
             const name = hashIndex !== -1 ? decodeURIComponent(link.substring(hashIndex + 1)) : '';
             const coreUrl = (hashIndex !== -1 ? link.substring(0, hashIndex) : link).substring(5);
+            
             const atIndex = coreUrl.lastIndexOf('@');
             if (atIndex === -1) throw new Error("无效的 SS 格式: 缺少 '@'");
+
             const credentialsBase64 = coreUrl.substring(0, atIndex);
             const credentials = base64Decode(credentialsBase64);
-            const [method, password] = credentials.split(':');
+            const colonIndex = credentials.indexOf(':');
+
+            let method, password;
+            // ** CORE FIX: Robustly handle credentials parsing **
+            if (colonIndex === -1) {
+                // If no colon, the whole part is the password, cipher needs to be inferred or is missing.
+                // We provide a common default that Clash can often auto-detect.
+                method = 'aes-256-gcm'; 
+                password = credentials;
+            } else {
+                method = credentials.substring(0, colonIndex);
+                password = credentials.substring(colonIndex + 1);
+            }
+            
+            if (!password) {
+                 throw new Error("无效的 SS 格式: 密码为空");
+            }
+
             const serverInfo = coreUrl.substring(atIndex + 1);
             let server: string, port: number;
+
             const ipv6Match = serverInfo.match(/^\[(.+)\]:(\d+)$/);
             if (ipv6Match) {
                 server = ipv6Match[1];
@@ -109,6 +61,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 server = serverInfo.substring(0, lastColonIndex);
                 port = parseInt(serverInfo.substring(lastColonIndex + 1), 10);
             }
+
             return {
                 name: name || `${server}:${port}`, server, port, password,
                 type: 'ss', params: { method },
@@ -119,6 +72,63 @@ export function parseNodeLink(link: string): Partial<Node> | null {
         }
     }
 
+    if (link.startsWith('ssr://')) {
+        try {
+            const decoded = base64Decode(link.substring(6));
+            const mainParts = decoded.split('/?');
+            const mainInfo = mainParts[0];
+            const paramsStr = mainParts.length > 1 ? mainParts[1] : '';
+            const parts = mainInfo.split(':');
+            if (parts.length < 6) throw new Error("无效的 SSR 格式: 字段不足");
+
+            const password_base64 = parts.pop()!;
+            const obfs = parts.pop()!;
+            const method = parts.pop()!;
+            const protocol = parts.pop()!;
+            const port = parseInt(parts.pop()!, 10);
+            const server = parts.join(':'); 
+            const password = base64Decode(password_base64);
+            const params: Record<string, any> = {};
+
+            if (paramsStr) {
+                const searchParams = new URLSearchParams(paramsStr);
+                searchParams.forEach((value, key) => {
+                    params[key] = base64Decode(value);
+                });
+            }
+
+            return {
+                name: params.remarks || `${server}:${port}`,
+                server, port, password, type: 'ssr',
+                params: { protocol, method, obfs, obfsparam: params.obfsparam, protoparam: params.protoparam },
+            };
+        } catch (e) {
+            console.error('解析 SSR 链接失败:', link, e);
+            return null;
+        }
+    }
+
+    if (link.startsWith('vmess://')) {
+        try {
+            const jsonStr = base64Decode(link.substring(8));
+            const config = JSON.parse(jsonStr);
+            return {
+                name: config.ps || `${config.add}:${config.port}`,
+                server: config.add,
+                port: parseInt(config.port, 10),
+                password: config.id, // In VMess, UUID is the password
+                type: 'vmess',
+                params: {
+                    net: config.net, tls: config.tls, aid: config.aid,
+                    host: config.host, path: config.path, type: config.type, security: 'auto'
+                },
+            };
+        } catch (e) {
+            console.error('解析 VMess 链接失败:', link, e);
+            return null;
+        }
+    }
+    
     try {
         const url = new URL(link);
         const protocol = url.protocol.replace(':', '');
@@ -133,12 +143,12 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             return {
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, port: parseInt(url.port, 10),
-                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : undefined,
+                password: url.username ? decodeURIComponent(url.username) : undefined,
                 type: nodeType, params: params,
             };
         }
     } catch (e) {
-        // Not a standard URL.
+        // Not a standard URL, which is fine, just ignore.
     }
 
     console.warn(`不支持或格式错误的链接，已跳过: ${link}`);
