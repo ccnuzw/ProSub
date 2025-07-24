@@ -94,7 +94,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 if (node.params?.udp) proxy.udp = node.params.udp;
                 break;
             case 'ssr':
-                proxy.password = node.password || node.params?.password;
+                 proxy.password = node.password || node.params?.password;
                 proxy.cipher = node.params?.cipher || node.params?.method;
                 proxy.protocol = node.params?.protocol;
                 proxy['protocol-param'] = node.params?.protoparam;
@@ -105,7 +105,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 proxy.uuid = node.password || node.params?.uuid;
                 proxy.alterId = node.params?.alterId ?? node.params?.aid ?? 0;
                 proxy.cipher = node.params?.cipher ?? 'auto';
-                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none' && node.params.tls !== false);
+                proxy.tls = !!(node.params?.tls === true || node.params?.tls === 'tls' || node.params?.security === 'tls');
                 proxy.network = network;
                 if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
@@ -121,7 +121,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
             case 'vless-reality':
                 proxy.type = 'vless';
                 proxy.uuid = node.password || node.params?.uuid;
-                proxy.tls = !!(node.params?.tls && node.params.tls !== 'none' && node.params.tls !== false);
+                proxy.tls = !!(node.params?.tls === true || node.params?.tls === 'tls' || node.params?.security === 'tls');
                 proxy.network = network;
                 proxy.flow = node.params?.flow;
                  if (proxy.network === 'ws') {
@@ -143,7 +143,8 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 break;
             case 'trojan':
                 proxy.password = node.password || node.params?.password;
-                proxy.sni = node.params?.sni || node.server;
+                proxy.sni = node.params?.sni || node.params?.host || node.server;
+                proxy.tls = true; // Trojan must have TLS
                 proxy['skip-cert-verify'] = node.params?.['skip-cert-verify'] ?? (node.params?.allowInsecure === '1' || node.params?.allowInsecure === true);
                 if (network === 'ws') {
                     proxy.network = 'ws';
@@ -184,6 +185,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
     } else {
         ruleset = ruleSets.getClashDefaultRules(nodes);
     }
+    
     const finalConfig = {
         'port': 7890,
         'socks-port': 7891,
@@ -388,7 +390,6 @@ function applySubscriptionRules(nodes: Node[], rules: SubscriptionRule[] = []): 
     }
     return filteredNodes;
 }
-
 async function fetchAllNodes(profile: Profile, env: Env): Promise<Node[]> {
     const KV = env.KV;
     const nodeIds = profile.nodes || [];
