@@ -8,7 +8,7 @@ import {
     generateSingBoxSubscription,
     generateSurgeSubscription,
     convertNodeToUri
-} from './generators';
+} from './generators/index';
 
 function generateBase64Subscription(nodes: Node[]): Response {
     const nodeLinks = nodes.map(convertNodeToUri).filter(Boolean);
