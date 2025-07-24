@@ -1,4 +1,5 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { requireAuth } from './utils/auth';
 
 interface ProfileRequestBody {
   name?: string;
@@ -7,9 +8,12 @@ interface ProfileRequestBody {
   alias?: string;
 }
 
-
-
 export async function handleProfileGet(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const KV = env.KV
     const profileJson = await KV.get(`profile:${id}`)
@@ -24,6 +28,11 @@ export async function handleProfileGet(request: Request, env: Env, id: string): 
 }
 
 export async function handleProfilePut(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const KV = env.KV
     const profileId = id;
@@ -74,6 +83,11 @@ export async function handleProfilePut(request: Request, env: Env, id: string): 
 }
 
 export async function handleProfileDelete(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const KV = env.KV
     const profile = await KV.get(`profile:${id}`)

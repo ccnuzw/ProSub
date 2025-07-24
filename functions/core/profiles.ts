@@ -1,4 +1,5 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { requireAuth } from './utils/auth';
 
 interface ProfileRequest {
   name: string;
@@ -7,9 +8,12 @@ interface ProfileRequest {
   alias?: string;
 }
 
-
-
 export async function handleProfilesGet(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const KV = env.KV
     const profileIndexJson = await KV.get('_index:profiles');
@@ -30,6 +34,11 @@ export async function handleProfilesGet(request: Request, env: Env): Promise<Res
 }
 
 export async function handleProfilesPost(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const { name, nodes = [], subscriptions = [], alias } = (await request.json()) as ProfileRequest
 

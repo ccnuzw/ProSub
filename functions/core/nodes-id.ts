@@ -1,5 +1,6 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { Node, Env } from '@shared/types';
+import { requireAuth } from './utils/auth';
 
 const ALL_NODES_KEY = 'ALL_NODES';
 
@@ -21,6 +22,11 @@ interface NodeRequest {
 }
 
 export async function handleNodeGet(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+  
   try {
     const allNodes = await getAllNodes(env);
     const node = allNodes[id];
@@ -35,6 +41,11 @@ export async function handleNodeGet(request: Request, env: Env, id: string): Pro
 }
 
 export async function handleNodePut(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const { name, server, port, password, type } = (await request.json()) as NodeRequest;
     const updatedNode: Node = { id, name, server, port, password, type };
@@ -54,6 +65,11 @@ export async function handleNodePut(request: Request, env: Env, id: string): Pro
 }
 
 export async function handleNodeDelete(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const allNodes = await getAllNodes(env);
     if (!allNodes[id]) {

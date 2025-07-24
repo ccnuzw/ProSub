@@ -1,5 +1,6 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { Subscription, Env } from '@shared/types';
+import { requireAuth } from './utils/auth';
 
 const ALL_SUBSCRIPTIONS_KEY = 'ALL_SUBSCRIPTIONS';
 
@@ -18,6 +19,11 @@ interface SubscriptionRequest {
 }
 
 export async function handleSubscriptionGet(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+  
   try {
     const allSubscriptions = await getAllSubscriptions(env);
     const sub = allSubscriptions[id];
@@ -32,6 +38,11 @@ export async function handleSubscriptionGet(request: Request, env: Env, id: stri
 }
 
 export async function handleSubscriptionPut(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const { name, url } = (await request.json()) as SubscriptionRequest;
     const updatedSubscription: Subscription = { id, name, url };
@@ -51,6 +62,11 @@ export async function handleSubscriptionPut(request: Request, env: Env, id: stri
 }
 
 export async function handleSubscriptionDelete(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const allSubscriptions = await getAllSubscriptions(env);
     if (!allSubscriptions[id]) {

@@ -1,5 +1,6 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { Subscription, Env } from '@shared/types';
+import { requireAuth } from './utils/auth';
 
 const ALL_SUBSCRIPTIONS_KEY = 'ALL_SUBSCRIPTIONS';
 
@@ -18,6 +19,11 @@ interface SubscriptionRequest {
 }
 
 export async function handleSubscriptionsGet(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const allSubscriptions = await getAllSubscriptions(env);
     return jsonResponse(Object.values(allSubscriptions));
@@ -28,6 +34,11 @@ export async function handleSubscriptionsGet(request: Request, env: Env): Promis
 }
 
 export async function handleSubscriptionsPost(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const { name, url } = (await request.json()) as SubscriptionRequest;
     const id = crypto.randomUUID();

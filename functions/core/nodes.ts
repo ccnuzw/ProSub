@@ -1,5 +1,6 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { Node, Env } from '@shared/types';
+import { requireAuth } from './utils/auth'; // 引入认证函数
 
 const ALL_NODES_KEY = 'ALL_NODES';
 
@@ -21,6 +22,11 @@ interface NodeRequest {
 }
 
 export async function handleNodesGet(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult; // 认证失败，返回错误响应
+  }
+
   try {
     const allNodes = await getAllNodes(env);
     return jsonResponse(Object.values(allNodes));
@@ -31,6 +37,11 @@ export async function handleNodesGet(request: Request, env: Env): Promise<Respon
 }
 
 export async function handleNodesPost(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
     const { name, server, port, password, type } = (await request.json()) as NodeRequest;
     const id = crypto.randomUUID();
