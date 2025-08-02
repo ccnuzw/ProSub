@@ -39,8 +39,12 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
-      }
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true
+      },
+      injectRegister: 'auto',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png']
     })
   ],
   resolve: {
