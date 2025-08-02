@@ -24,27 +24,14 @@ export default defineConfig({
         name: 'ProSub',
         short_name: 'ProSub',
         description: '你的私人代理订阅与节点管理中心',
-        theme_color: '#00b96b',
-        icons: [
-          {
-            src: 'logo-192.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml'
-          },
-          {
-            src: 'logo-512.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml'
-          }
-        ]
+        theme_color: '#00b96b'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg,json}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true
       },
-      injectRegister: 'auto',
-      includeAssets: ['favicon.ico', 'logo-192.svg', 'logo-512.svg']
+      injectRegister: 'auto'
     })
   ],
   resolve: {
