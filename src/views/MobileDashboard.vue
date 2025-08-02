@@ -94,21 +94,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Card, Statistic, Empty, Tag } from 'ant-design-vue'
+import { Card, Statistic, Empty, Tag, Button } from 'ant-design-vue'
 import { 
   DashboardOutlined, 
   ClusterOutlined, 
   FileTextOutlined, 
-  WifiOutlined, 
-  PlusOutlined 
+  WifiOutlined,
+  PlusOutlined
 } from '@ant-design/icons-vue'
+import type { Node, HealthStatus, Profile } from '../../packages/shared/types/index.ts'
 import { useRouter } from 'vue-router'
-import { Node, HealthStatus, Profile } from '../types'
 
 const router = useRouter()
-const goTo = (path: string) => {
-  router.push(path)
-}
+const goTo = (path: string) => router.push(path)
 
 const stats = ref({
   nodes: 0,
@@ -121,49 +119,42 @@ const recentNodes = ref<Node[]>([])
 const recentProfiles = ref<Profile[]>([])
 const nodeStatus = ref<Record<string, HealthStatus>>({})
 
-const formatTime = (dateString: string) => {
-  const date = new Date(dateString)
-  return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`
-}
-
 const getNodeStatusColor = (node: Node) => {
   const status = nodeStatus.value[node.id]
-  if (!status || !status.latency) return 'default'
+  if (!status || !status.latency) return 'success'
   if (status.latency < 500) return 'success'
   if (status.latency < 1000) return 'warning'
   return 'error'
 }
 
-const fetchDashboardData = async () => {
+const formatTime = (time: string) => {
+  return new Date(time).toLocaleString()
+}
+
+const refreshData = async () => {
   try {
-    // 获取节点数据
-    const nodesRes = await fetch('/api/nodes')
+    // 获取统计数据
+    const statsRes = await fetch('/api/stats')
+    if (statsRes.ok) {
+      stats.value = await statsRes.json()
+    }
+
+    // 获取最近节点
+    const nodesRes = await fetch('/api/nodes?limit=5')
     if (nodesRes.ok) {
-      const nodes = await nodesRes.json()
-      recentNodes.value = nodes.slice(0, 5)
-      stats.value.nodes = nodes.length
+      recentNodes.value = await nodesRes.json()
     }
 
-    // 获取订阅数据
-    const subsRes = await fetch('/api/subscriptions')
-    if (subsRes.ok) {
-      const subscriptions = await subsRes.json()
-      stats.value.subscriptions = subscriptions.length
-    }
-
-    // 获取配置文件数据
-    const profilesRes = await fetch('/api/profiles')
+    // 获取最近配置文件
+    const profilesRes = await fetch('/api/profiles?limit=5')
     if (profilesRes.ok) {
-      const profiles = await profilesRes.json()
-      recentProfiles.value = profiles.slice(0, 5)
-      stats.value.profiles = profiles.length
+      recentProfiles.value = await profilesRes.json()
     }
 
     // 获取节点状态
     const statusRes = await fetch('/api/node-statuses')
     if (statusRes.ok) {
       nodeStatus.value = await statusRes.json()
-      stats.value.onlineNodes = Object.values(nodeStatus.value).filter(s => s.status === 'online').length
     }
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
@@ -171,12 +162,6 @@ const fetchDashboardData = async () => {
 }
 
 onMounted(() => {
-  fetchDashboardData()
+  refreshData()
 })
 </script>
-
-<style scoped>
-.dark .border-gray-200 {
-  border-color: #444;
-}
-</style>

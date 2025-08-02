@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Card, Row, Col, Statistic, Table, Button } from 'ant-design-vue'
-import { Node, HealthStatus, Profile } from '../types'
+import type { Node, HealthStatus, Profile } from '@shared/types'
 import MobileDashboard from './MobileDashboard.vue'
 
 const loading = ref(false)
@@ -131,34 +131,28 @@ const getNodeStatusColor = (node: Node) => {
 const refreshData = async () => {
   loading.value = true
   try {
-    // 获取节点数据
-    const nodesRes = await fetch('/api/nodes')
+    // 获取统计数据
+    const statsRes = await fetch('/api/stats')
+    if (statsRes.ok) {
+      stats.value = await statsRes.json()
+    }
+
+    // 获取最近节点
+    const nodesRes = await fetch('/api/nodes?limit=5')
     if (nodesRes.ok) {
-      const nodes = await nodesRes.json()
-      recentNodes.value = nodes.slice(0, 5)
-      stats.value.nodes = nodes.length
+      recentNodes.value = await nodesRes.json()
     }
 
-    // 获取订阅数据
-    const subsRes = await fetch('/api/subscriptions')
-    if (subsRes.ok) {
-      const subscriptions = await subsRes.json()
-      stats.value.subscriptions = subscriptions.length
-    }
-
-    // 获取配置文件数据
-    const profilesRes = await fetch('/api/profiles')
+    // 获取最近配置文件
+    const profilesRes = await fetch('/api/profiles?limit=5')
     if (profilesRes.ok) {
-      const profiles = await profilesRes.json()
-      recentProfiles.value = profiles.slice(0, 5)
-      stats.value.profiles = profiles.length
+      recentProfiles.value = await profilesRes.json()
     }
 
     // 获取节点状态
     const statusRes = await fetch('/api/node-statuses')
     if (statusRes.ok) {
       nodeStatus.value = await statusRes.json()
-      stats.value.onlineNodes = Object.values(nodeStatus.value).filter(s => s.status === 'online').length
     }
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
