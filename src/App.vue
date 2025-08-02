@@ -1,22 +1,7 @@
-<template>const { defineConfig } = require('@vue/cli-service')
-module.exports = defineConfig({
-  transpileDependencies: true,
-  chainWebpack: config => {
-    const svgRule = config.module.rule('svg')
-
-    svgRule.uses.clear()
-
-    svgRule
-      .use('vue-loader')
-        .loader('vue-loader')
-        .end()
-      .use('vue-svg-loader')
-        .loader('vue-svg-loader')
-  }
-})
+<template>
   <ClientLayout />
   <div v-if="showInstallPrompt" class="pwa-install-prompt" :class="{ dark: isDarkMode }">
-    <img :src="require('@/assets/logo-192.svg')" alt="ProSub" class="logo" />
+    <img src="./assets/logo-192.svg" alt="ProSub" class="logo" />
     <div class="content">
       <div class="font-bold">安装 ProSub 应用</div>
       <div class="text-sm mt-1">将 ProSub 安装到主屏幕以获得更好的体验</div>
