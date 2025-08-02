@@ -15,7 +15,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeMount } from 'vue'
-import ClientLayout from './components/ClientLayout.vue'
 
 const showInstallPrompt = ref(false)
 const isDarkMode = ref(false)
