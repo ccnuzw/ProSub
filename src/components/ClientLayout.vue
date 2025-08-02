@@ -97,18 +97,12 @@ import {
   ClusterOutlined,
   WifiOutlined,
   FileTextOutlined,
-  TeamOutlined,
   UserOutlined,
-  LoginOutlined,
   MenuOutlined,
-  BulbOutlined,
-  FolderOpenOutlined,
-  FilterOutlined
+  BulbOutlined
 } from '@ant-design/icons-vue'
 
-const { Header, Content, Footer } = Layout
 const { useToken } = theme
-const { token } = useToken()
 
 const router = useRouter()
 const route = useRoute()

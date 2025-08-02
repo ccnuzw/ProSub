@@ -46,6 +46,13 @@ export interface User {
   defaultPasswordChanged: boolean;
 }
 
+// 健康检查状态接口
+export interface HealthStatus {
+  status: 'online' | 'offline' | 'checking' | 'error';
+  latency?: number;
+  error?: string;
+}
+
 // 新增节点分组接口
 export interface NodeGroup {
   id: string;
@@ -67,5 +74,5 @@ export interface CustomRuleSet {
 }
 
 export interface Env {
-  KV: KVNamespace;
+  KV: any;
 }

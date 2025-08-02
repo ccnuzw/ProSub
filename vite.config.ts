@@ -27,24 +27,24 @@ export default defineConfig({
         theme_color: '#00b96b',
         icons: [
           {
-            src: 'src/assets/logo-192.png',
+            src: 'logo-192.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: 'src/assets/logo-512.png',
+            src: 'logo-512.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
           }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,json}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true
       },
       injectRegister: 'auto',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png']
+      includeAssets: ['favicon.ico', 'logo-192.svg', 'logo-512.svg']
     })
   ],
   resolve: {

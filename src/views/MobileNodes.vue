@@ -27,7 +27,7 @@
         @touchmove="onTouchMove($event, node.id)"
         @touchend="onTouchEnd(node.id)"
       >
-        <div class="swipe-content" :ref="(el) => setContentRef(el, node.id)">
+        <div class="swipe-content" :ref="(el: any) => setContentRef(el, node.id)">
           <div class="font-medium">{{ node.name }}</div>
           <div class="text-sm text-gray-500">{{ node.server }}:{{ node.port }}</div>
           <div class="flex items-center mt-1">
@@ -57,7 +57,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { message, Tag, Spin, Empty, Card } from 'ant-design-vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
-import { Node, HealthStatus } from '../types'
+import type { Node, HealthStatus } from '@shared/types'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -73,12 +73,12 @@ const nodeStatus = ref<Record<string, HealthStatus>>({})
 // 移动端滑动删除相关状态
 const touchStartX = ref(0)
 const touchStartY = ref(0)
-const contentRefs = ref<Record<string, HTMLElement | null>>({})
+const contentRefs = ref<Record<string, any>>({})
 
 const filteredNodes = computed(() => {
   if (!searchTerm.value) return nodes.value
   const term = searchTerm.value.toLowerCase()
-  return nodes.value.filter(node => 
+  return nodes.value.filter((node: Node) => 
     node.name.toLowerCase().includes(term) ||
     node.server.toLowerCase().includes(term) ||
     node.type.toLowerCase().includes(term)
@@ -106,7 +106,7 @@ const getNodeStatusColor = (node: Node) => {
   return 'error'
 }
 
-const setContentRef = (el: HTMLElement | null, nodeId: string) => {
+const setContentRef = (el: any, nodeId: string) => {
   if (el) {
     contentRefs.value[nodeId] = el
   }
@@ -181,7 +181,7 @@ const handleDelete = async (id: string) => {
     const res = await fetch(`/api/nodes/${id}`, { method: 'DELETE' })
     if (res.ok) {
       message.success('删除成功')
-      nodes.value = nodes.value.filter(node => node.id !== id)
+      nodes.value = nodes.value.filter((node: Node) => node.id !== id)
     } else {
       throw new Error('Failed to delete node')
     }

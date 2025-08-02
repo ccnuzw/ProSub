@@ -1,7 +1,7 @@
 <template>
   <ClientLayout />
   <div v-if="showInstallPrompt" class="pwa-install-prompt" :class="{ dark: isDarkMode }">
-    <img src="/src/assets/logo-192.png" alt="ProSub" class="logo" />
+    <img src="/logo-192.svg" alt="ProSub" class="logo" />
     <div class="content">
       <div class="font-bold">安装 ProSub 应用</div>
       <div class="text-sm mt-1">将 ProSub 安装到主屏幕以获得更好的体验</div>
