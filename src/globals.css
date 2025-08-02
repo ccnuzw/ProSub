@@ -220,3 +220,71 @@
   background: #555;
   color: white;
 }
+
+/* src/globals.css */
+
+/* --- Bottom Navigation Bar Styles --- */
+
+/* This is the main container for the bottom nav */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: white; /* Light mode background */
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 1000; /* Ensure it's on top of other content */
+}
+
+/* Dark mode styles for the nav bar */
+.dark .mobile-nav {
+  background-color: #1f1f1f;
+  border-top-color: #3a3a3a;
+}
+
+/* Individual navigation items */
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #666; /* Default icon and text color */
+  text-decoration: none;
+  font-size: 12px;
+}
+
+/* Dark mode for nav items */
+.dark .mobile-nav-item {
+  color: #a0a0a0;
+}
+
+/* Style for the active navigation item */
+.mobile-nav-item.active {
+  color: #00b96b; /* Active color */
+}
+
+/* Dark mode for the active item */
+.dark .mobile-nav-item.active {
+  color: #00d68f;
+}
+
+/* Icon styles within the nav item */
+.mobile-nav-item .anticon {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+/* --- Layout Adjustments --- */
+
+/* Add padding to the bottom of the main content area to prevent overlap with the nav bar */
+.ant-layout-content {
+  padding-bottom: 80px !important; /* Adjust this value if your nav bar height changes */
+}
+
+/* We don't need the default footer anymore */
+.ant-layout-footer {
+  display: none !important;
+}
