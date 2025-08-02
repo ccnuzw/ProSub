@@ -1,12 +1,6 @@
 <template>
   <div class="space-y-4">
     <a-card class="mobile-card">
-      <template #title>
-        <div class="flex items-center">
-          <DashboardOutlined class="mr-2" />
-          <span>系统概览</span>
-        </div>
-      </template>
       <div class="grid grid-cols-2 gap-4">
         <a-statistic title="节点数" :value="stats.nodes" />
         <a-statistic title="订阅数" :value="stats.subscriptions" />
