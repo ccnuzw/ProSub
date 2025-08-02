@@ -2,20 +2,24 @@
   <a-config-provider :theme="customTheme">
     <a-layout style="min-height: 100vh">
       <a-layout-header class="flex items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div class="logo flex-shrink-0 text-white text-lg sm:text-xl font-bold mr-4 sm:mr-6">ProSub</div>
-        <a-menu
-          theme="dark"
-          mode="horizontal"
-          :selected-keys="[selectedKey]"
-          :items="menuItems"
-          class="hidden sm:flex flex-1 min-w-0"
-        />
+        
+        <div class="flex items-center flex-1 min-w-0">
+          <div class="logo flex-shrink-0 text-white text-lg sm:text-xl font-bold mr-4 sm:mr-6">ProSub</div>
+
+          <a-menu
+            theme="dark"
+            mode="horizontal"
+            :selected-keys="[selectedKey]"
+            :items="menuItems"
+            class="hidden sm:flex flex-1 min-w-0"
+          />
+        </div>
 
         <a-button type="text" class="sm:hidden text-white" @click="toggleDrawer">
           <MenuOutlined />
         </a-button>
 
-        <div class="ml-auto flex-shrink-0 flex items-center gap-2">
+        <div class="flex-shrink-0 flex items-center gap-2">
           <a-switch v-model:checked="isDarkTheme" @change="toggleTheme" class="mr-2">
             <template #checkedChildren><BulbOutlined /></template>
             <template #unCheckedChildren><BulbOutlined /></template>
@@ -30,7 +34,7 @@
             登录
           </a-button>
         </div>
-      </a-layout-header>
+        </a-layout-header>
 
       <a-drawer
         v-model:open="drawerVisible"
@@ -84,10 +88,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
-import { Layout, Menu, Button, message, theme, Drawer, Switch, ConfigProvider } from 'ant-design-vue';
-import { useRouter, useRoute } from 'vue-router';
-import { User } from '@shared/types';
+import { ref, onMounted, watch, computed } from 'vue'
+import { Layout, Menu, Button, message, theme, Drawer, Switch, ConfigProvider } from 'ant-design-vue'
+import { useRouter, useRoute } from 'vue-router'
+import { User } from '@shared/types'
 import {
   DashboardOutlined,
   ClusterOutlined,
@@ -96,108 +100,108 @@ import {
   UserOutlined,
   MenuOutlined,
   BulbOutlined,
-  LoginOutlined, // 确保 LoginOutlined 已导入
-} from '@ant-design/icons-vue';
+  LoginOutlined,
+} from '@ant-design/icons-vue'
 
-const { useToken } = theme;
+const { useToken } = theme
 
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
-const currentUser = ref<User | null>(null);
-const loadingUser = ref(true);
-const isClient = ref(false);
-const drawerVisible = ref(false);
+const currentUser = ref<User | null>(null)
+const loadingUser = ref(true)
+const isClient = ref(false)
+const drawerVisible = ref(false)
 
-const isDarkTheme = ref(localStorage.getItem('theme') === 'dark');
+const isDarkTheme = ref(localStorage.getItem('theme') === 'dark')
 
 const toggleDrawer = () => {
-  drawerVisible.value = !drawerVisible.value;
-};
+  drawerVisible.value = !drawerVisible.value
+}
 
 const onDrawerChange = (val: boolean) => { 
-  if (!val) drawerVisible.value = false;
-};
+  if (!val) drawerVisible.value = false 
+}
 
 const toggleTheme = (checked: boolean) => {
-  isDarkTheme.value = checked;
-  localStorage.setItem('theme', checked ? 'dark' : 'light');
-};
+  isDarkTheme.value = checked
+  localStorage.setItem('theme', checked ? 'dark' : 'light')
+}
 
 onMounted(() => {
-  isClient.value = true;
+  isClient.value = true
   // Set initial theme class on html element
   if (isDarkTheme.value) {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add('dark')
   } else {
-    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.remove('dark')
   }
-});
+})
 
 // Watch for theme changes and update html class
 watch(isDarkTheme, (newVal) => {
   if (newVal) {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add('dark')
   } else {
-    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.remove('dark')
   }
-});
+})
 
 watch(isClient, (newVal) => {
   if (newVal) {
-    fetchCurrentUser();
+    fetchCurrentUser()
   }
-});
+})
 
 watch(() => route.path, (newPath) => {
   if (isClient.value) {
     // 检查是否需要重新获取用户，例如在登录/登出后
     if (newPath === '/user/login' || newPath === '/dashboard') {
-      fetchCurrentUser();
+      fetchCurrentUser()
     }
   }
-});
+})
 
 const fetchCurrentUser = async () => {
-  loadingUser.value = true;
+  loadingUser.value = true
   try {
-    const res = await fetch('/api/auth/me');
+    const res = await fetch('/api/auth/me')
     if (res.ok) {
-      const user = (await res.json()) as User;
-      currentUser.value = user;
+      const user = (await res.json()) as User
+      currentUser.value = user
       if (user.name === 'admin' && user.defaultPasswordChanged === false && route.path !== '/user/change-password') {
-        message.warning('请修改默认密码');
-        router.push('/user/change-password');
+        message.warning('请修改默认密码')
+        router.push('/user/change-password')
       }
     } else {
-      currentUser.value = null;
+      currentUser.value = null
       if (route.path !== '/user/login' && route.path !== '/user/register') {
-        router.push('/user/login');
+        router.push('/user/login')
       }
     }
   } catch (error) {
-    console.error('Failed to fetch current user:', error);
-    currentUser.value = null;
+    console.error('Failed to fetch current user:', error)
+    currentUser.value = null
   } finally {
-    loadingUser.value = false;
+    loadingUser.value = false
   }
-};
+}
 
 const handleLogout = async () => {
   try {
-    const res = await fetch('/api/auth/logout', { method: 'POST' });
+    const res = await fetch('/api/auth/logout', { method: 'POST' })
     if (res.ok) {
-      message.success('登出成功');
-      currentUser.value = null;
-      router.push('/user/login');
+      message.success('登出成功')
+      currentUser.value = null
+      router.push('/user/login')
     } else {
-      throw new Error('登出失败');
+      throw new Error('登出失败')
     }
   } catch (error) {
-    console.error('Failed to logout:', error);
-    message.error('登出失败，请重试');
+    console.error('Failed to logout:', error)
+    message.error('登出失败，请重试')
   }
-};
+}
 
 const menuItems = computed(() => {
   const items = [
@@ -205,7 +209,7 @@ const menuItems = computed(() => {
     { 
       key: 'nodes',
       label: '节点管理', 
-      icon: ClusterOutlined,
+      icon: ClusterOutlined, 
       children: [
         { key: 'nodesList', label: '节点列表', onClick: () => router.push('/nodes') },
         { key: 'nodeGroups', label: '节点分组', onClick: () => router.push('/node-groups') }
@@ -220,34 +224,34 @@ const menuItems = computed(() => {
     { 
       key: 'profiles', 
       label: '配置文件', 
-      icon: FileTextOutlined,
+      icon: FileTextOutlined, 
       children: [
         { key: 'profilesList', label: '配置列表', onClick: () => router.push('/profiles') },
         { key: 'ruleSets', label: '规则集', onClick: () => router.push('/rule-sets') }
       ]
     },
-  ];
+  ]
 
   if (isClient.value && currentUser.value) {
-    items.push({ key: 'profile', label: '我的资料', icon: UserOutlined, onClick: () => router.push('/user/profile') });
+    items.push({ key: 'profile', label: '我的资料', icon: UserOutlined, onClick: () => router.push('/user/profile') })
   } else if (isClient.value && !currentUser.value) {
-    items.push({ key: 'login', label: '登录', icon: LoginOutlined, onClick: () => router.push('/user/login') });
+    items.push({ key: 'login', label: '登录', icon: LoginOutlined, onClick: () => router.push('/user/login') })
   }
-  return items;
-});
+  return items
+})
 
 const selectedKey = computed(() => {
-  const path = route.path;
-  if (path.startsWith('/dashboard')) return 'dashboard';
-  if (path.startsWith('/nodes')) return 'nodes';
-  if (path.startsWith('/node-groups')) return 'nodeGroups';
-  if (path.startsWith('/subscriptions')) return 'subscriptions';
-  if (path.startsWith('/profiles')) return 'profiles';
-  if (path.startsWith('/rule-sets')) return 'ruleSets';
-  if (path.startsWith('/user/login')) return 'login';
-  if (path.startsWith('/user/profile')) return 'profile';
-  return 'dashboard';
-});
+  const path = route.path
+  if (path.startsWith('/dashboard')) return 'dashboard'
+  if (path.startsWith('/nodes')) return 'nodes'
+  if (path.startsWith('/node-groups')) return 'nodeGroups'
+  if (path.startsWith('/subscriptions')) return 'subscriptions'
+  if (path.startsWith('/profiles')) return 'profiles'
+  if (path.startsWith('/rule-sets')) return 'ruleSets'
+  if (path.startsWith('/user/login')) return 'login'
+  if (path.startsWith('/user/profile')) return 'profile'
+  return 'dashboard'
+})
 
 const customTheme = computed(() => ({
   token: {
@@ -256,7 +260,7 @@ const customTheme = computed(() => ({
     borderRadius: 6,
   },
   algorithm: isDarkTheme.value ? theme.darkAlgorithm : theme.defaultAlgorithm,
-}));
+}))
 </script>
 
 <style scoped>
