@@ -76,4 +76,21 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+
+const menuItems = [
+  { key: 'dashboard', label: '仪表盘', path: '/dashboard' },
+  { key: 'nodes', label: '节点', path: '/nodes' },
+  { key: 'subscriptions', label: '订阅', path: '/subscriptions' },
+  { key: 'profiles', label: '配置文件', path: '/profiles' },
+  { key: 'rule-sets', label: '规则集', path: '/rule-sets' },
+  { key: 'user/profile', label: '我的', path: '/user/profile' }
+]
+
+const selectedKey = computed(() => route.path.split('/').pop() || '')
+
 </script>
