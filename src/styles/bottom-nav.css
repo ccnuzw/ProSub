@@ -1,0 +1,10 @@
+import './style.css';
+import './globals.css';
+import './styles/bottom-nav.css'; // <-- 添加这一行
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
+
+const app = createApp(App);
+app.use(router);
+app.mount('#app');
