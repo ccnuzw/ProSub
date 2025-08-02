@@ -58,26 +58,26 @@
       
       <!-- Mobile Bottom Navigation -->
       <div class="mobile-nav sm:hidden">
-        <a href="/#/dashboard" class="mobile-nav-item" :class="{ active: selectedKey === 'dashboard' }">
+        <router-link to="/dashboard" class="mobile-nav-item" :class="{ active: selectedKey === 'dashboard' }">
           <DashboardOutlined />
           <span>仪表盘</span>
-        </a>
-        <a href="/#/nodes" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('nodes') }">
+        </router-link>
+        <router-link to="/nodes" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('nodes') }">
           <ClusterOutlined />
           <span>节点</span>
-        </a>
-        <a href="/#/subscriptions" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('subscriptions') }">
+        </router-link>
+        <router-link to="/subscriptions" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('subscriptions') }">
           <WifiOutlined />
           <span>订阅</span>
-        </a>
-        <a href="/#/profiles" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('profiles') }">
+        </router-link>
+        <router-link to="/profiles" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('profiles') }">
           <FileTextOutlined />
           <span>配置</span>
-        </a>
-        <a href="/#/user/profile" class="mobile-nav-item" :class="{ active: selectedKey === 'profile' }">
+        </router-link>
+        <router-link to="/user/profile" class="mobile-nav-item" :class="{ active: selectedKey === 'profile' }">
           <UserOutlined />
           <span>我的</span>
-        </a>
+        </router-link>
       </div>
       
       <a-layout-footer class="text-center p-4 hidden sm:block">

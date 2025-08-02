@@ -1,5 +1,5 @@
 <template>
-  <ClientLayout />
+  <router-view />
   <div v-if="showInstallPrompt" class="pwa-install-prompt" :class="{ dark: isDarkMode }">
     <img src="./assets/logo-192.svg" alt="ProSub" class="logo" />
     <div class="content">
