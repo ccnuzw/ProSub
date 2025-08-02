@@ -3,6 +3,9 @@
     <div class="flex justify-between items-center mb-4">
       <h1 class="text-xl font-bold">节点管理</h1>
       <div class="flex gap-2">
+        <a-button type="primary" size="small" @click="isImportModalVisible = true">
+          <ImportOutlined />
+        </a-button>
         <a-button type="primary" size="small" @click="navigateTo('/nodes/new')">
           <PlusOutlined />
         </a-button>
@@ -27,7 +30,7 @@
         @touchmove="onTouchMove($event, node.id)"
         @touchend="onTouchEnd(node.id)"
       >
-        <div class="swipe-content" :ref="(el: any) => setContentRef(el, node.id)">
+        <div class="swipe-content" :ref="(el) => setContentRef(el, node.id)">
           <div class="font-medium">{{ node.name }}</div>
           <div class="text-sm text-gray-500">{{ node.server }}:{{ node.port }}</div>
           <div class="flex items-center mt-1">
@@ -51,13 +54,19 @@
 
     <a-spin v-else />
   </a-card>
-</template>
+
+  <a-modal title="从剪贴板导入节点" v-model:open="isImportModalVisible" @ok="handleImport" @cancel="() => { isImportModalVisible = false; importLinks = ''; }" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
+    <p>请粘贴一个或多个节点链接，每行一个。</p>
+    <a-textarea :rows="5" v-model:value="importLinks" placeholder="vmess://...&#10;vless://...&#10;ss://..." />
+  </a-modal>
+  </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { message, Tag, Spin, Empty, Card } from 'ant-design-vue'
-import { PlusOutlined } from '@ant-design/icons-vue'
+import { message, Tag, Spin, Empty, Card, Modal, InputSearch, Textarea } from 'ant-design-vue'
+import { PlusOutlined, ImportOutlined } from '@ant-design/icons-vue' // 导入图标
 import type { Node, HealthStatus } from '@shared/types'
+import { parseNodeLink as parseNode } from '@shared/node-parser' // 导入节点解析函数
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -69,6 +78,12 @@ const nodes = ref<Node[]>([])
 const loading = ref(true)
 const searchTerm = ref('')
 const nodeStatus = ref<Record<string, HealthStatus>>({})
+
+// START: 添加导入功能所需的状态
+const isImportModalVisible = ref(false)
+const importLinks = ref('')
+const importing = ref(false)
+// END: 添加导入功能所需的状态
 
 // 移动端滑动删除相关状态
 const touchStartX = ref(0)
@@ -113,6 +128,12 @@ const setContentRef = (el: any, nodeId: string) => {
 }
 
 const onTouchStart = (e: TouchEvent, nodeId: string) => {
+  // 重置其他所有项的滑动状态
+  for (const id in contentRefs.value) {
+    if (id !== nodeId && contentRefs.value[id]) {
+      contentRefs.value[id]!.style.transform = 'translateX(0)'
+    }
+  }
   touchStartX.value = e.touches[0].clientX
   touchStartY.value = e.touches[0].clientY
 }
@@ -125,8 +146,8 @@ const onTouchMove = (e: TouchEvent, nodeId: string) => {
   const diffX = touchStartX.value - touchX
   const diffY = Math.abs(touchStartY.value - touchY)
 
-  // 只有在主要是水平滑动时才触发滑动删除
-  if (diffY < diffX && diffX > 10) {
+  // 只有在主要是水平向左滑动时才触发
+  if (diffX > diffY && diffX > 10) {
     e.preventDefault()
     contentRefs.value[nodeId]!.style.transform = `translateX(-${Math.min(diffX, 80)}px)`
   }
@@ -191,6 +212,41 @@ const handleDelete = async (id: string) => {
   }
 }
 
+// START: 添加导入节点的处理函数
+const handleImport = async () => {
+  importing.value = true;
+  try {
+    const lines = importLinks.value.split('\n').filter(line => line.trim() !== '');
+    const newNodes = lines.map(line => parseNode(line)).filter(Boolean);
+
+    if (newNodes.length === 0) {
+      message.warning('没有可导入的有效节点链接');
+      return;
+    }
+
+    const res = await fetch('/api/nodes/batch-import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodes: newNodes }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      throw new Error(result.message || '导入失败');
+    }
+    message.success(result.message);
+    isImportModalVisible.value = false;
+    importLinks.value = '';
+    fetchNodes(); // 导入成功后刷新列表
+  } catch (error) {
+    if (error instanceof Error) {
+      message.error(error.message);
+    }
+  } finally {
+    importing.value = false;
+  }
+};
+// END: 添加导入节点的处理函数
+
 onMounted(() => {
   fetchNodes()
   fetchNodeStatus()
@@ -208,6 +264,11 @@ onMounted(() => {
   background: white;
   position: relative;
   z-index: 2;
+  padding: 12px;
+}
+
+.dark .mobile-swipe-delete .swipe-content {
+  background: #1f1f1f;
 }
 
 .mobile-swipe-delete .swipe-actions {
@@ -216,6 +277,8 @@ onMounted(() => {
   top: 0;
   height: 100%;
   display: flex;
+  align-items: center;
+  z-index: 1;
 }
 
 .mobile-swipe-delete .swipe-actions button {
@@ -223,13 +286,15 @@ onMounted(() => {
   border: none;
   color: white;
   padding: 0 20px;
+  cursor: pointer;
 }
 
 .mobile-swipe-delete .delete-btn {
   background: #ff4d4f;
 }
 
-.dark .mobile-swipe-delete .swipe-content {
-  background: #1f1f1f;
+/* 覆盖 antd 列表项的默认 padding，因为我们把它加到了 swipe-content 上 */
+.mobile-list .mobile-list-item {
+  padding: 0;
 }
 </style>
