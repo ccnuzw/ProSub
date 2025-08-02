@@ -1,6 +1,5 @@
 <template>
   <div class="hidden sm:block">
-    <!-- 桌面端视图保持不变 -->
     <a-card>
       <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <h1 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">节点管理</h1>
@@ -48,9 +47,7 @@
           />
         </div>
 
-        <!-- Desktop Table View -->
         <a-table
-        v-if="!isMobile"
         :row-selection="rowSelection"
         :columns="columns"
         :data-source="paginatedNodes"
@@ -69,42 +66,6 @@
         }"
       />
 
-        <!-- Mobile Card View -->
-        <div v-else class="grid grid-cols-1 gap-4">
-          <a-card v-for="node in paginatedNodes" :key="node.id" :title="node.name" size="small">
-            <p><strong>类型:</strong> <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag></p>
-            <p><strong>服务器:</strong> {{ node.server }}</p>
-            <p><strong>端口:</strong> {{ node.port }}</p>
-            <p><strong>状态:</strong>
-              <template v-if="nodeStatus[node.id]">
-                <a-tag v-if="nodeStatus[node.id].status === 'checking'" :icon="h(SyncOutlined, { spin: true })" color="processing">检查中...</a-tag>
-                <a-tag v-else-if="nodeStatus[node.id].status === 'offline'" :icon="h(CloseCircleOutlined)" color="error">离线</a-tag>
-                <a-tag v-else-if="nodeStatus[node.id].status === 'online'" :icon="h(CheckCircleOutlined)" :color="nodeStatus[node.id].latency && nodeStatus[node.id].latency > 1000 ? 'error' : (nodeStatus[node.id].latency && nodeStatus[node.id].latency > 500 ? 'warning' : 'success')">
-                  {{ nodeStatus[node.id].latency ? `${nodeStatus[node.id].latency} ms` : '在线' }}
-                </a-tag>
-                <a-tag v-else>未知</a-tag>
-              </template>
-              <template v-else>
-                <a-tag>未知</a-tag>
-              </template>
-            </p>
-            <template #actions>
-              <a-button type="text" :icon="h(ReloadOutlined)" @click="checkNodeHealth(node)" :loading="nodeStatus[node.id]?.status === 'checking'">检查</a-button>
-              <a-button type="text" :icon="h(EditOutlined)" @click="navigateTo(`/nodes/${node.id}`)">编辑</a-button>
-              <a-popconfirm title="确定要删除这个节点吗？" @confirm="handleDelete(node.id)" ok-text="确定" cancel-text="取消">
-                <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
-              </a-popconfirm>
-            </template>
-          </a-card>
-          <a-pagination
-            v-if="filteredAndSortedNodes.length > nodesPageSize"
-            v-model:current="currentNodesPage"
-            :page-size="nodesPageSize"
-            :total="filteredAndSortedNodes.length"
-            show-less-items
-            class="mt-4 text-center"
-          />
-          </div>
       </template>
       <template v-else>
         <a-empty
@@ -125,7 +86,6 @@
     </a-card>
   </div>
   <div class="sm:hidden">
-    <!-- 移动端视图 -->
     <MobileNodes />
   </div>
 </template>
