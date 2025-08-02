@@ -126,7 +126,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background-color: white;
   }
+
+  /* 同样为深色模式添加背景色 */
+.dark .mobile-list-item {
+    background-color: #1f1f1f; /* 您可以根据您的深色主题调整这个颜色 */
+    border-bottom-color: #333;
+}
 
   .mobile-list-item:last-child {
     border-bottom: none;
