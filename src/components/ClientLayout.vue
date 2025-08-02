@@ -211,7 +211,6 @@ const menuItems = computed(() => {
       key: 'nodes',
       label: '节点管理', 
       icon: ClusterOutlined, 
-      onClick: () => router.push('/nodes'),
       children: [
         { key: 'nodeGroups', label: '节点分组', onClick: () => router.push('/node-groups') }
       ]
@@ -226,7 +225,6 @@ const menuItems = computed(() => {
       key: 'profiles', 
       label: '配置文件', 
       icon: FileTextOutlined, 
-      onClick: () => router.push('/profiles'),
       children: [
         { key: 'ruleSets', label: '规则集', onClick: () => router.push('/rule-sets') }
       ]
