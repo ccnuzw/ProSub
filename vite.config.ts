@@ -25,6 +25,18 @@ export default defineConfig({
         short_name: 'ProSub',
         description: '你的私人代理订阅与节点管理中心',
         theme_color: '#00b96b'
+        icons: [ // <-- 添加 icons 数组
+          {
+            src: 'logo-192.svg', // 确保这个文件在 public 目录下
+            sizes: '192x192',
+            type: 'image/svg+xml',
+          },
+          {
+            src: 'logo-512.svg', // 确保这个文件在 public 目录下
+            sizes: '512x512',
+            type: 'image/svg+xml',
+          }
+        ]
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg,json}'],
