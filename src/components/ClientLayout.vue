@@ -22,6 +22,9 @@
             <template #checkedChildren><BulbOutlined /></template>
             <template #unCheckedChildren><BulbOutlined /></template>
           </a-switch>
+          <span v-if="isClient && !loadingUser && currentUser" class="hidden sm:inline mr-2 text-white">
+            {{ isDarkTheme ? '深色模式' : '浅色模式' }}
+          </span>
           <a-button v-if="isClient && !loadingUser && currentUser" type="primary" @click="handleLogout">
             登出 ({{ currentUser.name }})
           </a-button>
@@ -36,7 +39,7 @@
         v-model:open="drawerVisible"
         placement="left"
         :closable="true"
-        @after-open-change="val => { if (!val) drawerVisible = false }"
+        @after-open-change="onDrawerChange"
         :width="200"
       >
         <a-menu
@@ -52,7 +55,32 @@
           <router-view />
         </div>
       </a-layout-content>
-      <a-layout-footer class="text-center p-4">
+      
+      <!-- Mobile Bottom Navigation -->
+      <div class="mobile-nav sm:hidden">
+        <a href="/#/dashboard" class="mobile-nav-item" :class="{ active: selectedKey === 'dashboard' }">
+          <DashboardOutlined />
+          <span>仪表盘</span>
+        </a>
+        <a href="/#/nodes" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('nodes') }">
+          <ClusterOutlined />
+          <span>节点</span>
+        </a>
+        <a href="/#/subscriptions" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('subscriptions') }">
+          <WifiOutlined />
+          <span>订阅</span>
+        </a>
+        <a href="/#/profiles" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('profiles') }">
+          <FileTextOutlined />
+          <span>配置</span>
+        </a>
+        <a href="/#/user/profile" class="mobile-nav-item" :class="{ active: selectedKey === 'profile' }">
+          <UserOutlined />
+          <span>我的</span>
+        </a>
+      </div>
+      
+      <a-layout-footer class="text-center p-4 hidden sm:block">
         ProSub ©{{ new Date().getFullYear() }} Created with by Gemini
       </a-layout-footer>
     </a-layout>
@@ -60,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, h } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { Layout, Menu, Button, message, theme, Drawer, Switch, ConfigProvider } from 'ant-design-vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User } from '@shared/types'
@@ -74,6 +102,8 @@ import {
   LoginOutlined,
   MenuOutlined,
   BulbOutlined,
+  FolderOpenOutlined,
+  FilterOutlined
 } from '@ant-design/icons-vue'
 
 const { Header, Content, Footer } = Layout
@@ -92,6 +122,10 @@ const isDarkTheme = ref(localStorage.getItem('theme') === 'dark')
 
 const toggleDrawer = () => {
   drawerVisible.value = !drawerVisible.value
+}
+
+const onDrawerChange = (val: boolean) => { 
+  if (!val) drawerVisible.value = false 
 }
 
 const toggleTheme = (checked: boolean) => {
@@ -176,16 +210,37 @@ const handleLogout = async () => {
 
 const menuItems = computed(() => {
   const items = [
-    { key: 'dashboard', label: '仪表盘', icon: () => h(DashboardOutlined), onClick: () => router.push('/dashboard') },
-    { key: 'nodes', label: '节点管理', icon: () => h(ClusterOutlined), onClick: () => router.push('/nodes') },
-    { key: 'subscriptions', label: '订阅管理', icon: () => h(WifiOutlined), onClick: () => router.push('/subscriptions') },
-    { key: 'profiles', label: '配置文件', icon: () => h(FileTextOutlined), onClick: () => router.push('/profiles') },
+    { key: 'dashboard', label: '仪表盘', icon: DashboardOutlined, onClick: () => router.push('/dashboard') },
+    { 
+      key: 'nodes',
+      label: '节点管理', 
+      icon: ClusterOutlined, 
+      onClick: () => router.push('/nodes'),
+      children: [
+        { key: 'nodeGroups', label: '节点分组', onClick: () => router.push('/node-groups') }
+      ]
+    },
+    { 
+      key: 'subscriptions', 
+      label: '订阅管理', 
+      icon: WifiOutlined, 
+      onClick: () => router.push('/subscriptions') 
+    },
+    { 
+      key: 'profiles', 
+      label: '配置文件', 
+      icon: FileTextOutlined, 
+      onClick: () => router.push('/profiles'),
+      children: [
+        { key: 'ruleSets', label: '规则集', onClick: () => router.push('/rule-sets') }
+      ]
+    },
   ]
 
   if (isClient.value && currentUser.value) {
-    items.push({ key: 'profile', label: '我的资料', icon: () => h(UserOutlined), onClick: () => router.push('/user/profile') })
+    items.push({ key: 'profile', label: '我的资料', icon: UserOutlined, onClick: () => router.push('/user/profile') })
   } else if (isClient.value && !currentUser.value) {
-    items.push({ key: 'login', label: '登录', icon: () => h(LoginOutlined), onClick: () => router.push('/user/login') })
+    items.push({ key: 'login', label: '登录', icon: LoginOutlined, onClick: () => router.push('/user/login') })
   }
   return items
 })
@@ -194,8 +249,10 @@ const selectedKey = computed(() => {
   const path = route.path
   if (path.startsWith('/dashboard')) return 'dashboard'
   if (path.startsWith('/nodes')) return 'nodes'
+  if (path.startsWith('/node-groups')) return 'nodeGroups'
   if (path.startsWith('/subscriptions')) return 'subscriptions'
   if (path.startsWith('/profiles')) return 'profiles'
+  if (path.startsWith('/rule-sets')) return 'ruleSets'
   if (path.startsWith('/user/login')) return 'login'
   if (path.startsWith('/user/profile')) return 'profile'
   return 'dashboard'

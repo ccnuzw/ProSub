@@ -1,131 +1,138 @@
 <template>
-  <a-card>
-    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-      <h1 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">节点管理</h1>
-      <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
-        <div class="flex flex-col sm:flex-row gap-2">
-          <a-button type="default" :icon="$slots.reloadOutlined ? $slots.reloadOutlined() : ''" @click="handleCheckAllNodes" :loading="checkingAll">检查所有节点</a-button>
-          <a-button type="default" :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">导入节点</a-button>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-2">
-          <a-button v-if="hasUnsavedChanges" type="primary" @click="saveNodes" :loading="importing">保存更改</a-button>
-          <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''" @click="navigateTo('/nodes/new')">添加节点</a-button>
-        </div>
-      </div>
-    </div>
-
-    <template v-if="!loading && nodes.length > 0">
+  <div class="hidden sm:block">
+    <!-- 桌面端视图保持不变 -->
+    <a-card>
       <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <h1 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">节点管理</h1>
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
           <div class="flex flex-col sm:flex-row gap-2">
-            <a-popconfirm
-              :title="`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`"
-              @confirm="handleBatchDelete"
-              ok-text="确定"
-              cancel-text="取消"
-              :disabled="!hasSelected"
-            >
-              <a-button type="primary" danger :disabled="!hasSelected">删除选中</a-button>
-            </a-popconfirm>
-            <a-popconfirm
-              title="确定要清空所有节点吗？此操作不可撤销！"
-              @confirm="handleClearAllNodes"
-              ok-text="确定"
-              cancel-text="取消"
-            >
-              <a-button type="primary" danger>一键清空</a-button>
-            </a-popconfirm>
+            <a-button type="default" :icon="h(ReloadOutlined)" @click="handleCheckAllNodes" :loading="checkingAll">检查所有节点</a-button>
+            <a-button type="default" :icon="h(ImportOutlined)" @click="isImportModalVisible = true">导入节点</a-button>
           </div>
-          <span class="ml-2" v-if="hasSelected">已选择 {{ selectedRowKeys.length }} 项</span>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <a-button v-if="hasUnsavedChanges" type="primary" @click="saveNodes" :loading="importing">保存更改</a-button>
+            <a-button type="primary" :icon="h(PlusOutlined)" @click="navigateTo('/nodes/new')">添加节点</a-button>
+          </div>
         </div>
-        <a-input-search
-          placeholder="搜索节点名称、服务器或类型"
-          @update:value="searchTerm = $event"
-          class="w-full sm:w-72 mt-2 sm:mt-0"
-          allow-clear
-        />
       </div>
 
-      <!-- Desktop Table View -->
-      <a-table
-      v-if="!isMobile"
-      :row-selection="rowSelection"
-      :columns="columns"
-      :data-source="paginatedNodes"
-      row-key="id"
-      :loading="loading"
-      :scroll="{ x: 'max-content' }"
-      :pagination="{
-        current: currentNodesPage,
-        pageSize: nodesPageSize,
-        total: filteredAndSortedNodes.length,
-        showSizeChanger: true,
-        showQuickJumper: true,
-        showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-        onShowSizeChange: (current, size) => { nodesPageSize = size; currentNodesPage = 1; },
-        onChange: (page) => { currentNodesPage = page; },
-      }"
-    />
-
-      <!-- Mobile Card View -->
-      <div v-else class="grid grid-cols-1 gap-4">
-        <a-card v-for="node in paginatedNodes" :key="node.id" :title="node.name" size="small">
-          <p><strong>类型:</strong> <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag></p>
-          <p><strong>服务器:</strong> {{ node.server }}</p>
-          <p><strong>端口:</strong> {{ node.port }}</p>
-          <p><strong>状态:</strong>
-            <template v-if="nodeStatus[node.id]">
-              <a-tag v-if="nodeStatus[node.id].status === 'checking'" :icon="h(SyncOutlined, { spin: true })" color="processing">检查中...</a-tag>
-              <a-tag v-else-if="nodeStatus[node.id].status === 'offline'" :icon="h(CloseCircleOutlined)" color="error">离线</a-tag>
-              <a-tag v-else-if="nodeStatus[node.id].status === 'online'" :icon="h(CheckCircleOutlined)" :color="nodeStatus[node.id].latency && nodeStatus[node.id].latency > 1000 ? 'error' : (nodeStatus[node.id].latency && nodeStatus[node.id].latency > 500 ? 'warning' : 'success')">
-                {{ nodeStatus[node.id].latency ? `${nodeStatus[node.id].latency} ms` : '在线' }}
-              </a-tag>
-              <a-tag v-else>未知</a-tag>
-            </template>
-            <template v-else>
-              <a-tag>未知</a-tag>
-            </template>
-          </p>
-          <template #actions>
-            <a-button type="text" :icon="h(ReloadOutlined)" @click="checkNodeHealth(node)" :loading="nodeStatus[node.id]?.status === 'checking'">检查</a-button>
-            <a-button type="text" :icon="h(EditOutlined)" @click="navigateTo(`/nodes/${node.id}`)">编辑</a-button>
-            <a-popconfirm title="确定要删除这个节点吗？" @confirm="handleDelete(node.id)" ok-text="确定" cancel-text="取消">
-              <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
-            </a-popconfirm>
-          </template>
-        </a-card>
-        <a-pagination
-          v-if="filteredAndSortedNodes.length > nodesPageSize"
-          v-model:current="currentNodesPage"
-          :page-size="nodesPageSize"
-          :total="filteredAndSortedNodes.length"
-          show-less-items
-          class="mt-4 text-center"
-        />
+      <template v-if="!loading && nodes.length > 0">
+        <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <a-popconfirm
+                :title="`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`"
+                @confirm="handleBatchDelete"
+                ok-text="确定"
+                cancel-text="取消"
+                :disabled="!hasSelected"
+              >
+                <a-button type="primary" danger :disabled="!hasSelected">删除选中</a-button>
+              </a-popconfirm>
+              <a-popconfirm
+                title="确定要清空所有节点吗？此操作不可撤销！"
+                @confirm="handleClearAllNodes"
+                ok-text="确定"
+                cancel-text="取消"
+              >
+                <a-button type="primary" danger>一键清空</a-button>
+              </a-popconfirm>
+            </div>
+            <span class="ml-2" v-if="hasSelected">已选择 {{ selectedRowKeys.length }} 项</span>
+          </div>
+          <a-input-search
+            placeholder="搜索节点名称、服务器或类型"
+            @update:value="searchTerm = $event"
+            class="w-full sm:w-72 mt-2 sm:mt-0"
+            allow-clear
+          />
         </div>
-    </template>
-    <template v-else>
-      <a-empty
-        :image="Empty.PRESENTED_IMAGE_SIMPLE"
-        description="暂无节点，快去添加一个吧！"
-      >
-        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''" @click="navigateTo('/nodes/new')">手动添加</a-button>
-          <a-button :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">从剪贴板导入</a-button>
-        </div>
-      </a-empty>
-    </template>
 
-    <a-modal title="从剪贴板导入节点" v-model:open="isImportModalVisible" @ok="handleImport" @cancel="() => { isImportModalVisible = false; importLinks = ''; }" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
-      <p>请粘贴一个或多个节点链接，每行一个。</p>
-      <a-textarea :rows="5" v-model:value="importLinks" placeholder="vmess://...&#10;vless://...&#10;ss://..." />
-    </a-modal>
-  </a-card>
+        <!-- Desktop Table View -->
+        <a-table
+        v-if="!isMobile"
+        :row-selection="rowSelection"
+        :columns="columns"
+        :data-source="paginatedNodes"
+        row-key="id"
+        :loading="loading"
+        :scroll="{ x: 'max-content' }"
+        :pagination="{
+          current: currentNodesPage,
+          pageSize: nodesPageSize,
+          total: filteredAndSortedNodes.length,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+          onShowSizeChange: (current, size) => { nodesPageSize = size; currentNodesPage = 1; },
+          onChange: (page) => { currentNodesPage = page; },
+        }"
+      />
+
+        <!-- Mobile Card View -->
+        <div v-else class="grid grid-cols-1 gap-4">
+          <a-card v-for="node in paginatedNodes" :key="node.id" :title="node.name" size="small">
+            <p><strong>类型:</strong> <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag></p>
+            <p><strong>服务器:</strong> {{ node.server }}</p>
+            <p><strong>端口:</strong> {{ node.port }}</p>
+            <p><strong>状态:</strong>
+              <template v-if="nodeStatus[node.id]">
+                <a-tag v-if="nodeStatus[node.id].status === 'checking'" :icon="h(SyncOutlined, { spin: true })" color="processing">检查中...</a-tag>
+                <a-tag v-else-if="nodeStatus[node.id].status === 'offline'" :icon="h(CloseCircleOutlined)" color="error">离线</a-tag>
+                <a-tag v-else-if="nodeStatus[node.id].status === 'online'" :icon="h(CheckCircleOutlined)" :color="nodeStatus[node.id].latency && nodeStatus[node.id].latency > 1000 ? 'error' : (nodeStatus[node.id].latency && nodeStatus[node.id].latency > 500 ? 'warning' : 'success')">
+                  {{ nodeStatus[node.id].latency ? `${nodeStatus[node.id].latency} ms` : '在线' }}
+                </a-tag>
+                <a-tag v-else>未知</a-tag>
+              </template>
+              <template v-else>
+                <a-tag>未知</a-tag>
+              </template>
+            </p>
+            <template #actions>
+              <a-button type="text" :icon="h(ReloadOutlined)" @click="checkNodeHealth(node)" :loading="nodeStatus[node.id]?.status === 'checking'">检查</a-button>
+              <a-button type="text" :icon="h(EditOutlined)" @click="navigateTo(`/nodes/${node.id}`)">编辑</a-button>
+              <a-popconfirm title="确定要删除这个节点吗？" @confirm="handleDelete(node.id)" ok-text="确定" cancel-text="取消">
+                <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
+              </a-popconfirm>
+            </template>
+          </a-card>
+          <a-pagination
+            v-if="filteredAndSortedNodes.length > nodesPageSize"
+            v-model:current="currentNodesPage"
+            :page-size="nodesPageSize"
+            :total="filteredAndSortedNodes.length"
+            show-less-items
+            class="mt-4 text-center"
+          />
+          </div>
+      </template>
+      <template v-else>
+        <a-empty
+          :image="Empty.PRESENTED_IMAGE_SIMPLE"
+          description="暂无节点，快去添加一个吧！"
+        >
+          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <a-button type="primary" :icon="h(PlusOutlined)" @click="navigateTo('/nodes/new')">手动添加</a-button>
+            <a-button :icon="h(ImportOutlined)" @click="isImportModalVisible = true">从剪贴板导入</a-button>
+          </div>
+        </a-empty>
+      </template>
+
+      <a-modal title="从剪贴板导入节点" v-model:open="isImportModalVisible" @ok="handleImport" @cancel="() => { isImportModalVisible = false; importLinks = ''; }" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
+        <p>请粘贴一个或多个节点链接，每行一个。</p>
+        <a-textarea :rows="5" v-model:value="importLinks" placeholder="vmess://...&#10;vless://...&#10;ss://..." />
+      </a-modal>
+    </a-card>
+  </div>
+  <div class="sm:hidden">
+    <!-- 移动端视图 -->
+    <MobileNodes />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed, h, onBeforeUnmount } from 'vue'
-import { message, Empty, Tag, Space, Button, Popconfirm, Card } from 'ant-design-vue'
+import { message, Empty, Tag, Space, Button, Popconfirm, Card, Modal } from 'ant-design-vue'
 import {
   EditOutlined,
   DeleteOutlined,
@@ -141,6 +148,7 @@ import { Node, HealthStatus } from '../types'
 import { parseNodeLink as parseNode } from '@shared/node-parser'
 
 import { useRouter } from 'vue-router'
+import MobileNodes from './MobileNodes.vue'
 
 const router = useRouter()
 const navigateTo = (path: string) => {

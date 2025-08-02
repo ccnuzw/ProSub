@@ -17,6 +17,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/node-groups',
+    name: 'NodeGroups',
+    component: () => import('../views/NodeGroups.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/profiles',
     name: 'Profiles',
     component: () => import('../views/Profiles.vue'),
@@ -26,6 +32,12 @@ const routes = [
     path: '/subscriptions',
     name: 'Subscriptions',
     component: () => import('../views/Subscriptions.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/rule-sets',
+    name: 'RuleSets',
+    component: () => import('../views/RuleSets.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -79,6 +91,30 @@ const routes = [
     path: '/subscriptions/new',
     name: 'SubscriptionNew',
     component: () => import('../views/SubscriptionNew.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/node-groups/:id',
+    name: 'NodeGroupEdit',
+    component: () => import('../views/NodeGroupEdit.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/node-groups/new',
+    name: 'NodeGroupNew',
+    component: () => import('../views/NodeGroupNew.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/rule-sets/:id',
+    name: 'RuleSetEdit',
+    component: () => import('../views/RuleSetEdit.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/rule-sets/new',
+    name: 'RuleSetNew',
+    component: () => import('../views/RuleSetNew.vue'),
     meta: { requiresAuth: true }
   },
 ]

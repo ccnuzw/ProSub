@@ -1,83 +1,118 @@
+import { Env } from '@shared/types';
 import { jsonResponse, errorResponse } from './utils/response';
-import { Node, HealthStatus, Env } from '@shared/types';
+import { requireAuth } from './utils/auth';
 
-const ALL_NODES_KEY = 'ALL_NODES';
-
-async function getAllNodes(env: Env): Promise<Record<string, Node>> {
-  const nodesJson = await env.KV.get(ALL_NODES_KEY);
-  return nodesJson ? JSON.parse(nodesJson) : {};
+interface HealthCheckResult {
+  status: 'online' | 'offline' | 'error';
+  latency?: number;
+  error?: string;
 }
 
-async function putAllNodes(env: Env, nodes: Record<string, Node>): Promise<void> {
-  await env.KV.put(ALL_NODES_KEY, JSON.stringify(nodes));
+async function checkNodeHealth(node: any): Promise<HealthCheckResult> {
+  const startTime = Date.now();
+  
+  try {
+    // 根据节点类型选择合适的健康检查方式
+    let checkPromise: Promise<Response>;
+    
+    switch (node.type) {
+      case 'http':
+      case 'https':
+        // 对于HTTP(S)节点，发送HEAD请求
+        checkPromise = fetch(`http${node.type === 'https' ? 's' : ''}://${node.server}:${node.port}`, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000) // 5秒超时
+        });
+        break;
+      default:
+        // 对于其他类型的节点，尝试TCP连接检查
+        // 在Cloudflare Workers环境中，我们使用简单的HTTP请求检查
+        checkPromise = fetch(`http://${node.server}:${node.port}`, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000) // 5秒超时
+        }).catch(() => {
+          // 如果HTTP检查失败，尝试HTTPS
+          return fetch(`https://${node.server}:${node.port}`, {
+            method: 'HEAD',
+            signal: AbortSignal.timeout(5000)
+          });
+        });
+    }
+    
+    const response = await checkPromise;
+    const latency = Date.now() - startTime;
+    
+    return {
+      status: response.ok ? 'online' : 'offline',
+      latency: response.ok ? latency : undefined,
+      error: response.ok ? undefined : `HTTP ${response.status}`
+    };
+  } catch (error: any) {
+    const latency = Date.now() - startTime;
+    console.error(`Health check failed for node ${node.id}:`, error);
+    
+    return {
+      status: 'offline',
+      latency: latency,
+      error: error.name === 'AbortError' ? 'Timeout' : error.message || 'Connection failed'
+    };
+  }
 }
 
 export async function handleNodeHealthCheck(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
-    const { nodeId } = (await request.json()) as { nodeId: string };
-
-    if (!nodeId) {
-      return errorResponse('NodeId is required', 400);
-    }
-
-    const allNodes = await getAllNodes(env);
-    const node = allNodes[nodeId];
-
+    const { id } = await request.json() as { id: string };
+    const allNodesJson = await env.KV.get('ALL_NODES');
+    const allNodes = allNodesJson ? JSON.parse(allNodesJson) : {};
+    
+    const node = allNodes[id];
     if (!node) {
       return errorResponse('Node not found', 404);
     }
+    
+    const result = await checkNodeHealth(node);
+    return jsonResponse(result);
+  } catch (error) {
+    console.error('Failed to check node health:', error);
+    return errorResponse('Failed to check node health');
+  }
+}
 
-    const healthStatus: HealthStatus = {
-      status: 'offline',
-      timestamp: new Date().toISOString(),
-    };
+export async function handleBatchNodeHealthCheck(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
-
-    try {
-      const startTime = Date.now();
-      
-      await fetch(`http://${node.server}:${node.port}`, {
-        method: 'HEAD',
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'ProSub Health Check/1.0'
-        }
-      });
-
-      const endTime = Date.now();
-      
-      healthStatus.status = 'online';
-      healthStatus.latency = endTime - startTime;
-
-    } catch (error) {
-      healthStatus.status = 'offline';
-      if (error instanceof Error) {
-        // Check for specific error messages that indicate unsupported operations in Workers
-        if (error.message.includes('network connection') || error.message.includes('unsupported protocol')) {
-          healthStatus.error = `Health check failed: Direct connection to ${node.type} node is not fully supported from Cloudflare Workers.`;
-        } else if (error.name === 'AbortError') {
-          healthStatus.error = 'Health check timed out.';
-        } else {
-          healthStatus.error = error.message;
-        }
-      } else {
-        healthStatus.error = String(error);
-      }
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    node.healthStatus = healthStatus;
-    await putAllNodes(env, allNodes);
-
+  try {
+    const allNodesJson = await env.KV.get('ALL_NODES');
+    const allNodes = allNodesJson ? JSON.parse(allNodesJson) : {};
+    
+    // 批量检查所有节点的健康状态
+    const checkPromises = Object.entries(allNodes).map(async ([id, node]: [string, any]) => {
+      const result = await checkNodeHealth(node);
+      return { id, ...result };
+    });
+    
+    const results = await Promise.all(checkPromises);
+    const healthStatus: Record<string, HealthCheckResult> = {};
+    
+    results.forEach(result => {
+      healthStatus[result.id] = {
+        status: result.status,
+        latency: result.latency,
+        error: result.error
+      };
+    });
+    
     return jsonResponse(healthStatus);
   } catch (error) {
-    console.error('Unhandled error in handleNodeHealthCheck:', error);
-    if (error instanceof Error) {
-      return errorResponse(`Internal Server Error: ${error.message}`, 500);
-    }
-    return errorResponse('Internal Server Error', 500);
+    console.error('Failed to check nodes health in batch:', error);
+    return errorResponse('Failed to check nodes health in batch');
   }
 }

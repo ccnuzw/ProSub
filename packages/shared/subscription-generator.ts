@@ -472,6 +472,9 @@ export async function generateSubscriptionResponse(request: Request, profile: Pr
             else targetClient = 'base64';
         }
 
+        // 记录客户端类型，用于统计分析
+        console.log(`Subscription request for profile ${profile.id} with target client: ${targetClient}`);
+
         const ruleConfig = profile.ruleSets ? profile.ruleSets[targetClient] : undefined;
 
         switch (targetClient) {
@@ -489,11 +492,17 @@ export async function generateSubscriptionResponse(request: Request, profile: Pr
             case 'shadowrocket':
                 return generateBase64Subscription(allNodes);
             default:
+                // 当无法识别客户端类型时，记录警告并返回默认格式
+                console.warn(`Unknown target client: ${targetClient}, falling back to base64`);
                 return generateBase64Subscription(allNodes);
         }
     } catch (error) {
         console.error("Unhandled error in generateSubscriptionResponse:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
-        return new Response(`An unexpected server error occurred. ${errorMessage}`, { status: 500 });
+        // 返回更友好的错误信息
+        return new Response(`服务器内部错误，请稍后重试。错误信息: ${errorMessage}`, { 
+            status: 500,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
     }
 }
