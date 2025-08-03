@@ -110,11 +110,23 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 nodeType = 'vless-reality';
             }
             
+            // 确保hostname和port存在
+            if (!url.hostname || !url.port) {
+                throw new Error("VLESS 链接缺少服务器地址或端口");
+            }
+            
+            // 处理用户名（UUID）
+            const username = url.username ? decodeURIComponent(url.username) : '';
+            const password = url.password ? decodeURIComponent(url.password) : '';
+            
+            // 对于VLESS，用户名通常是UUID，作为密码使用
+            const finalPassword = username || password;
+            
             return {
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
-                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : '',
+                password: finalPassword,
                 type: nodeType, 
                 params: params,
             };

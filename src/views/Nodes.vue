@@ -14,13 +14,9 @@
           <template #icon><DownloadOutlined /></template>
           导出节点
         </a-button>
-        <a-button type="default" @click="showImportModal">
+        <a-button type="primary" @click="showImportModal">
           <template #icon><ImportOutlined /></template>
           导入节点
-        </a-button>
-        <a-button type="primary" @click="showCreateModal">
-          <template #icon><PlusOutlined /></template>
-          添加节点
         </a-button>
       </div>
     </div>
@@ -154,10 +150,6 @@
                 <template #icon><ReloadOutlined /></template>
                 检查
               </a-button>
-              <a-button type="text" size="small" @click="handleEdit(record)" class="action-button">
-                <template #icon><EditOutlined /></template>
-                编辑
-              </a-button>
               <a-popconfirm
                 title="确定要删除这个节点吗？"
                 @confirm="handleDelete(record.id)"
@@ -175,53 +167,6 @@
       </a-table>
     </div>
 
-    <!-- 创建/编辑节点模态框 -->
-    <a-modal
-      v-model:open="modalVisible"
-      :title="modalTitle"
-      @ok="handleSubmit"
-      @cancel="handleCancel"
-      :confirm-loading="submitting"
-      width="600px"
-    >
-      <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
-        <a-form-item label="节点名称" name="name">
-          <a-input v-model:value="formData.name" placeholder="请输入节点名称" />
-        </a-form-item>
-        
-        <a-form-item label="服务器地址" name="server">
-          <a-input v-model:value="formData.server" placeholder="请输入服务器地址" />
-        </a-form-item>
-        
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="端口" name="port">
-              <a-input-number v-model:value="formData.port" placeholder="端口" :min="1" :max="65535" style="width: 100%" />
-            </a-form-item>
-          </a-col>
-          <a-col :span="12">
-            <a-form-item label="类型" name="type">
-              <a-select v-model:value="formData.type" placeholder="选择节点类型">
-                <a-select-option value="vmess">VMess</a-select-option>
-                <a-select-option value="vless">VLESS</a-select-option>
-                <a-select-option value="trojan">Trojan</a-select-option>
-                <a-select-option value="ss">Shadowsocks</a-select-option>
-                <a-select-option value="ssr">ShadowsocksR</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-        </a-row>
-        
-        <a-form-item label="密码" name="password">
-          <a-input-password v-model:value="formData.password" placeholder="请输入密码" />
-        </a-form-item>
-
-        <a-form-item label="备注" name="remark">
-          <a-textarea v-model:value="formData.remark" placeholder="可选：添加节点备注信息" :rows="3" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
-
     <!-- 批量导入模态框 -->
     <NodeImportModal ref="nodeImportModalRef" @import="handleBatchImport" />
   </div>
@@ -233,8 +178,6 @@ import { message } from 'ant-design-vue'
 import {
   ReloadOutlined,
   ImportOutlined,
-  PlusOutlined,
-  EditOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -248,28 +191,10 @@ import NodeImportModal from '../components/NodeImportModal.vue'
 const loading = ref(false)
 const checkingAll = ref(false)
 const importing = ref(false)
-const submitting = ref(false)
 
 const nodes = ref<Node[]>([])
 const nodeStatus = ref<Record<string, HealthStatus>>({})
 
-// 模态框状态
-const modalVisible = ref(false)
-const importModalVisible = ref(false)
-const isEdit = ref(false)
-const currentId = ref('')
-
-// 表单数据
-const formData = ref({
-  name: '',
-  server: '',
-  port: 443,
-  type: 'vmess',
-  password: '',
-  remark: ''
-})
-
-const importLinks = ref('')
 const nodeImportModalRef = ref()
 
 // 搜索和筛选
@@ -285,17 +210,6 @@ const pagination = ref({
 
 // 选择的行
 const selectedRowKeys = ref<string[]>([])
-
-// 表单验证规则
-const formRules = {
-  name: [{ required: true, message: '请输入节点名称' }],
-  server: [{ required: true, message: '请输入服务器地址' }],
-  port: [{ required: true, message: '请输入端口' }],
-  type: [{ required: true, message: '请选择节点类型' }]
-}
-
-// 计算属性
-const modalTitle = computed(() => isEdit.value ? '编辑节点' : '添加节点')
 
 // 统计信息计算
 const onlineNodesCount = computed(() => {
@@ -509,33 +423,6 @@ const handleBatchDelete = async () => {
   }
 }
 
-const showCreateModal = () => {
-  isEdit.value = false
-  formData.value = {
-    name: '',
-    server: '',
-    port: 443,
-    type: 'vmess',
-    password: '',
-    remark: ''
-  }
-  modalVisible.value = true
-}
-
-const handleEdit = (record: Node) => {
-  isEdit.value = true
-  currentId.value = record.id
-  formData.value = {
-    name: record.name,
-    server: record.server,
-    port: record.port,
-    type: record.type,
-    password: record.password || '',
-    remark: (record as any).remark || ''
-  }
-  modalVisible.value = true
-}
-
 const handleCheck = async (record: Node) => {
   try {
     const response = await fetch(`/api/node-health-check/${record.id}`, {
@@ -586,189 +473,66 @@ const handleBatchImport = async (nodes: Node[]) => {
   }
   
   importing.value = true
-  try {
-    let successCount = 0
-    let errorCount = 0
-    const errors: string[] = []
-    
-    for (const node of nodes) {
-      try {
-        // 确保节点数据完整
-        const nodeData = {
-          name: node.name,
-          server: node.server,
-          port: node.port,
-          type: node.type,
-          password: node.password || '',
-          params: node.params || {}
-        }
-        
-        console.log('正在导入节点:', nodeData)
-        
-        const response = await fetch('/api/nodes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(nodeData)
-        })
-        
-        if (response.ok) {
-          successCount++
-          console.log(`节点 ${node.name} 导入成功`)
-        } else {
-          errorCount++
-          const errorData = await response.json()
-          const errorMsg = `导入失败 ${node.name}: ${errorData.message || '未知错误'}`
-          errors.push(errorMsg)
-          console.error(errorMsg)
-        }
-      } catch (error) {
-        errorCount++
-        const errorMsg = `导入失败 ${node.name}: ${error}`
-        errors.push(errorMsg)
-        console.error(errorMsg)
-      }
-    }
-    
-    // 显示详细结果
-    if (successCount > 0) {
-      message.success(`成功导入 ${successCount} 个节点`)
-    }
-    
-    if (errorCount > 0) {
-      message.warning(`导入完成，但有 ${errorCount} 个节点导入失败`)
-      console.error('导入错误详情:', errors)
-    }
-    
-    // 立即刷新数据
-    await fetchData()
-    
-    // 清空选择
-    selectedRowKeys.value = []
-    
-    // 显示最终结果
-    if (successCount > 0 && errorCount === 0) {
-      message.success(`批量导入完成！成功导入 ${successCount} 个节点`)
-    } else if (successCount > 0 && errorCount > 0) {
-      message.warning(`批量导入完成！成功 ${successCount} 个，失败 ${errorCount} 个`)
-    } else if (successCount === 0) {
-      message.error('批量导入失败！请检查节点格式')
-    }
-    
-  } catch (error) {
-    console.error('批量导入失败:', error)
-    message.error('批量导入失败')
-  } finally {
-    importing.value = false
-  }
-}
-
-const handleImport = async () => {
-  if (!importLinks.value.trim()) {
-    message.warning('请输入节点链接')
-    return
-  }
   
-  importing.value = true
+  // 显示进度提示
+  const progressKey = 'batch-import-progress'
+  message.loading({
+    content: `正在导入节点... (0/${nodes.length})`,
+    key: progressKey,
+    duration: 0
+  })
+  
   try {
-    const links = importLinks.value.split('\n').filter(link => link.trim())
-    let successCount = 0
-    let errorCount = 0
-    const errors: string[] = []
+    // 准备所有节点的数据
+    const nodeDataList = nodes.map(node => ({
+      name: node.name,
+      server: node.server,
+      port: node.port,
+      type: node.type,
+      password: node.password || '',
+      params: node.params || {}
+    }))
     
-    for (const link of links) {
-      try {
-        // 使用节点解析器解析链接
-        const parsedNode = parseNodeLink(link)
-        
-        if (!parsedNode) {
-          errorCount++
-          errors.push(`无法解析链接: ${link}`)
-          continue
-        }
-        
-        // 验证必要字段
-        if (!parsedNode.server || !parsedNode.port) {
-          errorCount++
-          errors.push(`节点信息不完整: ${link}`)
-          continue
-        }
-        
-        // 创建完整的节点对象
-        const nodeData = {
-          name: parsedNode.name || `${parsedNode.server}:${parsedNode.port}`,
-          server: parsedNode.server,
-          port: parsedNode.port,
-          type: parsedNode.type || 'vmess',
-          password: parsedNode.password || '',
-          params: parsedNode.params || {}
-        }
-        
-        const response = await fetch('/api/nodes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(nodeData)
-        })
-        
-        if (response.ok) {
-          successCount++
-        } else {
-          errorCount++
-          const errorData = await response.json()
-          errors.push(`导入失败: ${errorData.message || '未知错误'}`)
-        }
-      } catch (error) {
-        errorCount++
-        errors.push(`解析失败: ${link}`)
-        console.error('导入节点失败:', error)
-      }
-    }
-    
-    // 显示结果
-    if (successCount > 0) {
-      message.success(`成功导入 ${successCount} 个节点`)
-    }
-    
-    if (errorCount > 0) {
-      message.warning(`导入完成，但有 ${errorCount} 个节点导入失败`)
-      console.error('导入错误详情:', errors)
-    }
-    
-    importModalVisible.value = false
-    importLinks.value = ''
-    await fetchData()
-  } catch (error) {
-    console.error('批量导入失败:', error)
-    message.error('批量导入失败')
-  } finally {
-    importing.value = false
-  }
-}
-
-const handleSubmit = async () => {
-  submitting.value = true
-  try {
-    const url = isEdit.value ? `/api/nodes/${currentId.value}` : '/api/nodes'
-    const method = isEdit.value ? 'PUT' : 'POST'
-    
-    const response = await fetch(url, {
-      method,
+    // 使用新的批量导入API
+    const response = await fetch('/api/nodes/batch-import', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData.value)
+      body: JSON.stringify({ nodes: nodeDataList })
     })
     
     if (response.ok) {
-      message.success(isEdit.value ? '节点更新成功' : '节点创建成功')
-      modalVisible.value = false
+      const result = await response.json()
+      
+      // 关闭进度提示
+      message.destroy(progressKey)
+      
+      // 显示结果
+      if (result.successCount > 0 && result.errorCount === 0) {
+        message.success(`批量导入完成！成功导入 ${result.successCount} 个节点`)
+      } else if (result.successCount > 0 && result.errorCount > 0) {
+        message.warning(`批量导入完成！成功 ${result.successCount} 个，失败 ${result.errorCount} 个`)
+      } else if (result.successCount === 0) {
+        message.error('批量导入失败！请检查节点格式')
+      }
+      
+      // 立即刷新数据
       await fetchData()
+      
+      // 清空选择
+      selectedRowKeys.value = []
+      
     } else {
+      message.destroy(progressKey)
       const errorData = await response.json()
-      message.error(errorData.message || '操作失败')
+      message.error(errorData.message || '批量导入失败')
     }
+    
   } catch (error) {
-    console.error('提交节点数据失败:', error)
-    message.error('操作失败')
+    message.destroy(progressKey)
+    console.error('批量导入失败:', error)
+    message.error('批量导入失败')
   } finally {
-    submitting.value = false
+    importing.value = false
   }
 }
 
@@ -788,11 +552,6 @@ const handleDelete = async (id: string) => {
     console.error('删除节点失败:', error)
     message.error('节点删除失败')
   }
-}
-
-const handleCancel = () => {
-  modalVisible.value = false
-  importModalVisible.value = false
 }
 
 const exportNodes = () => {
