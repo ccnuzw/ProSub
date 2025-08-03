@@ -483,6 +483,9 @@ const handleBatchImport = async (nodes: Node[]) => {
   })
   
   try {
+    console.log('开始批量导入，节点数量:', nodes.length)
+    console.log('节点数据示例:', nodes[0])
+    
     // 准备所有节点的数据
     const nodeDataList = nodes.map(node => ({
       name: node.name,
@@ -493,6 +496,8 @@ const handleBatchImport = async (nodes: Node[]) => {
       params: node.params || {}
     }))
     
+    console.log('准备发送的数据:', nodeDataList.length, '个节点')
+    
     // 使用新的批量导入API
     const response = await fetch('/api/nodes/batch-import', {
       method: 'POST',
@@ -500,8 +505,11 @@ const handleBatchImport = async (nodes: Node[]) => {
       body: JSON.stringify({ nodes: nodeDataList })
     })
     
+    console.log('API响应状态:', response.status, response.statusText)
+    
     if (response.ok) {
       const result = await response.json()
+      console.log('API响应数据:', result)
       
       // 关闭进度提示
       message.destroy(progressKey)
@@ -524,13 +532,14 @@ const handleBatchImport = async (nodes: Node[]) => {
     } else {
       message.destroy(progressKey)
       const errorData = await response.json()
+      console.error('API错误响应:', errorData)
       message.error(errorData.message || '批量导入失败')
     }
     
   } catch (error) {
     message.destroy(progressKey)
     console.error('批量导入失败:', error)
-    message.error('批量导入失败')
+    message.error(`批量导入失败: ${error instanceof Error ? error.message : '未知错误'}`)
   } finally {
     importing.value = false
   }
