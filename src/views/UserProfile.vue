@@ -16,16 +16,16 @@
         
         <a-form :model="userInfo" layout="vertical">
           <a-form-item label="用户名">
-            <a-input v-model:value="userInfo.name" disabled />
+            <a-input v-model:value="userInfo.username" disabled />
           </a-form-item>
           
           <a-form-item label="用户ID">
             <a-input v-model:value="userInfo.id" disabled />
           </a-form-item>
           
-          <a-form-item label="账户状态">
-            <a-tag :color="userInfo.defaultPasswordChanged ? 'green' : 'orange'">
-              {{ userInfo.defaultPasswordChanged ? '已设置密码' : '使用默认密码' }}
+          <a-form-item label="用户角色">
+            <a-tag :color="userInfo.role === 'admin' ? 'blue' : 'green'">
+              {{ userInfo.role === 'admin' ? '管理员' : '普通用户' }}
             </a-tag>
           </a-form-item>
         </a-form>
@@ -70,8 +70,8 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 
 interface UserInfo {
   id: string
-  name: string
-  defaultPasswordChanged: boolean
+  username: string
+  role: string
 }
 
 interface PasswordForm {
@@ -82,8 +82,8 @@ interface PasswordForm {
 
 const userInfo = ref<UserInfo>({
   id: '',
-  name: '',
-  defaultPasswordChanged: false
+  username: '',
+  role: ''
 })
 
 const passwordForm = ref<PasswordForm>({

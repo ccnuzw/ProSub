@@ -43,7 +43,7 @@ export async function handleUserChangePassword(request: Request, env: Env): Prom
 
     // 更新密码
     adminUser.password = newPassword;
-    adminUser.defaultPasswordChanged = true;
+    adminUser.updatedAt = new Date().toISOString();
     await putAdminUser(env, adminUser);
 
     return jsonResponse({ message: '密码修改成功' });

@@ -12,9 +12,11 @@ async function getAdminUser(env: Env): Promise<User | null> {
 async function createAdminUser(env: Env): Promise<User> {
   const adminUser: User = {
     id: 'admin',
-    name: 'admin',
+    username: 'admin',
     password: 'admin123', // 默认密码，首次登录后需要修改
-    defaultPasswordChanged: false
+    role: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   };
   
   await env.KV.put(ADMIN_USER_KEY, JSON.stringify(adminUser));
@@ -36,7 +38,7 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
       adminUser = await createAdminUser(env);
     }
 
-    if (username !== adminUser.name || password !== adminUser.password) {
+    if (username !== adminUser.username || password !== adminUser.password) {
       return errorResponse('用户名或密码错误', 401);
     }
 
@@ -60,8 +62,8 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
 
     return jsonResponse({
       id: adminUser.id,
-      name: adminUser.name,
-      defaultPasswordChanged: adminUser.defaultPasswordChanged
+      username: adminUser.username,
+      role: adminUser.role
     }, {
       headers: {
         'Set-Cookie': cookie

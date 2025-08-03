@@ -31,7 +31,11 @@ export async function handleMe(request: Request, env: Env): Promise<Response> {
     }
 
     // Return user data without sensitive information like password
-    return jsonResponse({ id: adminUser.id, name: adminUser.name, defaultPasswordChanged: adminUser.defaultPasswordChanged });
+    return jsonResponse({ 
+      id: adminUser.id, 
+      username: adminUser.username, 
+      role: adminUser.role 
+    });
   } catch (error) {
     console.error('获取当前用户失败:', error);
     return errorResponse('获取当前用户失败');
