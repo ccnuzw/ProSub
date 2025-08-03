@@ -70,7 +70,7 @@ export interface NodeGroup {
 // 健康检查类型
 export interface HealthStatus {
   nodeId: string;
-  status: 'online' | 'offline' | 'unknown';
+  status: 'online' | 'offline' | 'unknown' | 'checking';
   latency?: number;
   lastChecked: string;
   error?: string;

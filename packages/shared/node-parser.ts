@@ -71,6 +71,12 @@ export function parseNodeLink(link: string): Partial<Node> | null {
         try {
             const jsonStr = base64Decode(link.substring(8));
             const config = JSON.parse(jsonStr);
+            
+            // 验证必要字段
+            if (!config.add || !config.port || !config.id) {
+                throw new Error("VMess 配置缺少必要字段");
+            }
+            
             return {
                 name: config.ps || `${config.add}:${config.port}`,
                 server: config.add,
@@ -78,8 +84,13 @@ export function parseNodeLink(link: string): Partial<Node> | null {
                 password: config.id, // In VMess, UUID is the password
                 type: 'vmess',
                 params: {
-                    net: config.net, tls: config.tls, aid: config.aid,
-                    host: config.host, path: config.path, type: config.type, security: 'auto'
+                    net: config.net || 'tcp', 
+                    tls: config.tls || 'none', 
+                    aid: config.aid || 0,
+                    host: config.host || '', 
+                    path: config.path || '', 
+                    type: config.type || 'none', 
+                    security: config.security || 'auto'
                 },
             };
         } catch (e) {
@@ -87,27 +98,123 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             return null;
         }
     }
+
+    if (link.startsWith('vless://')) {
+        try {
+            const url = new URL(link);
+            const params: Record<string, any> = {};
+            url.searchParams.forEach((value, key) => { params[key] = value; });
+            
+            let nodeType = 'vless' as Node['type'];
+            if (params.security === 'reality') {
+                nodeType = 'vless-reality';
+            }
+            
+            return {
+                name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
+                server: url.hostname, 
+                port: parseInt(url.port, 10),
+                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : '',
+                type: nodeType, 
+                params: params,
+            };
+        } catch (e) {
+            console.error('解析 VLess 链接失败:', link, e);
+            return null;
+        }
+    }
+
+    if (link.startsWith('trojan://')) {
+        try {
+            const url = new URL(link);
+            const params: Record<string, any> = {};
+            url.searchParams.forEach((value, key) => { params[key] = value; });
+            
+            return {
+                name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
+                server: url.hostname, 
+                port: parseInt(url.port, 10),
+                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : '',
+                type: 'trojan', 
+                params: params,
+            };
+        } catch (e) {
+            console.error('解析 Trojan 链接失败:', link, e);
+            return null;
+        }
+    }
+
+    if (link.startsWith('ssr://')) {
+        try {
+            const base64Part = link.substring(6);
+            const decoded = base64Decode(base64Part);
+            const atIndex = decoded.lastIndexOf('@');
+            if (atIndex === -1) throw new Error("无效的 SSR 格式");
+            
+            const serverPart = decoded.substring(atIndex + 1);
+            const colonIndex = serverPart.lastIndexOf(':');
+            if (colonIndex === -1) throw new Error("无效的 SSR 格式: 找不到端口");
+            
+            const server = serverPart.substring(0, colonIndex);
+            const port = parseInt(serverPart.substring(colonIndex + 1), 10);
+            
+            return {
+                name: `${server}:${port}`,
+                server, 
+                port,
+                password: '', // SSR 密码在加密部分
+                type: 'ssr', 
+                params: {},
+            };
+        } catch (e) {
+            console.error('解析 SSR 链接失败:', link, e);
+            return null;
+        }
+    }
     
+    // 尝试解析其他 URL 格式
     try {
         const url = new URL(link);
         const protocol = url.protocol.replace(':', '');
-        const supportedUrlProtocols = ['vless', 'trojan', 'vmess', 'socks', 'tuic', 'hysteria', 'hysteria2', 'anytls'];
+        const supportedUrlProtocols = ['socks', 'tuic', 'hysteria', 'hysteria2', 'anytls'];
         if (supportedUrlProtocols.includes(protocol)) {
             const params: Record<string, any> = {};
             url.searchParams.forEach((value, key) => { params[key] = value; });
-            let nodeType = protocol as Node['type'];
-            if (protocol === 'vless' && params.security === 'reality') {
-                nodeType = 'vless-reality';
-            }
+            
             return {
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
-                server: url.hostname, port: parseInt(url.port, 10),
-                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : undefined,
-                type: nodeType, params: params,
+                server: url.hostname, 
+                port: parseInt(url.port, 10),
+                password: url.username ? decodeURIComponent(url.username) : url.password ? decodeURIComponent(url.password) : '',
+                type: protocol as Node['type'], 
+                params: params,
             };
         }
     } catch (e) {
         // Not a standard URL
+    }
+
+    // 尝试解析纯文本格式 (server:port:password)
+    try {
+        const parts = link.split(':');
+        if (parts.length >= 2) {
+            const server = parts[0];
+            const port = parseInt(parts[1], 10);
+            const password = parts[2] || '';
+            
+            if (server && port && !isNaN(port)) {
+                return {
+                    name: `${server}:${port}`,
+                    server,
+                    port,
+                    password,
+                    type: 'vmess', // 默认类型
+                    params: {},
+                };
+            }
+        }
+    } catch (e) {
+        // Not a valid text format
     }
 
     console.warn(`不支持或格式错误的链接，已跳过: ${link}`);
