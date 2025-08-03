@@ -98,6 +98,10 @@
   --text-primary: #fafafa;
   --text-secondary: #a1a1aa;
   --text-tertiary: #71717a;
+  --border-color: #2a2a2a;
+  --border-light: #1a1a1a;
+  --divider-color: #2a2a2a;
+}
   --border-color: #27272a;
   --border-light: #3f3f46;
   --divider-color: #27272a;

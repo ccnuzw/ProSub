@@ -4,7 +4,7 @@
     <header class="top-nav">
       <div class="nav-container">
         <div class="nav-left">
-          <div class="logo">
+          <div class="logo" @click="goHome" style="cursor: pointer;">
             <div class="logo-icon">
               <ThunderboltOutlined />
             </div>
@@ -66,7 +66,60 @@
     <!-- 主要内容区域 -->
     <main class="main-content">
       <div class="content-container">
-        <router-view />
+        <!-- PC端侧边导航 -->
+        <aside class="sidebar" v-show="!isMobile">
+          <nav class="sidebar-nav">
+            <router-link 
+              to="/" 
+              class="sidebar-nav-item"
+              :class="{ active: $route.path === '/' }"
+            >
+              <AppstoreOutlined />
+              <span>仪表板</span>
+            </router-link>
+            
+            <router-link 
+              to="/nodes" 
+              class="sidebar-nav-item"
+              :class="{ active: $route.path.startsWith('/nodes') }"
+            >
+              <ClusterOutlined />
+              <span>节点管理</span>
+            </router-link>
+            
+            <router-link 
+              to="/subscriptions" 
+              class="sidebar-nav-item"
+              :class="{ active: $route.path.startsWith('/subscriptions') }"
+            >
+              <WifiOutlined />
+              <span>订阅管理</span>
+            </router-link>
+            
+            <router-link 
+              to="/profiles" 
+              class="sidebar-nav-item"
+              :class="{ active: $route.path.startsWith('/profiles') }"
+            >
+              <FileTextOutlined />
+              <span>配置文件</span>
+            </router-link>
+            
+            <router-link 
+              to="/user" 
+              class="sidebar-nav-item"
+              :class="{ active: $route.path.startsWith('/user') }"
+            >
+              <UserOutlined />
+              <span>用户设置</span>
+            </router-link>
+          </nav>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <div class="main-content-area">
+          <router-view />
+        </div>
       </div>
     </main>
 
@@ -141,11 +194,24 @@ import {
 const router = useRouter()
 const searchQuery = ref('')
 const isDarkMode = ref(false)
+const isMobile = ref(false)
+
+// 检测移动端
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// 监听窗口大小变化
+window.addEventListener('resize', checkMobile)
 
 const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   document.documentElement.classList.toggle('dark', isDarkMode.value)
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
+}
+
+const goHome = () => {
+  router.push('/')
 }
 
 const goToProfile = () => {
@@ -177,6 +243,9 @@ onMounted(() => {
     isDarkMode.value = true
     document.documentElement.classList.add('dark')
   }
+  
+  // 初始化移动端检测
+  checkMobile()
 })
 </script>
 
@@ -319,6 +388,59 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
+  display: flex;
+  gap: 24px;
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--surface-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  height: fit-content;
+  position: sticky;
+  top: 88px;
+  border: 1px solid var(--border-color);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.sidebar-nav-item:hover {
+  color: var(--primary-color);
+  background: var(--primary-50);
+}
+
+.sidebar-nav-item.active {
+  color: var(--primary-color);
+  background: var(--primary-50);
+  border-left: 3px solid var(--primary-color);
+}
+
+.sidebar-nav-item .anticon {
+  font-size: 16px;
+}
+
+.main-content-area {
+  flex: 1;
+  min-width: 0;
 }
 
 .mobile-nav {
@@ -331,6 +453,8 @@ onMounted(() => {
   border-top: 1px solid var(--border-color);
   padding: 8px 0;
   z-index: 100;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-nav-item {
@@ -344,14 +468,18 @@ onMounted(() => {
   text-decoration: none;
   font-size: 12px;
   transition: all 0.2s;
+  border-radius: var(--radius-md);
+  margin: 0 4px;
 }
 
 .mobile-nav-item:hover {
   color: var(--primary-color);
+  background: var(--primary-50);
 }
 
 .mobile-nav-item.active {
   color: var(--primary-color);
+  background: var(--primary-50);
 }
 
 .mobile-nav-item .anticon {
@@ -377,6 +505,38 @@ onMounted(() => {
   
   .content-container {
     padding: 0 16px;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .sidebar {
+    width: 100%;
+    position: static;
+    order: 2;
+  }
+  
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  
+  .sidebar-nav-item {
+    flex-shrink: 0;
+    min-width: 120px;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 8px;
+  }
+  
+  .sidebar-nav-item span {
+    font-size: 12px;
+  }
+  
+  .main-content-area {
+    order: 1;
   }
 }
 </style>
