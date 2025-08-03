@@ -489,17 +489,19 @@ const handleBatchDelete = async () => {
 
   try {
     const response = await fetch('/api/nodes/batch-delete', {
-      method: 'DELETE',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: selectedRowKeys.value })
     })
 
     if (response.ok) {
-      message.success(`成功删除 ${selectedRowKeys.value.length} 个节点`)
+      const result = await response.json()
+      message.success(result.message || `成功删除 ${selectedRowKeys.value.length} 个节点`)
       selectedRowKeys.value = []
       await fetchData()
     } else {
-      message.error('批量删除失败')
+      const errorData = await response.json()
+      message.error(errorData.message || '批量删除失败')
     }
   } catch (error) {
     console.error('批量删除失败:', error)
@@ -900,10 +902,13 @@ onMounted(() => {
   background: var(--surface-color);
   border-bottom: 1px solid var(--border-color);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .nodes-table :deep(.ant-table-tbody > tr > td) {
   border-bottom: 1px solid var(--border-light);
+  background: var(--surface-color);
+  color: var(--text-primary);
 }
 
 .nodes-table :deep(.ant-table-tbody > tr:hover > td) {
@@ -912,6 +917,73 @@ onMounted(() => {
 
 .nodes-table :deep(.ant-table-row-selected > td) {
   background: var(--primary-50);
+}
+
+.nodes-table :deep(.ant-table) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-table-container) {
+  background: var(--surface-color);
+}
+
+.nodes-table :deep(.ant-table-content) {
+  background: var(--surface-color);
+}
+
+.nodes-table :deep(.ant-table-body) {
+  background: var(--surface-color);
+}
+
+.nodes-table :deep(.ant-pagination) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-pagination-item) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-pagination-item:hover) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.nodes-table :deep(.ant-pagination-item-active) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.nodes-table :deep(.ant-pagination-prev),
+.nodes-table :deep(.ant-pagination-next) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-pagination-prev:hover),
+.nodes-table :deep(.ant-pagination-next:hover) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.nodes-table :deep(.ant-pagination-options) {
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-select) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-select-selector) {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
 }
 
 /* 响应式设计 */
