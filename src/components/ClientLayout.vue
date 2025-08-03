@@ -22,7 +22,6 @@
 
       </a-layout-header>
 
-      <!-- 添加桌面端导航菜单 -->
       <div class="hidden sm:block bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex px-6 py-3 space-x-8">
           <div 

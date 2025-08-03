@@ -69,7 +69,6 @@
       </div>
     </a-card>
 
-    <!-- 添加导航菜单 -->
     <a-card class="mobile-card rounded-2xl shadow-sm">
       <template #title>
         <div class="font-bold text-lg">快速导航</div>

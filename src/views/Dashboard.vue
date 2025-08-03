@@ -1,6 +1,5 @@
 <template>
   <div class="hidden sm:block p-6">
-    <!-- 桌面端视图 -->
     <a-row :gutter="[24, 24]">
       <a-col :span="24">
         <a-card class="rounded-xl shadow-sm">
@@ -89,7 +88,6 @@
         </a-card>
       </a-col>
 
-      <!-- 添加导航菜单 -->
       <a-col :span="24">
         <a-card title="快速导航" class="rounded-xl shadow-sm">
           <a-row :gutter="16">
@@ -135,7 +133,6 @@
     </a-row>
   </div>
   <div class="sm:hidden">
-    <!-- 移动端视图 -->
     <MobileDashboard />
   </div>
 </template>
