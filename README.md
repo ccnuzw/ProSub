@@ -245,7 +245,7 @@ rules:
 
 **如果这个项目对您有帮助，请给个 ⭐️ Star 支持一下！**
 
-[![GitHub stars](https://img.shields.io/github/stars/your-username/ProSub?style=social)](https://github.com/your-username/ProSub)
-[![GitHub forks](https://img.shields.io/github/forks/your-username/ProSub?style=social)](https://github.com/your-username/ProSub)
+[![GitHub stars](https://img.shields.io/github/stars/imzyb/ProSub?style=social)](https://github.com/imzyb/ProSub)
+[![GitHub forks](https://img.shields.io/github/forks/imzyb/ProSub?style=social)](https://github.com/imzyb/ProSub)
 
 </div>
