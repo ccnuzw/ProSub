@@ -2,7 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- START: Corrected Bottom Navigation Styles --- */
+/* --- START: Modern Global Styles --- */
+
+:root {
+  --primary-color: #00b96b;
+  --primary-light: #00d47d;
+  --primary-dark: #009d59;
+  --secondary-color: #1e90ff;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #ff4d4f;
+  --background-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+/* 深色模式变量 */
+.dark {
+  --background-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+}
+
+/* 全局样式 */
+body {
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* 卡片样式优化 */
+.ant-card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: box-shadow 0.3s ease;
+}
+
+.ant-card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.ant-card-bordered {
+  border: 1px solid var(--border-color);
+}
+
+/* 按钮样式优化 */
+.ant-btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-color: var(--primary-dark);
+  box-shadow: 0 2px 4px rgba(0, 185, 107, 0.2);
+}
+
+.ant-btn-primary:hover, .ant-btn-primary:focus {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 8px rgba(0, 185, 107, 0.3);
+}
+
+/* 表格样式优化 */
+.ant-table {
+  background-color: var(--card-bg);
+}
+
+.ant-table-thead > tr > th {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ant-table-tbody > tr > td {
+  color: var(--text-secondary);
+}
+
+.ant-table-tbody > tr:hover > td {
+  background-color: rgba(0, 185, 107, 0.05);
+}
+
+/* 统计数字样式 */
+.ant-statistic {
+  text-align: center;
+}
+
+.ant-statistic-title {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.ant-statistic-content {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+/* 标签样式优化 */
+.ant-tag {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+/* --- END: Modern Global Styles --- */
+
+/* --- START: Enhanced Bottom Navigation Styles --- */
 
 /* Base styles for the bottom navigation bar, applies to ALL screen sizes */
 .mobile-nav {
@@ -27,12 +140,25 @@
   justify-content: center;
   padding: 6px 0;
   text-decoration: none;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
 }
 
 .mobile-nav-item.active {
-  color: #00b96b;
+  color: var(--primary-color);
+  background-color: rgba(0, 185, 107, 0.1);
+  transform: translateY(-2px);
+}
+
+.mobile-nav-item:hover:not(.active) {
+  color: var(--text-primary);
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dark .mobile-nav-item:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .mobile-nav-item i,
@@ -41,17 +167,17 @@
   margin-bottom: 2px;
 }
 
-/* Enhancements for Desktop view (screens wider than 768px) */
+/* Enhancements for Desktop view (screens wider than 769px) */
 @media (min-width: 769px) {
   .mobile-nav {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
     width: auto;
-    min-width: 500px; /* Minimum width on desktop */
-    border-radius: 12px 12px 0 0; /* Rounded top corners */
+    min-width: 500px;
+    border-radius: 12px 12px 0 0;
     padding: 8px 20px;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
   }
 }
 
@@ -99,14 +225,6 @@
 /* Dark mode for navigation */
 .dark .mobile-nav {
     background-color: #1f1f1f;
-    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.4);
-    border-top: 1px solid #3a3a3a;
-}
-.dark .mobile-nav-item {
-    color: #a0a0a0;
-}
-.dark .mobile-nav-item.active {
-    color: #00d68f;
 }
 
 /* --- Layout Adjustments --- */
