@@ -22,6 +22,52 @@
 
       </a-layout-header>
 
+      <!-- 添加桌面端导航菜单 -->
+      <div class="hidden sm:block bg-white dark:bg-gray-800 shadow-sm">
+        <div class="flex px-6 py-3 space-x-8">
+          <div 
+            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
+            :class="selectedKey === 'dashboard' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+            @click="goTo('/dashboard')"
+          >
+            <DashboardOutlined class="mr-2" />
+            <span>仪表盘</span>
+          </div>
+          <div 
+            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
+            :class="selectedKey.startsWith('nodes') ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+            @click="goTo('/nodes')"
+          >
+            <ClusterOutlined class="mr-2" />
+            <span>节点</span>
+          </div>
+          <div 
+            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
+            :class="selectedKey.startsWith('subscriptions') ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+            @click="goTo('/subscriptions')"
+          >
+            <WifiOutlined class="mr-2" />
+            <span>订阅</span>
+          </div>
+          <div 
+            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
+            :class="selectedKey.startsWith('profiles') ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+            @click="goTo('/profiles')"
+          >
+            <FileTextOutlined class="mr-2" />
+            <span>配置</span>
+          </div>
+          <div 
+            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
+            :class="selectedKey === 'profile' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
+            @click="goTo('/user/profile')"
+          >
+            <UserOutlined class="mr-2" />
+            <span>我的</span>
+          </div>
+        </div>
+      </div>
+
       <a-layout-content class="p-4 sm:p-6 lg:p-8">
         <div :style="{ padding: '16px', borderRadius: customTheme.token.borderRadius }" class="sm:p-6">
           <router-view />
@@ -84,6 +130,10 @@ const isDarkTheme = ref(localStorage.getItem('theme') === 'dark');
 const toggleTheme = (checked: boolean) => {
   isDarkTheme.value = checked;
   localStorage.setItem('theme', checked ? 'dark' : 'light');
+};
+
+const goTo = (path: string) => {
+  router.push(path);
 };
 
 onMounted(() => {

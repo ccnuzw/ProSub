@@ -69,99 +69,71 @@
       </div>
     </a-card>
 
+    <!-- 添加导航菜单 -->
     <a-card class="mobile-card rounded-2xl shadow-sm">
       <template #title>
-        <div class="flex items-center">
-          <ClusterOutlined class="mr-2 text-blue-500" />
-          <span class="font-bold">最近节点</span>
-        </div>
-      </template>
-      <template #extra>
-        <a-button type="link" size="small" @click="goTo('/nodes')">更多</a-button>
-      </template>
-      <div v-if="recentNodes.length > 0" class="space-y-3">
-        <div 
-          v-for="node in recentNodes" 
-          :key="node.id"
-          class="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg px-2 py-1 transition-colors"
-        >
-          <div class="font-medium text-gray-800 dark:text-white">{{ node.name }}</div>
-          <div class="flex justify-between items-center mt-1">
-            <span class="text-sm text-gray-500 dark:text-gray-400">{{ node.server }}:{{ node.port }}</span>
-            <a-tag :color="getNodeStatusColor(node)" class="rounded-full px-2 py-1 text-xs">
-              <CheckCircleOutlined v-if="nodeStatus[node.id]?.status === 'online'" class="mr-1" />
-              <CloseCircleOutlined v-else-if="nodeStatus[node.id]?.status === 'offline'" class="mr-1" />
-              <QuestionCircleOutlined v-else class="mr-1" />
-              {{ nodeStatus[node.id]?.latency ? `${nodeStatus[node.id].latency}ms` : '未知' }}
-            </a-tag>
-          </div>
-        </div>
-      </div>
-      <a-empty v-else description="暂无节点" />
-    </a-card>
-
-    <a-card class="mobile-card rounded-2xl shadow-sm">
-      <template #title>
-        <div class="flex items-center">
-          <FileTextOutlined class="mr-2 text-green-500" />
-          <span class="font-bold">最近配置文件</span>
-        </div>
-      </template>
-      <template #extra>
-        <a-button type="link" size="small" @click="goTo('/profiles')">更多</a-button>
-      </template>
-      <div v-if="recentProfiles.length > 0" class="space-y-3">
-        <div 
-          v-for="profile in recentProfiles" 
-          :key="profile.id"
-          class="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-0 last:pb-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg px-2 py-1 transition-colors"
-        >
-          <div class="font-medium text-gray-800 dark:text-white">{{ profile.name }}</div>
-          <div class="flex justify-between items-center mt-1">
-            <span class="text-sm text-gray-500 dark:text-gray-400">
-              {{ profile.nodes.length }} 节点, {{ profile.subscriptions.length }} 订阅
-            </span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">
-              {{ formatTime(profile.updatedAt) }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <a-empty v-else description="暂无配置文件" />
-    </a-card>
-
-    <a-card class="mobile-card rounded-2xl shadow-sm">
-      <template #title>
-        <div class="flex items-center">
-          <ThunderboltOutlined class="mr-2 text-amber-500" />
-          <span class="font-bold">快速操作</span>
-        </div>
+        <div class="font-bold text-lg">快速导航</div>
       </template>
       <div class="grid grid-cols-3 gap-3">
-        <a-button 
-          type="primary" 
-          @click="goTo('/nodes/new')" 
-          class="flex flex-col items-center h-auto py-3 rounded-xl"
+        <div 
+          class="flex flex-col items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          @click="goTo('/nodes')"
         >
-          <PlusOutlined class="text-lg" />
-          <span class="text-xs mt-1">添加节点</span>
-        </a-button>
-        <a-button 
-          type="primary" 
-          @click="goTo('/subscriptions/new')" 
-          class="flex flex-col items-center h-auto py-3 rounded-xl"
+          <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-2">
+            <ClusterOutlined class="text-blue-500 text-xl" />
+          </div>
+          <span class="text-sm">节点</span>
+        </div>
+        
+        <div 
+          class="flex flex-col items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          @click="goTo('/subscriptions')"
         >
-          <PlusOutlined class="text-lg" />
-          <span class="text-xs mt-1">添加订阅</span>
-        </a-button>
-        <a-button 
-          type="primary" 
-          @click="goTo('/profiles/new')" 
-          class="flex flex-col items-center h-auto py-3 rounded-xl"
+          <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-2">
+            <WifiOutlined class="text-green-500 text-xl" />
+          </div>
+          <span class="text-sm">订阅</span>
+        </div>
+        
+        <div 
+          class="flex flex-col items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          @click="goTo('/profiles')"
         >
-          <PlusOutlined class="text-lg" />
-          <span class="text-xs mt-1">新建配置</span>
-        </a-button>
+          <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mb-2">
+            <FileTextOutlined class="text-amber-500 text-xl" />
+          </div>
+          <span class="text-sm">配置</span>
+        </div>
+        
+        <div 
+          class="flex flex-col items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          @click="goTo('/nodes/new')"
+        >
+          <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-2">
+            <PlusOutlined class="text-blue-500 text-xl" />
+          </div>
+          <span class="text-sm">添加节点</span>
+        </div>
+        
+        <div 
+          class="flex flex-col items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          @click="goTo('/subscriptions/new')"
+        >
+          <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center mb-2">
+            <PlusOutlined class="text-green-500 text-xl" />
+          </div>
+          <span class="text-sm">添加订阅</span>
+        </div>
+        
+        <div 
+          class="flex flex-col items-center p-3 rounded-xl bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          @click="goTo('/profiles/new')"
+        >
+          <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mb-2">
+            <PlusOutlined class="text-amber-500 text-xl" />
+          </div>
+          <span class="text-sm">新建配置</span>
+        </div>
       </div>
     </a-card>
   </div>
@@ -171,17 +143,12 @@
 import { ref, onMounted } from 'vue'
 import { Card, Statistic, Empty, Tag, Button } from 'ant-design-vue'
 import { 
-  DashboardOutlined, 
   ClusterOutlined, 
   FileTextOutlined, 
   WifiOutlined,
   PlusOutlined,
   RedoOutlined,
-  ProfileOutlined,
-  ThunderboltOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  QuestionCircleOutlined
+  ProfileOutlined
 } from '@ant-design/icons-vue'
 import type { Node, HealthStatus, Profile } from '../../packages/shared/types/index.ts'
 import { useRouter } from 'vue-router'

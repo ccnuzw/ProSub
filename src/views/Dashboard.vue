@@ -89,67 +89,47 @@
         </a-card>
       </a-col>
 
-      <a-col :span="12">
-        <a-card title="最近节点" class="rounded-xl shadow-sm h-full">
-          <template #extra>
-            <a-button type="link" @click="goTo('/nodes')">查看全部</a-button>
-          </template>
-          <a-table
-            :columns="nodeColumns"
-            :data-source="recentNodes"
-            :pagination="false"
-            size="middle"
-            :scroll="{ y: 300 }"
-            class="recent-table"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'name'">
-                <span class="font-medium">{{ record.name }}</span>
-              </template>
-              <template v-else-if="column.dataIndex === 'server'">
-                {{ record.server }}:{{ record.port }}
-              </template>
-              <template v-else-if="column.dataIndex === 'status'">
-                <a-tag v-if="nodeStatus[record.id]?.status === 'online'" :color="getNodeStatusColor(record)" class="rounded-full px-2 py-1 text-xs">
-                  <CheckCircleOutlined class="mr-1" />
-                  {{ nodeStatus[record.id]?.latency ? `${nodeStatus[record.id]?.latency}ms` : '在线' }}
-                </a-tag>
-                <a-tag v-else-if="nodeStatus[record.id]?.status === 'offline'" color="error" class="rounded-full px-2 py-1 text-xs">
-                  <CloseCircleOutlined class="mr-1" />离线
-                </a-tag>
-                <a-tag v-else color="default" class="rounded-full px-2 py-1 text-xs">
-                  <QuestionCircleOutlined class="mr-1" />未知
-                </a-tag>
-              </template>
-            </template>
-          </a-table>
-        </a-card>
-      </a-col>
-
-      <a-col :span="12">
-        <a-card title="最近配置文件" class="rounded-xl shadow-sm h-full">
-          <template #extra>
-            <a-button type="link" @click="goTo('/profiles')">查看全部</a-button>
-          </template>
-          <a-table
-            :columns="profileColumns"
-            :data-source="recentProfiles"
-            :pagination="false"
-            size="middle"
-            :scroll="{ y: 300 }"
-            class="recent-table"
-          >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.dataIndex === 'name'">
-                <span class="font-medium">{{ record.name }}</span>
-              </template>
-              <template v-else-if="column.dataIndex === 'info'">
-                <span class="text-gray-500 dark:text-gray-400 text-sm">
-                  {{ record.nodes.length }} 节点, {{ record.subscriptions.length }} 订阅
-                </span>
-              </template>
-            </template>
-          </a-table>
+      <!-- 添加导航菜单 -->
+      <a-col :span="24">
+        <a-card title="快速导航" class="rounded-xl shadow-sm">
+          <a-row :gutter="16">
+            <a-col :span="4">
+              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/nodes')">
+                <ClusterOutlined class="text-2xl mb-2 text-blue-500" />
+                <div class="font-medium">节点管理</div>
+              </a-card>
+            </a-col>
+            <a-col :span="4">
+              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/subscriptions')">
+                <WifiOutlined class="text-2xl mb-2 text-green-500" />
+                <div class="font-medium">订阅管理</div>
+              </a-card>
+            </a-col>
+            <a-col :span="4">
+              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/profiles')">
+                <FileTextOutlined class="text-2xl mb-2 text-amber-500" />
+                <div class="font-medium">配置管理</div>
+              </a-card>
+            </a-col>
+            <a-col :span="4">
+              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/nodes/new')">
+                <PlusOutlined class="text-2xl mb-2 text-blue-500" />
+                <div class="font-medium">添加节点</div>
+              </a-card>
+            </a-col>
+            <a-col :span="4">
+              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/subscriptions/new')">
+                <PlusOutlined class="text-2xl mb-2 text-green-500" />
+                <div class="font-medium">添加订阅</div>
+              </a-card>
+            </a-col>
+            <a-col :span="4">
+              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/profiles/new')">
+                <PlusOutlined class="text-2xl mb-2 text-amber-500" />
+                <div class="font-medium">新建配置</div>
+              </a-card>
+            </a-col>
+          </a-row>
         </a-card>
       </a-col>
     </a-row>
@@ -162,16 +142,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Card, Row, Col, Statistic, Table, Button } from 'ant-design-vue'
+import { Card, Row, Col, Statistic, Button } from 'ant-design-vue'
 import { 
   RedoOutlined, 
   ClusterOutlined, 
   FileTextOutlined, 
   ProfileOutlined, 
   WifiOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  QuestionCircleOutlined
+  PlusOutlined
 } from '@ant-design/icons-vue'
 import type { Node, HealthStatus, Profile } from '@shared/types'
 import { useRouter } from 'vue-router'
@@ -190,64 +168,6 @@ const stats = ref({
 const recentNodes = ref<Node[]>([])
 const recentProfiles = ref<Profile[]>([])
 const nodeStatus = ref<Record<string, HealthStatus>>({})
-
-const nodeColumns = [
-  {
-    title: '名称',
-    dataIndex: 'name',
-    key: 'name'
-  },
-  {
-    title: '服务器',
-    dataIndex: 'server',
-    key: 'server'
-  },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status'
-  }
-]
-
-const profileColumns = [
-  {
-    title: '名称',
-    dataIndex: 'name',
-    key: 'name'
-  },
-  {
-    title: '信息',
-    dataIndex: 'info',
-    key: 'info'
-  },
-  {
-    title: '更新时间',
-    dataIndex: 'updatedAt',
-    key: 'updatedAt',
-    customRender: ({ text }: { text: string }) => {
-      const date = new Date(text)
-      const now = new Date()
-      const diffTime = Math.abs(now.getTime() - date.getTime())
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      
-      if (diffDays <= 1) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      } else if (diffDays <= 7) {
-        return `${diffDays}天前`
-      } else {
-        return date.toLocaleDateString()
-      }
-    }
-  }
-]
-
-const getNodeStatusColor = (node: Node) => {
-  const status = nodeStatus.value[node.id]
-  if (!status || !status.latency) return 'success'
-  if (status.latency < 500) return 'success'
-  if (status.latency < 1000) return 'warning'
-  return 'error'
-}
 
 const refreshData = async () => {
   loading.value = true
@@ -292,14 +212,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.recent-table :deep(.ant-table-thead > tr > th) {
-  background-color: transparent !important;
-}
-
-.recent-table :deep(.ant-table-tbody > tr:last-child > td) {
-  border-bottom: none;
-}
-
 :deep(.ant-card-head-title) {
   font-weight: 600;
 }
