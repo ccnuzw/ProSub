@@ -1,3 +1,4 @@
+// 基础类型定义
 export interface Node {
   id: string;
   name: string;
@@ -12,67 +13,93 @@ export interface Subscription {
   id: string;
   name: string;
   url: string;
-}
-
-export interface SubscriptionRule {
-  id: string;
-  type: 'include' | 'exclude';
-  pattern: string;
+  nodeCount: number;
+  lastUpdated: string | null;
+  error: string | null;
 }
 
 export interface Profile {
   id: string;
   name: string;
-  alias?: string;
-  nodes: string[]; // Node IDs
-  subscriptions: (string | { 
-    id: string; 
-    rules: SubscriptionRule[] 
-  })[];
-  ruleSets?: Record<string, RuleSetConfig>;
+  description?: string;
+  nodes: string[];
+  subscriptions: string[];
+  rules: SubscriptionRule[];
+  clientType: 'clash' | 'surge' | 'quantumult-x' | 'loon' | 'sing-box';
+  createdAt: string;
   updatedAt: string;
+}
+
+export interface SubscriptionRule {
+  type: 'include' | 'exclude';
+  pattern: string;
+  description?: string;
 }
 
 export interface RuleSetConfig {
-  id?: string;
-  type: 'local' | 'remote';
-  url?: string;
-}
-
-export interface User {
-  id: string;
   name: string;
-  password: string;
-  defaultPasswordChanged: boolean;
-}
-
-// 健康检查状态接口
-export interface HealthStatus {
-  status: 'online' | 'offline' | 'checking' | 'error';
-  latency?: number;
-  error?: string;
-}
-
-// 新增节点分组接口
-export interface NodeGroup {
-  id: string;
-  name: string;
-  nodeIds: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// 新增规则集接口
-export interface CustomRuleSet {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  clientType: 'clash' | 'surge' | 'quantumultx' | 'loon' | 'sing-box' | 'general';
-  createdAt: string;
-  updatedAt: string;
+  rules: string[];
+  type: 'clash' | 'surge' | 'quantumult-x' | 'loon' | 'sing-box';
 }
 
 export interface Env {
-  KV: any;
+  KV: KVNamespace;
+  __STATIC_CONTENT: KVNamespace;
+}
+
+// 用户相关类型
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+  role: 'admin' | 'user';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 节点组类型
+export interface NodeGroup {
+  id: string;
+  name: string;
+  description?: string;
+  nodes: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 健康检查类型
+export interface HealthStatus {
+  nodeId: string;
+  status: 'online' | 'offline' | 'unknown';
+  latency?: number;
+  lastChecked: string;
+  error?: string;
+}
+
+// 流量统计类型
+export interface TrafficRecord {
+  timestamp: string;
+  profileId: string;
+  alias: string;
+  bytes?: number;
+}
+
+// API响应类型
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+// 分页类型
+export interface PaginationParams {
+  page: number;
+  pageSize: number;
+  total?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationParams;
 }

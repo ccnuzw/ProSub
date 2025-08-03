@@ -1,7 +1,7 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { hashPassword, comparePassword } from './utils/crypto';
-import { Env, User } from '@shared/types';
 import { parse } from 'cookie';
+import { Env, User } from '@shared/types';
+import { requireAuth } from './utils/auth';
 
 const ADMIN_USER_KEY = 'ADMIN_USER';
 
@@ -15,44 +15,34 @@ async function putAdminUser(env: Env, user: User): Promise<void> {
 }
 
 export async function handleUserChangePassword(request: Request, env: Env): Promise<Response> {
-  const cookies = parse(request.headers.get('Cookie') || '');
-  const token = cookies.auth_token;
-
-  if (!token) {
-    return errorResponse('未授权', 401);
-  }
-
-  const userId = await env.KV.get(`user_session:${token}`);
-
-  if (!userId) {
-    return errorResponse('未授权', 401);
-  }
-
-  let adminUser = await getAdminUser(env);
-
-  if (!adminUser || adminUser.id !== userId) {
-    return errorResponse('未授权', 401);
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
   }
 
   try {
-    const { oldPassword, newPassword } = (await request.json()) as { oldPassword?: string; newPassword?: string };
+    const { currentPassword, newPassword } = await request.json();
 
-    if (!newPassword || newPassword.length < 6) {
-      return errorResponse('新密码至少需要6个字符', 400);
+    if (!currentPassword || !newPassword) {
+      return errorResponse('当前密码和新密码不能为空', 400);
     }
 
-    // If it's the first login (default password not changed), oldPassword is not required
-    if (adminUser.defaultPasswordChanged) {
-      if (!oldPassword) {
-        return errorResponse('旧密码不能为空', 400);
-      }
-      const isOldPasswordValid = await comparePassword(oldPassword, adminUser.password || '');
-      if (!isOldPasswordValid) {
-        return errorResponse('旧密码不正确', 401);
-      }
+    if (newPassword.length < 6) {
+      return errorResponse('新密码长度至少6位', 400);
     }
 
-    adminUser.password = await hashPassword(newPassword);
+    const adminUser = await getAdminUser(env);
+    if (!adminUser) {
+      return errorResponse('用户不存在', 404);
+    }
+
+    // 验证当前密码
+    if (adminUser.password !== currentPassword) {
+      return errorResponse('当前密码错误', 401);
+    }
+
+    // 更新密码
+    adminUser.password = newPassword;
     adminUser.defaultPasswordChanged = true;
     await putAdminUser(env, adminUser);
 

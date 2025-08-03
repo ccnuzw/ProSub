@@ -1,11 +1,28 @@
 import { jsonResponse, errorResponse } from './utils/response';
+import { Env, Profile } from '@shared/types';
 import { requireAuth } from './utils/auth';
+
+const ALL_PROFILES_KEY = 'ALL_PROFILES';
+
+async function getAllProfiles(env: Env): Promise<Record<string, Profile>> {
+  const profilesJson = await env.KV.get(ALL_PROFILES_KEY);
+  return profilesJson ? JSON.parse(profilesJson) : {};
+}
+
+async function putAllProfiles(env: Env, profiles: Record<string, Profile>): Promise<void> {
+  await env.KV.put(ALL_PROFILES_KEY, JSON.stringify(profiles));
+}
 
 interface ProfileRequest {
   name: string;
-  nodes: string[];
-  subscriptions: string[];
   alias?: string;
+  nodeIds: string[];
+  subscriptionIds: string[];
+  ruleSets?: {
+    clash?: { type: 'built-in' | 'custom'; id: string };
+    surge?: { type: 'built-in' | 'custom'; id: string };
+    quantumultx?: { type: 'built-in' | 'custom'; id: string };
+  };
 }
 
 export async function handleProfilesGet(request: Request, env: Env): Promise<Response> {
@@ -15,21 +32,11 @@ export async function handleProfilesGet(request: Request, env: Env): Promise<Res
   }
 
   try {
-    const KV = env.KV
-    const profileIndexJson = await KV.get('_index:profiles');
-    const profileIds = profileIndexJson ? JSON.parse(profileIndexJson) : [];
-
-    const profiles = await Promise.all(
-      profileIds.map(async (profileId: string) => {
-        const profileJson = await KV.get(`profile:${profileId}`);
-        return profileJson ? JSON.parse(profileJson) : null;
-      })
-    );
-
-    return jsonResponse(profiles.filter(Boolean));
+    const allProfiles = await getAllProfiles(env);
+    return jsonResponse(Object.values(allProfiles));
   } catch (error) {
-    console.error('Failed to fetch profiles:', error)
-    return errorResponse('Failed to fetch profiles');
+    console.error('获取配置文件列表失败:', error);
+    return errorResponse('获取配置文件列表失败');
   }
 }
 
@@ -40,47 +47,89 @@ export async function handleProfilesPost(request: Request, env: Env): Promise<Re
   }
 
   try {
-    const { name, nodes = [], subscriptions = [], alias } = (await request.json()) as ProfileRequest
-
+    const { name, alias, nodeIds, subscriptionIds, ruleSets } = (await request.json()) as ProfileRequest;
+    
     if (!name) {
-      return errorResponse('Profile name is required', 400);
+      return errorResponse('配置文件名称不能为空', 400);
     }
 
-    const KV = env.KV;
-
-    if (alias) {
-      if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-        return errorResponse('Invalid characters in custom path. Use only letters, numbers, hyphen, and underscore.', 400);
-      }
-      const existingAlias = await KV.get(`alias:${alias}`);
-      if (existingAlias) {
-        return errorResponse('This custom path is already in use.', 409);
-      }
-    }
-
+    const id = crypto.randomUUID();
     const newProfile: Profile = {
-      id: crypto.randomUUID(),
+      id,
       name,
-      alias: alias || undefined,
-      nodes,
-      subscriptions,
-      updatedAt: new Date().toISOString(),
+      alias,
+      nodeIds: nodeIds || [],
+      subscriptionIds: subscriptionIds || [],
+      ruleSets: ruleSets || {},
+      nodes: 0,
+      subscriptions: 0
     };
 
-    await KV.put(`profile:${newProfile.id}`, JSON.stringify(newProfile));
+    const allProfiles = await getAllProfiles(env);
+    allProfiles[id] = newProfile;
+    await putAllProfiles(env, allProfiles);
 
-    if (alias) {
-      await KV.put(`alias:${alias}`, JSON.stringify({ id: newProfile.id }));
+    return jsonResponse(newProfile);
+  } catch (error) {
+    console.error('创建配置文件失败:', error);
+    return errorResponse('创建配置文件失败');
+  }
+}
+
+export async function handleProfileUpdate(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
+  try {
+    const { name, alias, nodeIds, subscriptionIds, ruleSets } = (await request.json()) as ProfileRequest;
+    
+    const allProfiles = await getAllProfiles(env);
+    const profile = allProfiles[id];
+
+    if (!profile) {
+      return errorResponse('配置文件不存在', 404);
     }
 
-    const profileIndexJson = await KV.get('_index:profiles');
-    const profileIds = profileIndexJson ? JSON.parse(profileIndexJson) : [];
-    profileIds.push(newProfile.id);
-    await KV.put('_index:profiles', JSON.stringify(profileIds));
+    if (!name) {
+      return errorResponse('配置文件名称不能为空', 400);
+    }
 
-    return jsonResponse(newProfile, 201);
+    profile.name = name;
+    profile.alias = alias;
+    profile.nodeIds = nodeIds || [];
+    profile.subscriptionIds = subscriptionIds || [];
+    profile.ruleSets = ruleSets || {};
+
+    await putAllProfiles(env, allProfiles);
+
+    return jsonResponse(profile);
   } catch (error) {
-    console.error('Failed to create profile:', error);
-    return errorResponse('Failed to create profile');
+    console.error('更新配置文件失败:', error);
+    return errorResponse('更新配置文件失败');
+  }
+}
+
+export async function handleProfileDelete(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
+  try {
+    const allProfiles = await getAllProfiles(env);
+    
+    if (!allProfiles[id]) {
+      return errorResponse('配置文件不存在', 404);
+    }
+
+    delete allProfiles[id];
+    await putAllProfiles(env, allProfiles);
+
+    return jsonResponse({ message: '配置文件删除成功' });
+  } catch (error) {
+    console.error('删除配置文件失败:', error);
+    return errorResponse('删除配置文件失败');
   }
 }

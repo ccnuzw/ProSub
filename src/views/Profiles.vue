@@ -1,290 +1,448 @@
 <template>
-  <a-card>
-    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-      <a-typography-title :level="3" class="mb-2 sm:mb-0">配置文件管理</a-typography-title>
-      <router-link to="/profiles/new" class="w-full sm:w-auto">
-        <a-button type="primary" class="w-full sm:w-auto">
+  <div class="profiles-page">
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">配置文件管理</h1>
+        <p class="page-subtitle">管理您的代理配置文件</p>
+      </div>
+      <div class="header-actions">
+        <a-button type="primary" @click="showCreateModal">
           <template #icon><PlusOutlined /></template>
           添加配置文件
         </a-button>
-      </router-link>
+      </div>
     </div>
 
-    <!-- Desktop Table View -->
-    <a-table v-if="!isMobile" :columns="tableColumns" :data-source="paginatedProfiles" row-key="id" :loading="loading" :scroll="{ x: 'max-content' }"
-      :pagination="{
-        current: currentProfilePage,
-        pageSize: profilePageSize,
-        total: profiles.length,
-        showSizeChanger: true,
-        showQuickJumper: true,
-        showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-        onShowSizeChange: (current, size) => { profilePageSize = size; currentProfilePage = 1; },
-        onChange: (page) => { currentProfilePage = page; },
-      }"
-    >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'nodes'">
-          <a-space align="center">
-            <ClusterOutlined />
-            <span>{{ record.nodes?.length || 0 }}</span>
-          </a-space>
-        </template>
-        <template v-else-if="column.key === 'subscriptions'">
-          <a-space align="center">
-            <WifiOutlined />
-            <span>{{ record.subscriptions?.length || 0 }}</span>
-          </a-space>
-        </template>
-        <template v-else-if="column.key === 'subscribe_url'">
-          <a-space v-if="origin">
-            <a-tooltip :title="getSubscriptionUrl(record)">
-              <a-button @click="handleCopy(getSubscriptionUrl(record))">
+    <!-- 配置文件列表 -->
+    <div class="profiles-content">
+      <a-table
+        :columns="columns"
+        :data-source="profiles"
+        :loading="loading"
+        :pagination="false"
+        row-key="id"
+        class="profiles-table"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'nodes'">
+            <a-space align="center">
+              <ClusterOutlined />
+              <span>{{ record.nodeIds?.length || 0 }}</span>
+            </a-space>
+          </template>
+          
+          <template v-if="column.key === 'subscriptions'">
+            <a-space align="center">
+              <WifiOutlined />
+              <span>{{ record.subscriptionIds?.length || 0 }}</span>
+            </a-space>
+          </template>
+          
+          <template v-if="column.key === 'subscribe_url'">
+            <a-space>
+              <a-button type="text" size="small" @click="handleCopy(getSubscriptionUrl(record))">
                 <template #icon><CopyOutlined /></template>
+                复制链接
               </a-button>
-            </a-tooltip>
-            <a-button @click="showQrCode(getSubscriptionUrl(record))">
-              <template #icon><QrcodeOutlined /></template>
-            </a-button>
-          </a-space>
-        </template>
-        <template v-else-if="column.key === 'action'">
-          <a-space :size="isMobile ? 'small' : 'middle'" :direction="isMobile ? 'vertical' : 'horizontal'">
-            <router-link :to="`/profiles/${record.id}`">
-              <a-button>
+              <a-button type="text" size="small" @click="showQrCode(getSubscriptionUrl(record))">
+                <template #icon><QrcodeOutlined /></template>
+                二维码
+              </a-button>
+            </a-space>
+          </template>
+          
+          <template v-if="column.key === 'actions'">
+            <a-space>
+              <a-button type="text" size="small" @click="handleEdit(record)">
                 <template #icon><EditOutlined /></template>
                 编辑
               </a-button>
-            </router-link>
-            <a-popconfirm
-              title="确定要删除这个配置文件吗？"
-              @confirm="handleDelete(record.id)"
-              ok-text="确定"
-              cancel-text="取消"
-            >
-              <a-button danger>
-                <template #icon><DeleteOutlined /></template>
-                删除
-              </a-button>
-            </a-popconfirm>
-          </a-space>
+              <a-popconfirm
+                title="确定要删除这个配置文件吗？"
+                @confirm="handleDelete(record.id)"
+                ok-text="确定"
+                cancel-text="取消"
+              >
+                <a-button type="text" size="small" danger>
+                  <template #icon><DeleteOutlined /></template>
+                  删除
+                </a-button>
+              </a-popconfirm>
+            </a-space>
+          </template>
         </template>
-      </template>
-    </a-table>
-
-    <!-- Mobile Card View -->
-    <div v-else class="grid grid-cols-1 gap-4">
-      <a-card v-for="profile in paginatedProfiles" :key="profile.id" :title="profile.name" size="small">
-        <p><strong>节点数:</strong> {{ profile.nodes?.length || 0 }}</p>
-        <p><strong>订阅数:</strong> {{ profile.subscriptions?.length || 0 }}</p>
-        <p v-if="profile.alias"><strong>别名:</strong> /sub/{{ profile.alias }}</p>
-        <template #actions>
-          <a-button type="text" :icon="h(CopyOutlined)" @click="handleCopy(getSubscriptionUrl(profile))">复制链接</a-button>
-          <a-button type="text" :icon="h(QrcodeOutlined)" @click="showQrCode(getSubscriptionUrl(profile))">二维码</a-button>
-          <router-link :to="`/profiles/${profile.id}`">
-            <a-button type="text" :icon="h(EditOutlined)">编辑</a-button>
-          </router-link>
-          <a-popconfirm title="确定要删除这个配置文件吗？" @confirm="handleDelete(profile.id)" ok-text="确定" cancel-text="取消">
-            <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
-          </a-popconfirm>
-        </template>
-      </a-card>
-      <a-pagination
-        v-if="profiles.length > profilePageSize"
-        v-model:current="currentProfilePage"
-        :page-size="profilePageSize"
-        :total="profiles.length"
-        show-less-items
-        class="mt-4 text-center"
-      />
+      </a-table>
     </div>
 
-    <a-modal title="订阅二维码" v-model:open="isQrCodeModalVisible" :footer="null" centered>
-      <div class="flex justify-center items-center mt-5">
-        <qrcode-vue :value="qrCodeUrl" :size="256" level="H" />
+    <!-- 创建/编辑配置文件模态框 -->
+    <a-modal
+      v-model:open="modalVisible"
+      :title="modalTitle"
+      @ok="handleSubmit"
+      @cancel="handleCancel"
+      :confirm-loading="submitting"
+      width="800px"
+    >
+      <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="配置文件名称" name="name">
+              <a-input v-model:value="formData.name" placeholder="请输入配置文件名称" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="别名" name="alias">
+              <a-input v-model:value="formData.alias" placeholder="可选，用于自定义订阅链接" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        
+        <a-form-item label="选择节点">
+          <a-transfer
+            v-model:target-keys="selectedNodeIds"
+            :data-source="availableNodes"
+            :titles="['可用节点', '已选节点']"
+            :render="item => item.title"
+            :show-search="true"
+            :filter-option="filterOption"
+            @change="handleNodeChange"
+          />
+        </a-form-item>
+        
+        <a-form-item label="选择订阅">
+          <a-transfer
+            v-model:target-keys="selectedSubscriptionIds"
+            :data-source="availableSubscriptions"
+            :titles="['可用订阅', '已选订阅']"
+            :render="item => item.title"
+            :show-search="true"
+            :filter-option="filterOption"
+            @change="handleSubscriptionChange"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 二维码模态框 -->
+    <a-modal
+      v-model:open="qrModalVisible"
+      title="订阅链接二维码"
+      :footer="null"
+      width="400px"
+    >
+      <div class="qr-content">
+        <qrcode-vue :value="qrCodeUrl" :size="200" level="M" />
+        <p class="qr-url">{{ qrCodeUrl }}</p>
       </div>
     </a-modal>
-  </a-card>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h, onBeforeUnmount, computed } from 'vue';
-import { RouterLink } from 'vue-router';
-import { message, Modal, Space, Tooltip, Button, Popconfirm, Card } from 'ant-design-vue';
+import { ref, onMounted, computed } from 'vue'
+import { message } from 'ant-design-vue'
 import {
-  EditOutlined,
-  DeleteOutlined,
   PlusOutlined,
-  CopyOutlined,
-  QrcodeOutlined,
   ClusterOutlined,
   WifiOutlined,
-} from '@ant-design/icons-vue';
-import type { TableProps } from 'ant-design-vue';
-import type { Profile } from '@shared/types';
-import QrcodeVue from 'qrcode.vue';
+  CopyOutlined,
+  QrcodeOutlined,
+  EditOutlined,
+  DeleteOutlined
+} from '@ant-design/icons-vue'
+import QrcodeVue from 'qrcode.vue'
+import type { Profile, Node, Subscription } from '@shared/types'
 
-const profiles = ref<Profile[]>([]);
-const loading = ref(true);
-const origin = ref('');
-const isQrCodeModalVisible = ref(false);
-const qrCodeUrl = ref('');
+// 响应式数据
+const loading = ref(false)
+const submitting = ref(false)
 
-const currentProfilePage = ref(1);
-const profilePageSize = computed(() => isMobile.value ? 5 : 10);
+const profiles = ref<Profile[]>([])
+const nodes = ref<Node[]>([])
+const subscriptions = ref<Subscription[]>([])
 
-const isMobile = ref(window.innerWidth < 640); // Tailwind's sm breakpoint is 640px
+// 模态框状态
+const modalVisible = ref(false)
+const qrModalVisible = ref(false)
+const isEdit = ref(false)
+const currentId = ref('')
 
-const handleResize = () => {
-  isMobile.value = window.innerWidth < 640;
-};
+// 表单数据
+const formData = ref({
+  name: '',
+  alias: ''
+})
 
-const paginatedProfiles = computed(() => {
-  const start = (currentProfilePage.value - 1) * profilePageSize.value;
-  const end = start + profilePageSize.value;
-  return profiles.value.slice(start, end);
-});
+const selectedNodeIds = ref<string[]>([])
+const selectedSubscriptionIds = ref<string[]>([])
 
-const tableColumns: TableProps<Profile>['columns'] = [
+// 二维码数据
+const qrCodeUrl = ref('')
+
+// 表单验证规则
+const formRules = {
+  name: [{ required: true, message: '请输入配置文件名称' }]
+}
+
+// 计算属性
+const modalTitle = computed(() => isEdit.value ? '编辑配置文件' : '添加配置文件')
+
+const availableNodes = computed(() => {
+  return nodes.value.map(node => ({
+    key: node.id,
+    title: `${node.name} (${node.server}:${node.port})`,
+    ...node
+  }))
+})
+
+const availableSubscriptions = computed(() => {
+  return subscriptions.value.map(sub => ({
+    key: sub.id,
+    title: sub.name,
+    ...sub
+  }))
+})
+
+// 表格列定义
+const columns = [
   {
-    title: '序号',
-    key: 'index',
-    width: '5%',
-    customRender: ({ index }) => (currentProfilePage.value - 1) * profilePageSize.value + index + 1,
+    title: '配置文件名称',
+    dataIndex: 'name',
+    key: 'name'
   },
-  { title: '名称', dataIndex: 'name', key: 'name' },
-  { title: '节点数', dataIndex: 'nodes', key: 'nodes' },
-  { title: '订阅数', dataIndex: 'subscriptions', key: 'subscriptions' },
-  { title: '订阅链接', key: 'subscribe_url' },
+  {
+    title: '节点数量',
+    key: 'nodes'
+  },
+  {
+    title: '订阅数量',
+    key: 'subscriptions'
+  },
+  {
+    title: '订阅链接',
+    key: 'subscribe_url'
+  },
   {
     title: '操作',
-    key: 'action',
-    fixed: 'right',
-    width: 120,
-    customRender: ({ record }) => (
-      h(Space, { size: isMobile.value ? 'small' : 'middle', direction: isMobile.value ? 'vertical' : 'horizontal' }, () => [
-        h(RouterLink, { to: `/profiles/${record.id}` }, () => h(Button, { icon: h(EditOutlined) }, () => '编辑')),
-        h(Popconfirm,
-          { title: '确定要删除这个配置文件吗？', onConfirm: () => handleDelete(record.id), okText: '确定', cancelText: '取消' },
-          () => h(Button, { danger: true, icon: h(DeleteOutlined) }, () => '删除')
-        ),
-      ])
-    ),
-  },
-];
-
-onMounted(() => {
-  if (typeof window !== 'undefined') {
-    origin.value = window.location.origin;
+    key: 'actions',
+    width: 200
   }
-  fetchProfiles();
-  window.addEventListener('resize', handleResize);
-});
+]
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize);
-});
-
-const getSubscriptionUrl = (record: Profile) => {
-  const baseUrl = record.alias
-    ? `${origin.value}/sub/${record.alias}`
-    : `${origin.value}/api/subscribe/${record.id}`;
-
-  const clashRuleSet = record.ruleSets?.clash;
-  const surgeRuleSet = record.ruleSets?.surge;
-
-  if (clashRuleSet) {
-    const url = new URL(baseUrl);
-    url.searchParams.set('target', 'clash');
-
-    if (clashRuleSet.type === 'built-in' && clashRuleSet.id !== 'default') {
-      url.searchParams.set('ruleset', clashRuleSet.id!);
-    }
-
-    return url.toString();
-  } else if (surgeRuleSet) {
-    const url = new URL(baseUrl);
-    url.searchParams.set('target', 'surge');
-
-    if (surgeRuleSet.type === 'built-in' && surgeRuleSet.id !== 'default') {
-      url.searchParams.set('ruleset', surgeRuleSet.id!);
-    }
-
-    return url.toString();
-  } else if (record.ruleSets?.quantumultx) {
-    const url = new URL(baseUrl);
-    url.searchParams.set('target', 'quantumultx');
-
-    if (record.ruleSets.quantumultx.type === 'built-in' && record.ruleSets.quantumultx.id !== 'default') {
-      url.searchParams.set('ruleset', record.ruleSets.quantumultx.id!);
-    }
-
-    return url.toString();
-  } else if (record.ruleSets?.loon) {
-    const url = new URL(baseUrl);
-    url.searchParams.set('target', 'loon');
-
-    if (record.ruleSets.loon.type === 'built-in' && record.ruleSets.loon.id !== 'default') {
-      url.searchParams.set('ruleset', record.ruleSets.loon.id!);
-    }
-
-    return url.toString();
-  } else if (record.ruleSets?.singbox) {
-    const url = new URL(baseUrl);
-    url.searchParams.set('target', 'singbox');
-
-    if (record.ruleSets.singbox.type === 'built-in' && record.ruleSets.singbox.id !== 'default') {
-      url.searchParams.set('ruleset', record.ruleSets.singbox.id!);
-    }
-
-    return url.toString();
-  }
-
-  return baseUrl;
-};
-
-const fetchProfiles = async () => {
-  loading.value = true;
-  currentProfilePage.value = 1; // Reset page to 1 when fetching new data
+// 方法
+const fetchData = async () => {
+  loading.value = true
   try {
-    const res = await fetch('/api/profiles');
-    if (!res.ok) throw new Error(`Failed to fetch profiles: ${res.statusText}`);
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error('API response is not an array');
-    profiles.value = data as Profile[];
+    const [profilesRes, nodesRes, subscriptionsRes] = await Promise.all([
+      fetch('/api/profiles'),
+      fetch('/api/nodes'),
+      fetch('/api/subscriptions')
+    ])
+    
+    if (profilesRes.ok) {
+      profiles.value = await profilesRes.json()
+    }
+    
+    if (nodesRes.ok) {
+      nodes.value = await nodesRes.json()
+    }
+    
+    if (subscriptionsRes.ok) {
+      subscriptions.value = await subscriptionsRes.json()
+    }
   } catch (error) {
-    console.error('Failed to fetch profiles:', error);
-    message.error('加载配置文件列表失败');
+    console.error('获取配置文件数据失败:', error)
+    message.error('获取配置文件数据失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
+
+const showCreateModal = () => {
+  isEdit.value = false
+  formData.value = { name: '', alias: '' }
+  selectedNodeIds.value = []
+  selectedSubscriptionIds.value = []
+  modalVisible.value = true
+}
+
+const handleEdit = (record: Profile) => {
+  isEdit.value = true
+  currentId.value = record.id
+  formData.value = { name: record.name, alias: record.alias || '' }
+  selectedNodeIds.value = record.nodeIds || []
+  selectedSubscriptionIds.value = record.subscriptionIds || []
+  modalVisible.value = true
+}
+
+const handleSubmit = async () => {
+  submitting.value = true
+  try {
+    const url = isEdit.value ? `/api/profiles/${currentId.value}` : '/api/profiles'
+    const method = isEdit.value ? 'PUT' : 'POST'
+    
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...formData.value,
+        nodeIds: selectedNodeIds.value,
+        subscriptionIds: selectedSubscriptionIds.value
+      })
+    })
+    
+    if (response.ok) {
+      message.success(isEdit.value ? '配置文件更新成功' : '配置文件创建成功')
+      modalVisible.value = false
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '操作失败')
+    }
+  } catch (error) {
+    console.error('操作失败:', error)
+    message.error('操作失败')
+  } finally {
+    submitting.value = false
+  }
+}
 
 const handleDelete = async (id: string) => {
   try {
-    await fetch(`/api/profiles/${id}`, { method: 'DELETE' });
-    message.success('配置文件删除成功');
-    await fetchProfiles();
+    const response = await fetch(`/api/profiles/${id}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.ok) {
+      message.success('配置文件删除成功')
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '删除失败')
+    }
   } catch (error) {
-    console.error('Failed to delete profile:', error);
-    message.error('删除配置文件失败');
+    console.error('删除失败:', error)
+    message.error('删除失败')
   }
-};
+}
 
-const handleCopy = (text: string) => {
-  navigator.clipboard.writeText(text);
-  message.success('订阅链接已复制到剪贴板');
-};
+const handleNodeChange = (targetKeys: string[]) => {
+  selectedNodeIds.value = targetKeys
+}
+
+const handleSubscriptionChange = (targetKeys: string[]) => {
+  selectedSubscriptionIds.value = targetKeys
+}
+
+const filterOption = (inputValue: string, item: any) => {
+  return item.title.indexOf(inputValue) !== -1
+}
+
+const getSubscriptionUrl = (profile: Profile) => {
+  const baseUrl = window.location.origin
+  if (profile.alias) {
+    return `${baseUrl}/sub/${profile.alias}`
+  }
+  return `${baseUrl}/api/subscribe/${profile.id}`
+}
+
+const handleCopy = async (url: string) => {
+  try {
+    await navigator.clipboard.writeText(url)
+    message.success('链接已复制到剪贴板')
+  } catch (error) {
+    console.error('复制失败:', error)
+    message.error('复制失败')
+  }
+}
 
 const showQrCode = (url: string) => {
-  qrCodeUrl.value = url;
-  isQrCodeModalVisible.value = true;
-};
+  qrCodeUrl.value = url
+  qrModalVisible.value = true
+}
+
+const handleCancel = () => {
+  modalVisible.value = false
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <style scoped>
-/* 可以根据需要添加样式 /
-.ant-table-row td:last-child .ant-space {
-display: flex;
-align-items: center; / 添加垂直居中 */
+.profiles-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profiles-content {
+  background: var(--surface-color);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.profiles-table {
+  border-radius: 12px;
+}
+
+.qr-content {
+  text-align: center;
+}
+
+.qr-url {
+  margin-top: 16px;
+  word-break: break-all;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .profiles-page {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    justify-content: stretch;
+  }
+  
+  .header-actions .ant-btn {
+    flex: 1;
+  }
+}
 </style>

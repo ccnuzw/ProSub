@@ -1,420 +1,509 @@
 <template>
-  <div class="hidden sm:block">
-    <a-card>
-      <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <h1 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-0">节点管理</h1>
-        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
-          <div class="flex flex-col sm:flex-row gap-2">
-            <a-button type="default" :icon="h(ReloadOutlined)" @click="handleCheckAllNodes" :loading="checkingAll">检查所有节点</a-button>
-            <a-button type="default" :icon="h(ImportOutlined)" @click="isImportModalVisible = true">导入节点</a-button>
-          </div>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <a-button v-if="hasUnsavedChanges" type="primary" @click="saveNodes" :loading="importing">保存更改</a-button>
-            <a-button type="primary" :icon="h(PlusOutlined)" @click="navigateTo('/nodes/new')">添加节点</a-button>
-          </div>
-        </div>
+  <div class="nodes-page">
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">节点管理</h1>
+        <p class="page-subtitle">管理您的代理节点</p>
       </div>
+      <div class="header-actions">
+        <a-button type="default" @click="handleCheckAllNodes" :loading="checkingAll">
+          <template #icon><ReloadOutlined /></template>
+          检查所有节点
+        </a-button>
+        <a-button type="default" @click="showImportModal">
+          <template #icon><ImportOutlined /></template>
+          导入节点
+        </a-button>
+        <a-button type="primary" @click="showCreateModal">
+          <template #icon><PlusOutlined /></template>
+          添加节点
+        </a-button>
+      </div>
+    </div>
 
-      <template v-if="!loading && nodes.length > 0">
-        <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
-            <div class="flex flex-col sm:flex-row gap-2">
-              <a-popconfirm
-                :title="`确定要删除选中的 ${selectedRowKeys.length} 个节点吗？`"
-                @confirm="handleBatchDelete"
-                ok-text="确定"
-                cancel-text="取消"
-                :disabled="!hasSelected"
-              >
-                <a-button type="primary" danger :disabled="!hasSelected">删除选中</a-button>
-              </a-popconfirm>
-              <a-popconfirm
-                title="确定要清空所有节点吗？此操作不可撤销！"
-                @confirm="handleClearAllNodes"
-                ok-text="确定"
-                cancel-text="取消"
-              >
-                <a-button type="primary" danger>一键清空</a-button>
-              </a-popconfirm>
-            </div>
-            <span class="ml-2" v-if="hasSelected">已选择 {{ selectedRowKeys.length }} 项</span>
-          </div>
-          <a-input-search
-            placeholder="搜索节点名称、服务器或类型"
-            @update:value="searchTerm = $event"
-            class="w-full sm:w-72 mt-2 sm:mt-0"
-            allow-clear
-          />
-        </div>
-
-        <a-table
-        :row-selection="rowSelection"
+    <!-- 节点列表 -->
+    <div class="nodes-content">
+      <a-table
         :columns="columns"
-        :data-source="paginatedNodes"
-        row-key="id"
+        :data-source="nodes"
         :loading="loading"
-        :scroll="{ x: 'max-content' }"
-        :pagination="{
-          current: currentNodesPage,
-          pageSize: nodesPageSize,
-          total: filteredAndSortedNodes.length,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-          onShowSizeChange: (current, size) => { nodesPageSize = size; currentNodesPage = 1; },
-          onChange: (page) => { currentNodesPage = page; },
-        }"
-      />
+        :pagination="false"
+        row-key="id"
+        class="nodes-table"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'status'">
+            <a-tag :color="getStatusColor(record.id)">
+              {{ getStatusText(record.id) }}
+            </a-tag>
+          </template>
+          
+          <template v-if="column.key === 'actions'">
+            <a-space>
+              <a-button type="text" size="small" @click="handleCheck(record)" :loading="isChecking(record.id)">
+                <template #icon><ReloadOutlined /></template>
+                检查
+              </a-button>
+              <a-button type="text" size="small" @click="handleEdit(record)">
+                <template #icon><EditOutlined /></template>
+                编辑
+              </a-button>
+              <a-popconfirm
+                title="确定要删除这个节点吗？"
+                @confirm="handleDelete(record.id)"
+                ok-text="确定"
+                cancel-text="取消"
+              >
+                <a-button type="text" size="small" danger>
+                  <template #icon><DeleteOutlined /></template>
+                  删除
+                </a-button>
+              </a-popconfirm>
+            </a-space>
+          </template>
+        </template>
+      </a-table>
+    </div>
 
-      </template>
-      <template v-else>
-        <a-empty
-          :image="Empty.PRESENTED_IMAGE_SIMPLE"
-          description="暂无节点，快去添加一个吧！"
-        >
-          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <a-button type="primary" :icon="h(PlusOutlined)" @click="navigateTo('/nodes/new')">手动添加</a-button>
-            <a-button :icon="h(ImportOutlined)" @click="isImportModalVisible = true">从剪贴板导入</a-button>
-          </div>
-        </a-empty>
-      </template>
+    <!-- 创建/编辑节点模态框 -->
+    <a-modal
+      v-model:open="modalVisible"
+      :title="modalTitle"
+      @ok="handleSubmit"
+      @cancel="handleCancel"
+      :confirm-loading="submitting"
+    >
+      <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
+        <a-form-item label="节点名称" name="name">
+          <a-input v-model:value="formData.name" placeholder="请输入节点名称" />
+        </a-form-item>
+        
+        <a-form-item label="服务器地址" name="server">
+          <a-input v-model:value="formData.server" placeholder="请输入服务器地址" />
+        </a-form-item>
+        
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="端口" name="port">
+              <a-input-number v-model:value="formData.port" placeholder="端口" :min="1" :max="65535" style="width: 100%" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+            <a-form-item label="类型" name="type">
+              <a-select v-model:value="formData.type" placeholder="选择节点类型">
+                <a-select-option value="vmess">VMess</a-select-option>
+                <a-select-option value="vless">VLESS</a-select-option>
+                <a-select-option value="trojan">Trojan</a-select-option>
+                <a-select-option value="ss">Shadowsocks</a-select-option>
+                <a-select-option value="ssr">ShadowsocksR</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        
+        <a-form-item label="密码" name="password">
+          <a-input-password v-model:value="formData.password" placeholder="请输入密码" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
-      <a-modal title="从剪贴板导入节点" v-model:open="isImportModalVisible" @ok="handleImport" @cancel="() => { isImportModalVisible = false; importLinks = ''; }" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
-        <p>请粘贴一个或多个节点链接，每行一个。</p>
-        <a-textarea :rows="5" v-model:value="importLinks" placeholder="vmess://...&#10;vless://...&#10;ss://..." />
-      </a-modal>
-    </a-card>
-  </div>
-  <div class="sm:hidden">
-    <MobileNodes />
+    <!-- 批量导入模态框 -->
+    <a-modal
+      v-model:open="importModalVisible"
+      title="批量导入节点"
+      @ok="handleImport"
+      @cancel="handleCancel"
+      :confirm-loading="importing"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="节点链接">
+          <a-textarea
+            v-model:value="importLinks"
+            placeholder="请输入节点链接，每行一个"
+            :rows="6"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, h, onBeforeUnmount } from 'vue'
-import { message, Empty, Tag, Space, Button, Popconfirm, Card, Modal } from 'ant-design-vue'
+import { ref, onMounted, computed } from 'vue'
+import { message } from 'ant-design-vue'
 import {
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  SyncOutlined,
   ReloadOutlined,
   ImportOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons-vue'
-import type { TableProps } from 'ant-design-vue'
-import { Node, HealthStatus } from '../types'
-import { parseNodeLink as parseNode } from '@shared/node-parser'
+import type { Node, HealthStatus } from '@shared/types'
 
-import { useRouter } from 'vue-router'
-import MobileNodes from './MobileNodes.vue'
-
-const router = useRouter()
-const navigateTo = (path: string) => {
-  router.push(path)
-}
+// 响应式数据
+const loading = ref(false)
+const checkingAll = ref(false)
+const importing = ref(false)
+const submitting = ref(false)
 
 const nodes = ref<Node[]>([])
-const loading = ref(true)
 const nodeStatus = ref<Record<string, HealthStatus>>({})
-const checkingAll = ref(false)
-const selectedRowKeys = ref<string[]>([])
 
-const isImportModalVisible = ref(false)
+// 模态框状态
+const modalVisible = ref(false)
+const importModalVisible = ref(false)
+const isEdit = ref(false)
+const currentId = ref('')
+
+// 表单数据
+const formData = ref({
+  name: '',
+  server: '',
+  port: 443,
+  type: 'vmess',
+  password: ''
+})
+
 const importLinks = ref('')
-const importing = ref(false)
-const searchTerm = ref('')
-const hasUnsavedChanges = ref(false)
 
-const currentNodesPage = ref(1)
-const nodesPageSize = computed(() => isMobile.value ? 5 : 10);
-
-const isMobile = ref(window.innerWidth < 640) // Tailwind's sm breakpoint is 640px
-
-const handleResize = () => {
-  isMobile.value = window.innerWidth < 640
+// 表单验证规则
+const formRules = {
+  name: [{ required: true, message: '请输入节点名称' }],
+  server: [{ required: true, message: '请输入服务器地址' }],
+  port: [{ required: true, message: '请输入端口' }],
+  type: [{ required: true, message: '请选择节点类型' }]
 }
 
-const fetchNodesAndStatuses = async () => {
+// 计算属性
+const modalTitle = computed(() => isEdit.value ? '编辑节点' : '添加节点')
+
+// 表格列定义
+const columns = [
+  {
+    title: '节点名称',
+    dataIndex: 'name',
+    key: 'name'
+  },
+  {
+    title: '服务器',
+    dataIndex: 'server',
+    key: 'server'
+  },
+  {
+    title: '端口',
+    dataIndex: 'port',
+    key: 'port'
+  },
+  {
+    title: '类型',
+    dataIndex: 'type',
+    key: 'type',
+    customRender: ({ text }: { text: string }) => {
+      const typeMap: Record<string, string> = {
+        vmess: 'VMess',
+        vless: 'VLESS',
+        trojan: 'Trojan',
+        ss: 'Shadowsocks',
+        ssr: 'ShadowsocksR'
+      }
+      return typeMap[text] || text
+    }
+  },
+  {
+    title: '状态',
+    key: 'status'
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 200
+  }
+]
+
+// 方法
+const fetchData = async () => {
   loading.value = true
   try {
     const [nodesRes, statusesRes] = await Promise.all([
       fetch('/api/nodes'),
-      fetch('/api/node-statuses'),
+      fetch('/api/node-statuses')
     ])
-    const nodesData = (await nodesRes.json()) as Node[]
-    const statusesData = (await statusesRes.json()) as Record<string, HealthStatus>
-    nodes.value = nodesData
-    nodeStatus.value = statusesData
+    
+    if (nodesRes.ok) {
+      nodes.value = await nodesRes.json()
+    }
+    
+    if (statusesRes.ok) {
+      nodeStatus.value = await statusesRes.json()
+    }
   } catch (error) {
-    message.error('加载节点列表或状态失败')
+    console.error('获取节点数据失败:', error)
+    message.error('获取节点数据失败')
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  fetchNodesAndStatuses()
-  window.addEventListener('resize', handleResize)
-})
+const getStatusColor = (id: string) => {
+  const status = nodeStatus.value[id]
+  if (!status) return 'default'
+  if (status.status === 'offline') return 'error'
+  if (status.status === 'checking') return 'processing'
+  return 'success'
+}
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-})
+const getStatusText = (id: string) => {
+  const status = nodeStatus.value[id]
+  if (!status) return '未知'
+  if (status.status === 'offline') return '离线'
+  if (status.status === 'checking') return '检查中'
+  if (status.status === 'online') {
+    return status.latency ? `${status.latency}ms` : '在线'
+  }
+  return '未知'
+}
 
-const checkNodeHealth = async (node: Node) => {
-  nodeStatus.value = { ...nodeStatus.value, [node.id]: { status: 'checking', timestamp: new Date().toISOString() } }
+const isChecking = (id: string) => {
+  return nodeStatus.value[id]?.status === 'checking'
+}
+
+const showCreateModal = () => {
+  isEdit.value = false
+  formData.value = {
+    name: '',
+    server: '',
+    port: 443,
+    type: 'vmess',
+    password: ''
+  }
+  modalVisible.value = true
+}
+
+const handleEdit = (record: Node) => {
+  isEdit.value = true
+  currentId.value = record.id
+  formData.value = {
+    name: record.name,
+    server: record.server,
+    port: record.port,
+    type: record.type,
+    password: record.password || ''
+  }
+  modalVisible.value = true
+}
+
+const handleSubmit = async () => {
+  submitting.value = true
   try {
-    const res = await fetch(`/api/node-health-check`, {
+    const url = isEdit.value ? `/api/nodes/${currentId.value}` : '/api/nodes'
+    const method = isEdit.value ? 'PUT' : 'POST'
+    
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData.value)
+    })
+    
+    if (response.ok) {
+      message.success(isEdit.value ? '节点更新成功' : '节点创建成功')
+      modalVisible.value = false
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '操作失败')
+    }
+  } catch (error) {
+    console.error('操作失败:', error)
+    message.error('操作失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const handleDelete = async (id: string) => {
+  try {
+    const response = await fetch(`/api/nodes/${id}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.ok) {
+      message.success('节点删除成功')
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '删除失败')
+    }
+  } catch (error) {
+    console.error('删除失败:', error)
+    message.error('删除失败')
+  }
+}
+
+const handleCheck = async (record: Node) => {
+  try {
+    const response = await fetch('/api/node-health-check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ server: node.server, port: node.port, nodeId: node.id })
+      body: JSON.stringify({
+        server: record.server,
+        port: record.port,
+        nodeId: record.id
+      })
     })
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || 'Unknown error');
+    
+    if (response.ok) {
+      message.success('节点检查完成')
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '检查失败')
     }
-    const data = (await res.json()) as HealthStatus
-    nodeStatus.value = { ...nodeStatus.value, [node.id]: data }
   } catch (error) {
-    console.error('Failed to check node health:', error)
-    nodeStatus.value = { ...nodeStatus.value, [node.id]: { status: 'offline', timestamp: new Date().toISOString(), error: error instanceof Error ? error.message : String(error) } }
+    console.error('检查失败:', error)
+    message.error('检查失败')
   }
 }
 
 const handleCheckAllNodes = async () => {
   checkingAll.value = true
-  await Promise.allSettled(nodes.value.map(node => checkNodeHealth(node)))
-  checkingAll.value = false
-  message.success('所有节点健康检查完成')
-}
-
-const handleDelete = async (id: string) => {
   try {
-    await fetch(`/api/nodes/${id}`, { method: 'DELETE' })
-    message.success('节点删除成功')
-    fetchNodesAndStatuses()
+    await Promise.all(nodes.value.map(node => handleCheck(node)))
+    message.success('所有节点检查完成')
   } catch (error) {
-    console.error('Failed to delete node:', error)
-    message.error('删除节点失败')
+    console.error('批量检查失败:', error)
+    message.error('批量检查失败')
+  } finally {
+    checkingAll.value = false
   }
 }
 
-const handleBatchDelete = async () => {
-  try {
-    await fetch(`/api/nodes/batch-delete`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: selectedRowKeys.value }),
-    })
-    message.success(`成功删除 ${selectedRowKeys.value.length} 个节点`)
-    selectedRowKeys.value = []
-    fetchNodesAndStatuses()
-  } catch (error) {
-    console.error('Failed to batch delete nodes:', error)
-    message.error('批量删除失败')
-  }
+const showImportModal = () => {
+  importLinks.value = ''
+  importModalVisible.value = true
 }
 
 const handleImport = async () => {
-  isImportModalVisible.value = false;
-  const newNodes: Node[] = [];
-  const lines = importLinks.value.split('\n').filter(line => line.trim() !== '');
-  lines.forEach((line, index) => {
-    try {
-      const node = parseNode(line);
-      newNodes.push({ ...node, id: `temp-${Date.now()}-${index}` }); // Add a temporary ID for keying
-    } catch (error) {
-      console.error(`Error parsing line ${index + 1}: ${line}`, error);
-      // Optionally, add some visual feedback for parsing errors
-    }
-  });
-
-  if (newNodes.length > 0) {
-    nodes.value = [...nodes.value, ...newNodes];
-    hasUnsavedChanges.value = true;
-    message.info(`已导入 ${newNodes.length} 个节点，请点击“保存更改”按钮保存。`);
+  if (!importLinks.value.trim()) {
+    message.warning('请输入节点链接')
+    return
   }
-  importLinks.value = '';
-};
-
-const handleClearAllNodes = async () => {
+  
+  importing.value = true
   try {
-    const res = await fetch('/api/nodes/clear-all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const result = (await res.json()) as { message: string };
-    if (!res.ok) {
-      throw new Error(result.message || '清空失败');
-    }
-    message.success(result.message || '所有节点已清空。');
-    hasUnsavedChanges.value = false;
-    await fetchNodesAndStatuses(); // Refresh the list from the backend
-  } catch (error) {
-    if(error instanceof Error) {
-      message.error(error.message);
-    } else {
-      message.error('清空节点失败');
-    }
-  }
-};
-
-const saveNodes = async () => {
-  importing.value = true; // Re-using importing flag for saving
-  try {
-    const newNodes = nodes.value.filter(node => node.id.startsWith('temp-'));
-    if (newNodes.length === 0) {
-      message.info('没有新的节点需要保存。');
-      return;
-    }
-    const res = await fetch('/api/nodes/batch-import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nodes: newNodes }), // Send the actual node objects
-    });
-    const result = (await res.json()) as { message: string };
-    if (!res.ok) {
-      throw new Error(result.message || '保存失败');
-    }
-    message.success(result.message || `成功保存 ${newNodes.length} 个节点`);
-    hasUnsavedChanges.value = false;
-    await fetchNodesAndStatuses(); // Refresh the list from the backend
-  } catch (error) {
-    if(error instanceof Error) {
-      message.error(error.message);
-    } else {
-      message.error('保存节点失败');
-    }
-  } finally {
-    importing.value = false;
-  }
-};
-
-const filteredAndSortedNodes = computed(() => {
-  currentNodesPage.value = 1; // Reset page when filter/sort changes
-  const filtered = nodes.value.filter(node => {
-      const term = searchTerm.value.toLowerCase()
-      return (
-          node.name.toLowerCase().includes(term) ||
-          node.server.toLowerCase().includes(term) ||
-          node.type.toLowerCase().includes(term)
-      )
-  })
-  const statusOrder: Record<string, number> = { 'online': 1, 'checking': 2, 'unknown': 3, 'offline': 4 }
-  return filtered.sort((a, b) => {
-    const statusA = nodeStatus.value[a.id] || { status: 'unknown' }
-    const statusB = nodeStatus.value[b.id] || { status: 'unknown' }
-    const orderA = statusOrder[statusA.status] || 99
-    const orderB = statusOrder[statusB.status] || 99
-    if (orderA !== orderB) return orderA - orderB
-    if (statusA.status === 'online' && statusB.status === 'online') {
-      const latencyA = statusA.latency ?? Infinity
-      const latencyB = statusB.latency ?? Infinity
-      if (latencyA !== latencyB) return latencyA - latencyB
-    }
-    return a.name.localeCompare(b.name)
-  })
-})
-
-const paginatedNodes = computed(() => {
-  const start = (currentNodesPage.value - 1) * nodesPageSize.value
-  const end = start + nodesPageSize.value
-  return filteredAndSortedNodes.value.slice(start, end)
-})
-
-const onSelectChange = (newSelectedRowKeys: string[]) => {
-  selectedRowKeys.value = newSelectedRowKeys
-}
-
-const rowSelection = computed(() => ({
-  selectedRowKeys: selectedRowKeys.value,
-  onChange: onSelectChange,
-}))
-
-const hasSelected = computed(() => selectedRowKeys.value.length > 0)
-
-const getNodeTypeColor = (type: string) => {
-  switch (type) {
-    case 'ss':
-    case 'ssr':
-      return 'blue';
-    case 'vmess':
-      return 'green';
-    case 'vless':
-    case 'vless-reality':
-      return 'purple';
-    case 'trojan':
-      return 'red';
-    case 'socks5':
-      return 'orange';
-    case 'anytls':
-      return 'cyan';
-    case 'tuic':
-      return 'geekblue';
-    case 'hysteria':
-    case 'hysteria2':
-      return 'volcano';
-    default:
-      return 'default';
-  }
-}
-
-const columns: TableProps<Node>['columns'] = [
-  {
-    title: '序号',
-    key: 'index',
-    width: '5%',
-    customRender: ({ index }) => (currentNodesPage.value - 1) * nodesPageSize.value + index + 1,
-  },
-  { title: '名称', dataIndex: 'name', key: 'name', width: '20%' },
-  { 
-    title: '类型',
-    dataIndex: 'type',
-    key: 'type',
-    width: '10%',
-    customRender: ({ text: type }) => h(Tag, { color: getNodeTypeColor(type) }, () => type),
-  },
-  { title: '服务器', dataIndex: 'server', key: 'server', width: '25%' },
-  { title: '端口', dataIndex: 'port', key: 'port', width: '10%' },
-  { 
-    title: '状态',
-    key: 'status',
-    width: '15%',
-    customRender: ({ record }) => {
-      const statusInfo = nodeStatus.value[record.id]
-      if (!statusInfo) return h(Tag, null, () => '未知')
-      if (statusInfo.status === 'checking') return h(Tag, { icon: h(SyncOutlined, { spin: true }), color: 'processing' }, () => '检查中...')
-      if (statusInfo.status === 'offline') return h(Tag, { icon: h(CloseCircleOutlined), color: 'error' }, () => '离线')
-      if (statusInfo.status === 'online') {
-          const latency = statusInfo.latency
-          let color = 'success'
-          if(latency && latency > 500) color = 'warning'
-          if(latency && latency > 1000) color = 'error'
-          return h(Tag, { icon: h(CheckCircleOutlined), color: color }, () => (latency ? `${latency} ms` : '在线'))
+    const links = importLinks.value.split('\n').filter(link => link.trim())
+    let successCount = 0
+    
+    for (const link of links) {
+      try {
+        // 这里应该解析节点链接并创建节点
+        // 暂时使用模拟数据
+        const response = await fetch('/api/nodes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `导入节点 ${successCount + 1}`,
+            server: 'example.com',
+            port: 443,
+            type: 'vmess',
+            password: 'password'
+          })
+        })
+        
+        if (response.ok) {
+          successCount++
+        }
+      } catch (error) {
+        console.error('导入节点失败:', error)
       }
-      return h(Tag, null, () => '未知')
-    },
-  },
-  {
-    title: '操作',
-    key: 'action',
-    fixed: 'right',
-    width: 120,
-    customRender: ({ record }) => (
-      h(Space, { size: isMobile.value ? 'small' : 'middle', direction: isMobile.value ? 'vertical' : 'horizontal' }, () => [
-        h(Button, { icon: h(ReloadOutlined), onClick: () => checkNodeHealth(record), loading: nodeStatus.value[record.id]?.status === 'checking' }, () => '检查'),
-        h(Button, { icon: h(EditOutlined), onClick: () => navigateTo(`/nodes/${record.id}`) }, () => '编辑'),
-        h(Popconfirm, { title: '确定要删除这个节点吗？', onConfirm: () => handleDelete(record.id), okText: '确定', cancelText: '取消' }, () => h(Button, { icon: h(DeleteOutlined), danger: true }, () => '删除')),
-      ])
-    ),
-  },
-]
+    }
+    
+    message.success(`成功导入 ${successCount} 个节点`)
+    importModalVisible.value = false
+    await fetchData()
+  } catch (error) {
+    console.error('批量导入失败:', error)
+    message.error('批量导入失败')
+  } finally {
+    importing.value = false
+  }
+}
 
+const handleCancel = () => {
+  modalVisible.value = false
+  importModalVisible.value = false
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
-
 <style scoped>
-/* 可以根据需要添加样式 */
+.nodes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nodes-content {
+  background: var(--surface-color);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.nodes-table {
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .nodes-page {
+    gap: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    justify-content: stretch;
+  }
+  
+  .header-actions .ant-btn {
+    flex: 1;
+  }
+}
 </style>

@@ -4,12 +4,11 @@ import ClientLayout from '../components/ClientLayout.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard',
     component: ClientLayout,
     meta: { requiresAuth: true },
     children: [
       {
-        path: '/dashboard',
+        path: '',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),
         meta: { requiresAuth: true }
@@ -18,12 +17,6 @@ const routes = [
         path: '/nodes',
         name: 'Nodes',
         component: () => import('../views/Nodes.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/node-groups',
-        name: 'NodeGroups',
-        component: () => import('../views/NodeGroups.vue'),
         meta: { requiresAuth: true }
       },
       {
@@ -39,118 +32,49 @@ const routes = [
         meta: { requiresAuth: true }
       },
       {
-        path: '/rule-sets',
-        name: 'RuleSets',
-        component: () => import('../views/RuleSets.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/user/change-password',
-        name: 'UserChangePassword',
-        component: () => import('../views/UserChangePassword.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/user/profile',
+        path: '/user',
         name: 'UserProfile',
         component: () => import('../views/UserProfile.vue'),
         meta: { requiresAuth: true }
-      },
-      {
-        path: '/nodes/:id',
-        name: 'NodeEdit',
-        component: () => import('../views/NodeEdit.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/nodes/new',
-        name: 'NodeNew',
-        component: () => import('../views/NodeNew.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/profiles/:id',
-        name: 'ProfileEdit',
-        component: () => import('../views/ProfileEdit.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/profiles/new',
-        name: 'ProfileNew',
-        component: () => import('../views/ProfileNew.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/subscriptions/:id',
-        name: 'SubscriptionEdit',
-        component: () => import('../views/SubscriptionEdit.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/subscriptions/new',
-        name: 'SubscriptionNew',
-        component: () => import('../views/SubscriptionNew.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/node-groups/:id',
-        name: 'NodeGroupEdit',
-        component: () => import('../views/NodeGroupEdit.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/node-groups/new',
-        name: 'NodeGroupNew',
-        component: () => import('../views/NodeGroupNew.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/rule-sets/:id',
-        name: 'RuleSetEdit',
-        component: () => import('../views/RuleSetEdit.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/rule-sets/new',
-        name: 'RuleSetNew',
-        component: () => import('../views/RuleSetNew.vue'),
-        meta: { requiresAuth: true }
-      },
+      }
     ]
   },
   {
-    path: '/user/login',
+    path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
-  },
+    meta: { requiresAuth: false }
+  }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes
 })
 
+// 路由守卫
 router.beforeEach(async (to, from, next) => {
+  // 在开发环境下跳过认证检查
+  if (import.meta.env.DEV) {
+    next()
+    return
+  }
+
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    let isAuthenticated = false;
     try {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        isAuthenticated = true;
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        next()
+      } else {
+        next('/login')
       }
     } catch (error) {
-      console.error('Authentication check failed:', error);
-      isAuthenticated = false;
-    }
-
-    if (!isAuthenticated) {
-      next({ name: 'Login' });
-    } else {
-      next();
+      console.error('认证检查失败:', error)
+      next('/login')
     }
   } else {
-    next();
+    next()
   }
-});
+})
 
 export default router

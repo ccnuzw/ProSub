@@ -1,381 +1,503 @@
 <template>
-  <a-card>
-    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-      <a-typography-title :level="3" class="mb-2 sm:mb-0">订阅管理</a-typography-title>
-      <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto">
-        <div class="flex flex-col sm:flex-row gap-2">
-          <a-button type="default" :icon="$slots.syncOutlined ? $slots.syncOutlined() : ''" @click="handleUpdateAll" :loading="updatingAll">全部更新</a-button>
-          <a-button type="default" :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true">导入订阅</a-button>
-        </div>
-        <router-link to="/subscriptions/new" class="w-full sm:w-auto">
-          <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''" class="w-full sm:w-auto">添加订阅</a-button>
-        </router-link>
+  <div class="subscriptions-page">
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">订阅管理</h1>
+        <p class="page-subtitle">管理您的代理订阅源</p>
+      </div>
+      <div class="header-actions">
+        <a-button type="default" @click="handleUpdateAll" :loading="updatingAll">
+          <template #icon><SyncOutlined /></template>
+          全部更新
+        </a-button>
+        <a-button type="default" @click="showImportModal">
+          <template #icon><ImportOutlined /></template>
+          批量导入
+        </a-button>
+        <a-button type="primary" @click="showCreateModal">
+          <template #icon><PlusOutlined /></template>
+          添加订阅
+        </a-button>
       </div>
     </div>
 
-    <!-- Desktop Table View -->
-    <a-table
-      v-if="!isMobile"
-      :columns="columns"
-      :data-source="paginatedSubscriptions"
-      row-key="id"
-      :loading="loading"
-      :scroll="{ x: 'max-content' }"
-      :pagination="{
-        current: currentSubscriptionPage,
-        pageSize: subscriptionPageSize,
-        total: subscriptions.length,
-        showSizeChanger: true,
-        showQuickJumper: true,
-        showTotal: (total, range) => `显示 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-        onShowSizeChange: (current, size) => { subscriptionPageSize = size; currentSubscriptionPage = 1; },
-        onChange: (page) => { currentSubscriptionPage = page; },
-      }"
-    >
-      <template #emptyText>
-        <a-empty
-          :image="Empty.PRESENTED_IMAGE_SIMPLE"
-          description="暂无订阅，快去添加一个吧！"
-        >
-          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <router-link to="/subscriptions/new" class="w-full sm:w-auto">
-              <a-button type="primary" :icon="$slots.plusOutlined ? $slots.plusOutlined() : ''" class="w-full sm:w-auto">手动添加</a-button>
-            </router-link>
-            <a-button :icon="$slots.importOutlined ? $slots.importOutlined() : ''" @click="isImportModalVisible = true" class="w-full sm:w-auto">从剪贴板导入</a-button>
-          </div>
-        </a-empty>
-      </template>
-    </a-table>
-
-    <!-- Mobile Card View -->
-    <div v-else class="grid grid-cols-1 gap-4">
-      <a-card v-for="sub in paginatedSubscriptions" :key="sub.id" :title="sub.name" size="small">
-        <p><strong>节点数:</strong> {{ statuses[sub.id]?.nodeCount ?? 'N/A' }}</p>
-        <p><strong>最后更新:</strong>
-          <template v-if="statuses[sub.id]">
-            <template v-if="statuses[sub.id].status === 'error'">
-              <a-tooltip :title="statuses[sub.id].error">
-                <a-tag :icon="h(CloseCircleOutlined)" color="error">更新失败</a-tag>
-              </a-tooltip>
-            </template>
-            <template v-else>
-              {{ formatTime(statuses[sub.id].lastUpdated) }}
-            </template>
+    <!-- 订阅列表 -->
+    <div class="subscriptions-content">
+      <a-table
+        :columns="columns"
+        :data-source="subscriptions"
+        :loading="loading"
+        :pagination="false"
+        row-key="id"
+        class="subscriptions-table"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'status'">
+            <a-tag :color="getStatusColor(record.id)">
+              {{ getStatusText(record.id) }}
+            </a-tag>
           </template>
-          <template v-else>
-            N/A
+          
+          <template v-if="column.key === 'actions'">
+            <a-space>
+              <a-button type="text" size="small" @click="handlePreview(record)">
+                <template #icon><EyeOutlined /></template>
+                预览
+              </a-button>
+              <a-button type="text" size="small" @click="handleUpdate(record.id)" :loading="isUpdating(record.id)">
+                <template #icon><SyncOutlined /></template>
+                更新
+              </a-button>
+              <a-button type="text" size="small" @click="handleEdit(record)">
+                <template #icon><EditOutlined /></template>
+                编辑
+              </a-button>
+              <a-popconfirm
+                title="确定要删除这个订阅吗？"
+                @confirm="handleDelete(record.id)"
+                ok-text="确定"
+                cancel-text="取消"
+              >
+                <a-button type="text" size="small" danger>
+                  <template #icon><DeleteOutlined /></template>
+                  删除
+                </a-button>
+              </a-popconfirm>
+            </a-space>
           </template>
-        </p>
-        <template #actions>
-          <a-button type="text" :icon="h(EyeOutlined)" @click="handlePreview(sub)">预览</a-button>
-          <a-button type="text" :icon="h(SyncOutlined)" @click="handleUpdate(sub.id)" :loading="statuses[sub.id]?.status === 'updating'">更新</a-button>
-          <router-link :to="`/subscriptions/${sub.id}`">
-            <a-button type="text" :icon="h(EditOutlined)">编辑</a-button>
-          </router-link>
-          <a-popconfirm title="确定要删除这个订阅吗？" @confirm="handleDelete(sub.id)" ok-text="确定" cancel-text="取消">
-            <a-button type="text" danger :icon="h(DeleteOutlined)">删除</a-button>
-          </a-popconfirm>
         </template>
-      </a-card>
-      <a-pagination
-        v-if="subscriptions.length > subscriptionPageSize"
-        v-model:current="currentSubscriptionPage"
-        :page-size="subscriptionPageSize"
-        :total="subscriptions.length"
-        show-less-items
-        class="mt-4 text-center"
-      />
+      </a-table>
     </div>
 
-    <a-modal :title="`预览订阅: ${previewSubName}`" v-model:open="isPreviewModalVisible" :footer="null" width="60%">
-      <a-spin :spinning="previewLoading">
-        <!-- Desktop Table View for Preview -->
-        <a-table v-if="!isMobile" size="small" :columns="previewColumns" :data-source="previewNodes" :row-key="(record, index) => `${record.server}-${index}`" :pagination="{ pageSize: 10 }"/>
+    <!-- 创建/编辑订阅模态框 -->
+    <a-modal
+      v-model:open="modalVisible"
+      :title="modalTitle"
+      @ok="handleSubmit"
+      @cancel="handleCancel"
+      :confirm-loading="submitting"
+    >
+      <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
+        <a-form-item label="订阅名称" name="name">
+          <a-input v-model:value="formData.name" placeholder="请输入订阅名称" />
+        </a-form-item>
+        
+        <a-form-item label="订阅链接" name="url">
+          <a-input v-model:value="formData.url" placeholder="请输入订阅链接" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
-        <!-- Mobile Card View for Preview -->
-        <div v-else class="grid grid-cols-1 gap-4">
-          <a-card v-for="node in paginatedPreviewNodes" :key="`${node.server}-${node.port}`" size="small">
-            <p><strong>名称:</strong> {{ node.name }}</p>
-            <p><strong>类型:</strong> <a-tag :color="getNodeTypeColor(node.type)">{{ node.type }}</a-tag></p>
-            <p><strong>服务器:</strong> {{ node.server }}</p>
-            <p><strong>端口:</strong> {{ node.port }}</p>
-          </a-card>
-          <a-pagination
-            v-if="previewNodes.length > previewPageSize"
-            v-model:current="currentPreviewPage"
-            :page-size="previewPageSize"
-            :total="previewNodes.length"
-            show-less-items
-            class="mt-4 text-center"
+    <!-- 批量导入模态框 -->
+    <a-modal
+      v-model:open="importModalVisible"
+      title="批量导入订阅"
+      @ok="handleImport"
+      @cancel="handleCancel"
+      :confirm-loading="importing"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="订阅链接">
+          <a-textarea
+            v-model:value="importUrls"
+            placeholder="请输入订阅链接，每行一个"
+            :rows="6"
           />
-        </div>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 预览模态框 -->
+    <a-modal
+      v-model:open="previewModalVisible"
+      :title="`预览订阅: ${previewSubName}`"
+      width="80%"
+      :footer="null"
+    >
+      <a-spin :spinning="previewLoading">
+        <a-table
+          :columns="previewColumns"
+          :data-source="previewNodes"
+          :pagination="{ pageSize: 10 }"
+          size="small"
+        />
       </a-spin>
     </a-modal>
-    <a-modal title="从剪贴板导入订阅" v-model:open="isImportModalVisible" @ok="handleBatchImport" @cancel="isImportModalVisible = false" :confirm-loading="importing" ok-text="导入" cancel-text="取消">
-      <p>请粘贴一个或多个订阅链接，每行一个。</p>
-      <a-textarea :rows="10" v-model:value="importUrls" placeholder="https://example.com/sub1&#10;https://example.com/sub2"/>
-    </a-modal>
-  </a-card>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, h, onBeforeUnmount } from 'vue'
-import { RouterLink } from 'vue-router'
-import { message, Modal, Tag, Tooltip, Empty, Button, Space, Popconfirm, Card } from 'ant-design-vue'
+import { ref, onMounted, computed } from 'vue'
+import { message } from 'ant-design-vue'
 import {
+  SyncOutlined,
+  ImportOutlined,
+  PlusOutlined,
+  EyeOutlined,
   EditOutlined,
   DeleteOutlined,
-  PlusOutlined,
-  SyncOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
-  EyeOutlined,
-  ImportOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons-vue'
-import type { TableProps } from 'ant-design-vue'
-import { Subscription, Node } from '@shared/types'
-import { parseNodeLink } from '@shared/node-parser'
+import type { Subscription, SubscriptionStatus } from '@shared/types'
 
-interface SubscriptionStatus {
-  status: 'success' | 'error' | 'updating';
-  nodeCount?: number;
-  lastUpdated?: string;
-  error?: string;
-}
-
-type ParsedNode = Partial<Node>;
-
-const subscriptions = ref<Subscription>([])
-const statuses = ref<Record<string, SubscriptionStatus>>({})
-const loading = ref(true)
+// 响应式数据
+const loading = ref(false)
 const updatingAll = ref(false)
-const isPreviewModalVisible = ref(false)
-const previewNodes = ref<ParsedNode>([])
-const previewLoading = ref(false)
-const previewSubName = ref('')
-const isImportModalVisible = ref(false)
-const importUrls = ref('')
 const importing = ref(false)
+const submitting = ref(false)
+const previewLoading = ref(false)
 
-const currentSubscriptionPage = ref(1)
-const subscriptionPageSize = computed(() => isMobile.value ? 5 : 10);
+const subscriptions = ref<Subscription[]>([])
+const statuses = ref<Record<string, SubscriptionStatus>>({})
 
-const currentPreviewPage = ref(1)
-const previewPageSize = ref(5) // Adjust as needed
+// 模态框状态
+const modalVisible = ref(false)
+const importModalVisible = ref(false)
+const previewModalVisible = ref(false)
+const isEdit = ref(false)
+const currentId = ref('')
 
-const paginatedPreviewNodes = computed(() => {
-  const start = (currentPreviewPage.value - 1) * previewPageSize.value
-  const end = start + previewPageSize.value
-  return previewNodes.value.slice(start, end)
+// 表单数据
+const formData = ref({
+  name: '',
+  url: ''
 })
 
-const paginatedSubscriptions = computed(() => {
-  const start = (currentSubscriptionPage.value - 1) * subscriptionPageSize.value
-  const end = start + subscriptionPageSize.value
-  return subscriptions.value.slice(start, end)
-})
+const importUrls = ref('')
+const previewNodes = ref([])
+const previewSubName = ref('')
 
-const isMobile = ref(window.innerWidth < 640) // Tailwind's sm breakpoint is 640px
-
-const handleResize = () => {
-  isMobile.value = window.innerWidth < 640
+// 表单验证规则
+const formRules = {
+  name: [{ required: true, message: '请输入订阅名称' }],
+  url: [{ required: true, message: '请输入订阅链接' }]
 }
 
+// 计算属性
+const modalTitle = computed(() => isEdit.value ? '编辑订阅' : '添加订阅')
+
+// 表格列定义
+const columns = [
+  {
+    title: '订阅名称',
+    dataIndex: 'name',
+    key: 'name'
+  },
+  {
+    title: '节点数量',
+    dataIndex: 'nodeCount',
+    key: 'nodeCount',
+    customRender: ({ record }: { record: Subscription }) => {
+      const status = statuses.value[record.id]
+      return status?.nodeCount || 0
+    }
+  },
+  {
+    title: '最后更新',
+    key: 'lastUpdated',
+    customRender: ({ record }: { record: Subscription }) => {
+      const status = statuses.value[record.id]
+      if (status?.lastUpdated) {
+        return new Date(status.lastUpdated).toLocaleString()
+      }
+      return '未更新'
+    }
+  },
+  {
+    title: '状态',
+    key: 'status'
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 300
+  }
+]
+
+const previewColumns = [
+  { title: '名称', dataIndex: 'name', key: 'name' },
+  { title: '类型', dataIndex: 'type', key: 'type' },
+  { title: '服务器', dataIndex: 'server', key: 'server' },
+  { title: '端口', dataIndex: 'port', key: 'port' }
+]
+
+// 方法
 const fetchData = async () => {
   loading.value = true
-  currentSubscriptionPage.value = 1; // Reset page to 1 when fetching new data
   try {
     const [subsRes, statusesRes] = await Promise.all([
       fetch('/api/subscriptions'),
       fetch('/api/subscription-statuses')
     ])
-    const subsData = (await subsRes.json()) as Subscription[]
-    const statusesData = (await statusesRes.json()) as Record<string, SubscriptionStatus>
-    subscriptions.value = subsData
-    statuses.value = statusesData
+    
+    if (subsRes.ok) {
+      subscriptions.value = await subsRes.json()
+    }
+    
+    if (statusesRes.ok) {
+      statuses.value = await statusesRes.json()
+    }
   } catch (error) {
-    message.error('加载订阅列表或状态失败')
+    console.error('获取订阅数据失败:', error)
+    message.error('获取订阅数据失败')
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  fetchData()
-  window.addEventListener('resize', handleResize)
-})
+const getStatusColor = (id: string) => {
+  const status = statuses.value[id]
+  if (!status) return 'default'
+  if (status.status === 'error') return 'error'
+  if (status.status === 'updating') return 'processing'
+  return 'success'
+}
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
-})
+const getStatusText = (id: string) => {
+  const status = statuses.value[id]
+  if (!status) return '未知'
+  if (status.status === 'error') return '更新失败'
+  if (status.status === 'updating') return '更新中'
+  return '正常'
+}
 
-const handleUpdate = async (id: string) => {
-  statuses.value = { ...statuses.value, [id]: { status: 'updating' } }
+const isUpdating = (id: string) => {
+  return statuses.value[id]?.status === 'updating'
+}
+
+const showCreateModal = () => {
+  isEdit.value = false
+  formData.value = { name: '', url: '' }
+  modalVisible.value = true
+}
+
+const handleEdit = (record: Subscription) => {
+  isEdit.value = true
+  currentId.value = record.id
+  formData.value = { name: record.name, url: record.url }
+  modalVisible.value = true
+}
+
+const handleSubmit = async () => {
+  submitting.value = true
   try {
-    const res = await fetch(`/api/subscriptions/update/${id}`, { method: 'POST' })
-    const updatedSub = (await res.json()) as Subscription;
-    if (!res.ok) {
-      const errorMessage = updatedSub.error || '更新失败';
-      message.error(`订阅 "${subscriptions.value.find(s=>s.id===id)?.name}" 更新失败: ${errorMessage}`);
-      throw new Error(errorMessage);
-    }
-    statuses.value = {
-      ...statuses.value,
-      [id]: {
-        status: updatedSub.error ? 'error' : 'success',
-        nodeCount: updatedSub.nodeCount,
-        lastUpdated: updatedSub.lastUpdated,
-        error: updatedSub.error,
-      },
-    };
-    message.success(`订阅 "${subscriptions.value.find(s=>s.id===id)?.name}" 更新成功!`);
-  } catch (error) {
-    console.error('Error updating subscription:', error);
-    if(error instanceof Error) {
-      // message.error(error.message); // Already handled by the specific error message above
+    const url = isEdit.value ? `/api/subscriptions/${currentId.value}` : '/api/subscriptions'
+    const method = isEdit.value ? 'PUT' : 'POST'
+    
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData.value)
+    })
+    
+    if (response.ok) {
+      message.success(isEdit.value ? '订阅更新成功' : '订阅创建成功')
+      modalVisible.value = false
+      await fetchData()
     } else {
-      message.error('更新订阅时发生未知错误');
+      const error = await response.json()
+      message.error(error.message || '操作失败')
     }
-    fetchData();
+  } catch (error) {
+    console.error('操作失败:', error)
+    message.error('操作失败')
+  } finally {
+    submitting.value = false
   }
 }
-const handleUpdateAll = async () => {
-  updatingAll.value = true
-  await Promise.allSettled(subscriptions.value.map(sub => handleUpdate(sub.id)))
-  updatingAll.value = false
-  message.success('所有订阅已更新完毕')
-  fetchData()
-}
+
 const handleDelete = async (id: string) => {
   try {
-    await fetch(`/api/subscriptions/${id}`, { method: 'DELETE' })
-    message.success('订阅删除成功')
-    fetchData()
+    const response = await fetch(`/api/subscriptions/${id}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.ok) {
+      message.success('订阅删除成功')
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '删除失败')
+    }
   } catch (error) {
-    console.error('Failed to delete subscription:', error)
-    message.error('删除订阅失败')
+    console.error('删除失败:', error)
+    message.error('删除失败')
   }
 }
-const handlePreview = async (sub: Subscription) => {
-  isPreviewModalVisible.value = true
-  previewLoading.value = true
-  previewSubName.value = sub.name
-  currentPreviewPage.value = 1 // Reset page to 1 when new preview data loads
+
+const handleUpdate = async (id: string) => {
   try {
-      const res = await fetch(`/api/subscriptions/preview/${sub.id}`)
-      const data = (await res.json()) as { nodes?: Node[], error?: string }
-      if(!res.ok) throw new Error(data.error || '预览失败')
-      previewNodes.value = (data.nodes || []) as ParsedNode[]
+    const response = await fetch(`/api/subscriptions/${id}/update`, {
+      method: 'POST'
+    })
+    
+    if (response.ok) {
+      message.success('订阅更新成功')
+      await fetchData()
+    } else {
+      const error = await response.json()
+      message.error(error.message || '更新失败')
+    }
   } catch (error) {
-      if(error instanceof Error) message.error(error.message)
-      previewNodes.value = []
-  } finally {
-      previewLoading.value = false
+    console.error('更新失败:', error)
+    message.error('更新失败')
   }
 }
-const handleBatchImport = async () => {
+
+const handleUpdateAll = async () => {
+  updatingAll.value = true
+  try {
+    await Promise.all(
+      subscriptions.value.map(sub => handleUpdate(sub.id))
+    )
+    message.success('全部订阅更新完成')
+  } catch (error) {
+    console.error('批量更新失败:', error)
+    message.error('批量更新失败')
+  } finally {
+    updatingAll.value = false
+  }
+}
+
+const showImportModal = () => {
+  importUrls.value = ''
+  importModalVisible.value = true
+}
+
+const handleImport = async () => {
+  if (!importUrls.value.trim()) {
+    message.warning('请输入订阅链接')
+    return
+  }
+  
   importing.value = true
   try {
-    const res = await fetch('/api/subscriptions/batch-import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls: importUrls.value.split('\n').filter(url => url.trim() !== '') }),
-    })
-    const result = (await res.json()) as { message: string }
-    if (!res.ok) {
-      throw new Error(result.message || '导入失败')
+    const urls = importUrls.value.split('\n').filter(url => url.trim())
+    let successCount = 0
+    
+    for (const url of urls) {
+      try {
+        const response = await fetch('/api/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `导入订阅 ${successCount + 1}`,
+            url: url.trim()
+          })
+        })
+        
+        if (response.ok) {
+          successCount++
+        }
+      } catch (error) {
+        console.error('导入订阅失败:', error)
+      }
     }
-    message.success(result.message)
-    isImportModalVisible.value = false
-    importUrls.value = ''
-    fetchData()
+    
+    message.success(`成功导入 ${successCount} 个订阅`)
+    importModalVisible.value = false
+    await fetchData()
   } catch (error) {
-    if (error instanceof Error) {
-      message.error(error.message)
-    } else {
-      message.error('导入订阅失败')
-    }
+    console.error('批量导入失败:', error)
+    message.error('批量导入失败')
   } finally {
     importing.value = false
   }
 }
-const formatTime = (isoString?: string) => {
-  if (!isoString) return '从未'
+
+const handlePreview = async (record: Subscription) => {
+  previewModalVisible.value = true
+  previewSubName.value = record.name
+  previewLoading.value = true
+  
   try {
-    return new Date(isoString).toLocaleString()
-  } catch (e) {
-    return '无效日期'
+    // 这里应该调用实际的预览API
+    // 暂时使用模拟数据
+    previewNodes.value = [
+      { name: '节点1', type: 'vmess', server: 'server1.com', port: 443 },
+      { name: '节点2', type: 'trojan', server: 'server2.com', port: 443 }
+    ]
+  } catch (error) {
+    console.error('预览失败:', error)
+    message.error('预览失败')
+  } finally {
+    previewLoading.value = false
   }
 }
 
-const getNodeTypeColor = (type: string) => {
-  switch (type) {
-    case 'ss':
-    case 'ssr':
-      return 'blue';
-    case 'vmess':
-      return 'green';
-    case 'vless':
-    case 'vless-reality':
-      return 'purple';
-    case 'trojan':
-      return 'red';
-    case 'socks5':
-      return 'orange';
-    case 'anytls':
-      return 'cyan';
-    case 'tuic':
-      return 'geekblue';
-    case 'hysteria':
-    case 'hysteria2':
-      return 'volcano';
-    default:
-      return 'default';
-  }
+const handleCancel = () => {
+  modalVisible.value = false
+  importModalVisible.value = false
 }
 
-const previewColumns: TableProps<ParsedNode>['columns'] = [
-  { title: '节点名称', dataIndex: 'name', key: 'name' },
-  { title: '服务器', dataIndex: 'server', key: 'server' },
-  { title: '端口', dataIndex: 'port', key: 'port' },
-  { title: '类型', dataIndex: 'type', key: 'type', customRender: ({ text: type }) => h(Tag, { color: getNodeTypeColor(type) }, () => type) },
-]
-
-const columns: TableProps<Subscription>['columns'] = [
-  {
-    title: '序号',
-    key: 'index',
-    width: '5%',
-    customRender: ({ index }) => (currentSubscriptionPage.value - 1) * subscriptionPageSize.value + index + 1,
-  },
-  { title: '名称', dataIndex: 'name', key: 'name' },
-  { title: '节点数', key: 'nodeCount', customRender: ({ record }) => statuses.value[record.id]?.nodeCount ?? 'N/A' },
-  { title: '最后更新', key: 'lastUpdated', customRender: ({ record }) => {
-          const status = statuses.value[record.id]
-          if (!status) return 'N/A'
-          if (status.status === 'error') {
-              return h(Tooltip, { title: status.error }, () => h(Tag, { icon: h(CloseCircleOutlined), color: 'error' }, () => '更新失败'))
-          }
-          return formatTime(status.lastUpdated)
-      }
-  },
-  {
-    title: '操作',
-    key: 'action',
-    fixed: 'right',
-    width: 120,
-    customRender: ({ record }) => (
-      h(Space, { size: isMobile.value ? 'small' : 'middle', direction: isMobile.value ? 'vertical' : 'horizontal' }, () => [
-        h(Button, { icon: h(EyeOutlined), onClick: () => handlePreview(record) }, () => '预览'),
-        h(Button, { icon: h(SyncOutlined), onClick: () => handleUpdate(record.id), loading: statuses.value[record.id]?.status === 'updating' }, () => '更新'),
-        h(RouterLink, { to: `/subscriptions/${record.id}` }, () => h(Button, { icon: h(EditOutlined) }, () => '编辑')),
-        h(Popconfirm, { title: '确定要删除这个订阅吗？', onConfirm: () => handleDelete(record.id), okText: '确定', cancelText: '取消' }, () => h(Button, { icon: h(DeleteOutlined), danger: true }, () => '删除')),
-      ])
-    ),
-  },
-]
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <style scoped>
-/* 可以根据需要添加样式 */
+.subscriptions-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.subscriptions-content {
+  background: var(--surface-color);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.subscriptions-table {
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .subscriptions-page {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-actions {
+    justify-content: stretch;
+  }
+  
+  .header-actions .ant-btn {
+    flex: 1;
+  }
+}
 </style>

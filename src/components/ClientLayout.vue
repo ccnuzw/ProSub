@@ -1,222 +1,382 @@
 <template>
-  <a-config-provider :theme="customTheme">
-    <a-layout style="min-height: 100vh">
-      <a-layout-header class="flex items-center justify-between px-4 sm:px-6 lg:px-8">
+  <div class="client-layout">
+    <!-- 顶部导航栏 -->
+    <header class="top-nav">
+      <div class="nav-container">
+        <div class="nav-left">
+          <div class="logo">
+            <div class="logo-icon">
+              <ThunderboltOutlined />
+            </div>
+            <span class="logo-text">ProSub</span>
+          </div>
+        </div>
+
+        <div class="nav-center">
+          <div class="search-box">
+            <SearchOutlined class="search-icon" />
+            <input 
+              type="text" 
+              placeholder="搜索..." 
+              class="search-input"
+              v-model="searchQuery"
+            />
+          </div>
+        </div>
         
-        <div class="flex items-center flex-1 min-w-0">
-          <div class="logo flex-shrink-0 text-white text-lg sm:text-xl font-bold">ProSub</div>
-        </div>
-
-        <div class="flex-shrink-0 flex items-center gap-2">
-          <a-switch v-model:checked="isDarkTheme" @change="toggleTheme" class="mr-2">
-            <template #checkedChildren><BulbOutlined /></template>
-            <template #unCheckedChildren><BulbOutlined /></template>
-          </a-switch>
-          <a-button v-if="isClient && !loadingUser && currentUser" type="primary" @click="handleLogout">
-            登出 ({{ currentUser.name }})
-          </a-button>
-          <a-button v-else-if="isClient && !loadingUser && !currentUser" type="primary" @click="router.push('/user/login')">
-            登录
-          </a-button>
-        </div>
-
-      </a-layout-header>
-
-      <div class="hidden sm:block bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex px-6 py-3 space-x-8">
-          <div 
-            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
-            :class="selectedKey === 'dashboard' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            @click="goTo('/dashboard')"
-          >
-            <DashboardOutlined class="mr-2" />
-            <span>仪表盘</span>
-          </div>
-          <div 
-            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
-            :class="selectedKey.startsWith('nodes') ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            @click="goTo('/nodes')"
-          >
-            <ClusterOutlined class="mr-2" />
-            <span>节点</span>
-          </div>
-          <div 
-            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
-            :class="selectedKey.startsWith('subscriptions') ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            @click="goTo('/subscriptions')"
-          >
-            <WifiOutlined class="mr-2" />
-            <span>订阅</span>
-          </div>
-          <div 
-            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
-            :class="selectedKey.startsWith('profiles') ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            @click="goTo('/profiles')"
-          >
-            <FileTextOutlined class="mr-2" />
-            <span>配置</span>
-          </div>
-          <div 
-            class="flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors"
-            :class="selectedKey === 'profile' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            @click="goTo('/user/profile')"
-          >
-            <UserOutlined class="mr-2" />
-            <span>我的</span>
+        <div class="nav-right">
+          <div class="nav-actions">
+            <a-button 
+              type="text" 
+              class="action-btn"
+              @click="toggleTheme"
+            >
+              <template #icon>
+                <BulbOutlined />
+              </template>
+            </a-button>
+            
+            <a-dropdown :trigger="['click']" placement="bottomRight">
+              <a-button type="text" class="action-btn user-btn">
+                <template #icon>
+                  <UserOutlined />
+                </template>
+                <span class="user-name">管理员</span>
+                <DownOutlined class="dropdown-arrow" />
+              </a-button>
+              <template #overlay>
+                <a-menu class="user-menu">
+                  <a-menu-item key="profile" @click="goToProfile">
+                    <UserOutlined />
+                    <span>个人资料</span>
+                  </a-menu-item>
+                  <a-menu-divider />
+                  <a-menu-item key="logout" @click="logout">
+                    <LogoutOutlined />
+                    <span>退出登录</span>
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </div>
         </div>
       </div>
+    </header>
 
-      <a-layout-content class="p-4 sm:p-6 lg:p-8">
-        <div :style="{ padding: '16px', borderRadius: customTheme.token.borderRadius }" class="sm:p-6">
-          <router-view />
-        </div>
-      </a-layout-content>
-      
-      <div class="mobile-nav">
-        <router-link to="/dashboard" class="mobile-nav-item" :class="{ active: selectedKey === 'dashboard' }">
-          <DashboardOutlined />
-          <span>仪表盘</span>
-        </router-link>
-        <router-link to="/nodes" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('nodes') }">
-          <ClusterOutlined />
-          <span>节点</span>
-        </router-link>
-        <router-link to="/subscriptions" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('subscriptions') }">
-          <WifiOutlined />
-          <span>订阅</span>
-        </router-link>
-        <router-link to="/profiles" class="mobile-nav-item" :class="{ active: selectedKey.startsWith('profiles') }">
-          <FileTextOutlined />
-          <span>配置</span>
-        </router-link>
-        <router-link to="/user/profile" class="mobile-nav-item" :class="{ active: selectedKey === 'profile' }">
-          <UserOutlined />
-          <span>我的</span>
-        </router-link>
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+      <div class="content-container">
+        <router-view />
       </div>
+    </main>
+
+    <!-- 移动端底部导航 -->
+    <nav class="mobile-nav">
+      <router-link 
+        to="/" 
+        class="mobile-nav-item"
+        :class="{ active: $route.path === '/' }"
+      >
+        <AppstoreOutlined />
+        <span>仪表板</span>
+      </router-link>
       
-      <a-layout-footer class="text-center p-4">
-        ProSub ©{{ new Date().getFullYear() }} Created with by Gemini
-      </a-layout-footer>
-    </a-layout>
-  </a-config-provider>
+      <router-link 
+        to="/nodes" 
+        class="mobile-nav-item"
+        :class="{ active: $route.path.startsWith('/nodes') }"
+      >
+        <ClusterOutlined />
+        <span>节点</span>
+      </router-link>
+      
+      <router-link 
+        to="/subscriptions" 
+        class="mobile-nav-item"
+        :class="{ active: $route.path.startsWith('/subscriptions') }"
+      >
+        <WifiOutlined />
+        <span>订阅</span>
+      </router-link>
+      
+      <router-link 
+        to="/profiles" 
+        class="mobile-nav-item"
+        :class="{ active: $route.path.startsWith('/profiles') }"
+      >
+        <FileTextOutlined />
+        <span>配置</span>
+      </router-link>
+      
+      <router-link 
+        to="/user" 
+        class="mobile-nav-item"
+        :class="{ active: $route.path.startsWith('/user') }"
+      >
+        <UserOutlined />
+        <span>用户</span>
+      </router-link>
+    </nav>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
-import { Layout, Menu, Button, message, theme, Drawer, Switch, ConfigProvider } from 'ant-design-vue';
-import { useRouter, useRoute } from 'vue-router';
-import { User } from '@shared/types';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import {
-  DashboardOutlined,
+  ThunderboltOutlined,
+  SearchOutlined,
+  BulbOutlined,
+  UserOutlined,
+  DownOutlined,
+  SettingOutlined,
+  LogoutOutlined,
+  AppstoreOutlined,
   ClusterOutlined,
   WifiOutlined,
-  FileTextOutlined,
-  UserOutlined,
-  BulbOutlined,
-  LoginOutlined,
-} from '@ant-design/icons-vue';
+  FileTextOutlined
+} from '@ant-design/icons-vue'
 
-const { useToken } = theme;
-const router = useRouter();
-const route = useRoute();
-const currentUser = ref<User | null>(null);
-const loadingUser = ref(true);
-const isClient = ref(false);
-const isDarkTheme = ref(localStorage.getItem('theme') === 'dark');
+const router = useRouter()
+const searchQuery = ref('')
+const isDarkMode = ref(false)
 
-const toggleTheme = (checked: boolean) => {
-  isDarkTheme.value = checked;
-  localStorage.setItem('theme', checked ? 'dark' : 'light');
-};
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value
+  document.documentElement.classList.toggle('dark', isDarkMode.value)
+  localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
+}
 
-const goTo = (path: string) => {
-  router.push(path);
-};
+const goToProfile = () => {
+  router.push('/user')
+}
 
-onMounted(() => {
-  isClient.value = true;
-  if (isDarkTheme.value) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-});
-
-watch(isDarkTheme, (newVal) => {
-  if (newVal) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-});
-
-watch(isClient, (newVal) => {
-  if (newVal) fetchCurrentUser();
-});
-
-watch(() => route.path, (newPath) => {
-  if (isClient.value && (newPath === '/user/login' || newPath === '/dashboard')) {
-    fetchCurrentUser();
-  }
-});
-
-const fetchCurrentUser = async () => {
-  loadingUser.value = true;
+const logout = async () => {
   try {
-    const res = await fetch('/api/auth/me');
-    if (res.ok) {
-      currentUser.value = (await res.json()) as User;
-      if (currentUser.value.name === 'admin' && !currentUser.value.defaultPasswordChanged && route.path !== '/user/change-password') {
-        message.warning('请修改默认密码');
-        router.push('/user/change-password');
-      }
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST'
+    })
+    
+    if (response.ok) {
+      message.success('退出登录成功')
+      router.push('/login')
     } else {
-      currentUser.value = null;
-      if (route.meta.requiresAuth) {
-        router.push('/user/login');
-      }
+      message.error('退出登录失败')
     }
   } catch (error) {
-    currentUser.value = null;
-  } finally {
-    loadingUser.value = false;
+    console.error('退出登录失败:', error)
+    message.error('退出登录失败')
   }
-};
+}
 
-const handleLogout = async () => {
-  await fetch('/api/auth/logout', { method: 'POST' });
-  message.success('登出成功');
-  currentUser.value = null;
-  router.push('/user/login');
-};
-
-// menuItems is no longer needed for the <a-menu> but might be used by the drawer if you keep it.
-// For this change, we can simplify or remove it if the drawer is also removed.
-const menuItems = computed(() => {
-  // This is now only for the mobile drawer, which we've removed.
-  // You can keep it if you plan to use it elsewhere, otherwise it can be removed.
-  return []; 
-});
-
-
-const selectedKey = computed(() => {
-  const path = route.path;
-  if (path.startsWith('/dashboard')) return 'dashboard';
-  if (path.startsWith('/nodes')) return 'nodes';
-  if (path.startsWith('/subscriptions')) return 'subscriptions';
-  if (path.startsWith('/profiles')) return 'profiles';
-  if (path.startsWith('/user/profile')) return 'profile';
-  return 'dashboard';
-});
-
-const customTheme = computed(() => ({
-  token: { colorPrimary: '#00b96b', borderRadius: 6 },
-  algorithm: isDarkTheme.value ? theme.darkAlgorithm : theme.defaultAlgorithm,
-}));
+onMounted(() => {
+  // 初始化主题
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    isDarkMode.value = true
+    document.documentElement.classList.add('dark')
+  }
+})
 </script>
 
 <style scoped>
-/* Scoped styles can be added here if needed */
+.client-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-color);
+}
+
+.top-nav {
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.logo-icon {
+  color: var(--primary-color);
+  font-size: 20px;
+}
+
+.nav-center {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 24px;
+}
+
+.search-box {
+  position: relative;
+  width: 100%;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  height: 36px;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-50);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  color: var(--text-primary);
+  background: var(--border-light);
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-name {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.dropdown-arrow {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.user-menu {
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px 0;
+}
+
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface-color);
+  border-top: 1px solid var(--border-color);
+  padding: 8px 0;
+  z-index: 100;
+}
+
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.mobile-nav-item:hover {
+  color: var(--primary-color);
+}
+
+.mobile-nav-item.active {
+  color: var(--primary-color);
+}
+
+.mobile-nav-item .anticon {
+  font-size: 20px;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 16px;
+  }
+  
+  .nav-center {
+    display: none;
+  }
+  
+  .mobile-nav {
+    display: flex;
+  }
+  
+  .main-content {
+    padding-bottom: 80px;
+  }
+  
+  .content-container {
+    padding: 0 16px;
+  }
+}
 </style>

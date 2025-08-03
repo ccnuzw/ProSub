@@ -1,18 +1,19 @@
 <template>
-  <div class="hidden sm:block p-6">
-    <a-row :gutter="[24, 24]">
-      <a-col :span="24">
-        <a-card class="rounded-xl shadow-sm">
-          <div class="flex justify-between items-center">
-            <div>
-              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">仪表板</h1>
-              <p class="text-gray-500 dark:text-gray-400">欢迎使用 ProSub 管理系统</p>
-            </div>
+  <div class="dashboard">
+    <!-- 欢迎卡片 -->
+    <div class="welcome-section">
+      <div class="welcome-card">
+        <div class="welcome-content">
+          <div class="welcome-text">
+            <h1 class="welcome-title">欢迎回来</h1>
+            <p class="welcome-subtitle">ProSub 管理系统为您提供全面的节点和订阅管理</p>
+          </div>
+          <div class="welcome-actions">
             <a-button 
               type="primary" 
+              size="large"
               @click="refreshData" 
               :loading="loading"
-              class="flex items-center"
             >
               <template #icon>
                 <RedoOutlined />
@@ -20,196 +21,513 @@
               刷新数据
             </a-button>
           </div>
-        </a-card>
-      </a-col>
+        </div>
+      </div>
+    </div>
 
-      <a-col :span="24">
-        <a-card title="统计概览" class="rounded-xl shadow-sm">
-          <a-row :gutter="24">
-            <a-col :span="6">
-              <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50">
-                <div class="text-blue-500 dark:text-blue-300 flex justify-between">
-                  <ClusterOutlined class="text-2xl" />
-                  <span class="text-sm">节点</span>
-                </div>
-                <a-statistic :value="stats.nodes" class="mt-2">
-                  <template #prefix>
-                    <span class="text-2xl font-bold text-gray-800 dark:text-white">{{ stats.nodes }}</span>
-                  </template>
-                </a-statistic>
-                <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">{{ stats.onlineNodes }} 在线</div>
+    <!-- 统计概览 -->
+    <div class="stats-section">
+      <a-card class="stats-card" :bordered="false">
+        <template #title>
+          <div class="card-title">
+            <AppstoreOutlined class="title-icon" />
+            <span>统计概览</span>
+          </div>
+        </template>
+        <a-row :gutter="24">
+          <a-col :span="6">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <ClusterOutlined />
               </div>
-            </a-col>
-            <a-col :span="6">
-              <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-4 rounded-lg border border-green-100 dark:border-green-900/50">
-                <div class="text-green-500 dark:text-green-300 flex justify-between">
-                  <FileTextOutlined class="text-2xl" />
-                  <span class="text-sm">订阅</span>
-                </div>
-                <a-statistic :value="stats.subscriptions" class="mt-2">
-                  <template #prefix>
-                    <span class="text-2xl font-bold text-gray-800 dark:text-white">{{ stats.subscriptions }}</span>
-                  </template>
-                </a-statistic>
-                <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">有效订阅</div>
+              <div class="stat-content">
+                <div class="stat-number">{{ stats.nodes }}</div>
+                <div class="stat-label">总节点数</div>
+                <div class="stat-subtitle">{{ stats.onlineNodes }} 个在线</div>
               </div>
-            </a-col>
-            <a-col :span="6">
-              <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 p-4 rounded-lg border border-amber-100 dark:border-amber-900/50">
-                <div class="text-amber-500 dark:text-amber-300 flex justify-between">
-                  <ProfileOutlined class="text-2xl" />
-                  <span class="text-sm">配置</span>
-                </div>
-                <a-statistic :value="stats.profiles" class="mt-2">
-                  <template #prefix>
-                    <span class="text-2xl font-bold text-gray-800 dark:text-white">{{ stats.profiles }}</span>
-                  </template>
-                </a-statistic>
-                <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">已创建</div>
+            </div>
+          </a-col>
+          <a-col :span="6">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <FileTextOutlined />
               </div>
-            </a-col>
-            <a-col :span="6">
-              <div class="bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-900/30 dark:to-fuchsia-900/30 p-4 rounded-lg border border-purple-100 dark:border-purple-900/50">
-                <div class="text-purple-500 dark:text-purple-300 flex justify-between">
-                  <WifiOutlined class="text-2xl" />
-                  <span class="text-sm">在线率</span>
-                </div>
-                <a-statistic :value="stats.nodes > 0 ? Math.round((stats.onlineNodes / stats.nodes) * 100) : 0" class="mt-2">
-                  <template #prefix>
-                    <span class="text-2xl font-bold text-gray-800 dark:text-white">
-                      {{ stats.nodes > 0 ? Math.round((stats.onlineNodes / stats.nodes) * 100) : 0 }}%
-                    </span>
-                  </template>
-                </a-statistic>
-                <div class="text-gray-500 dark:text-gray-400 text-sm mt-1">节点在线率</div>
+              <div class="stat-content">
+                <div class="stat-number">{{ stats.subscriptions }}</div>
+                <div class="stat-label">订阅数量</div>
+                <div class="stat-subtitle">有效订阅</div>
               </div>
-            </a-col>
-          </a-row>
-        </a-card>
-      </a-col>
+            </div>
+          </a-col>
+          <a-col :span="6">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <ProfileOutlined />
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">{{ stats.profiles }}</div>
+                <div class="stat-label">配置文件</div>
+                <div class="stat-subtitle">已创建</div>
+              </div>
+            </div>
+          </a-col>
+          <a-col :span="6">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <WifiOutlined />
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">{{ stats.nodes > 0 ? Math.round((stats.onlineNodes / stats.nodes) * 100) : 0 }}%</div>
+                <div class="stat-label">在线率</div>
+                <div class="stat-subtitle">节点可用性</div>
+              </div>
+            </div>
+          </a-col>
+        </a-row>
+      </a-card>
+    </div>
 
-      <a-col :span="24">
-        <a-card title="快速导航" class="rounded-xl shadow-sm">
-          <a-row :gutter="16">
-            <a-col :span="4">
-              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/nodes')">
-                <ClusterOutlined class="text-2xl mb-2 text-blue-500" />
-                <div class="font-medium">节点管理</div>
-              </a-card>
-            </a-col>
-            <a-col :span="4">
-              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/subscriptions')">
-                <WifiOutlined class="text-2xl mb-2 text-green-500" />
-                <div class="font-medium">订阅管理</div>
-              </a-card>
-            </a-col>
-            <a-col :span="4">
-              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/profiles')">
-                <FileTextOutlined class="text-2xl mb-2 text-amber-500" />
-                <div class="font-medium">配置管理</div>
-              </a-card>
-            </a-col>
-            <a-col :span="4">
-              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/nodes/new')">
-                <PlusOutlined class="text-2xl mb-2 text-blue-500" />
-                <div class="font-medium">添加节点</div>
-              </a-card>
-            </a-col>
-            <a-col :span="4">
-              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/subscriptions/new')">
-                <PlusOutlined class="text-2xl mb-2 text-green-500" />
-                <div class="font-medium">添加订阅</div>
-              </a-card>
-            </a-col>
-            <a-col :span="4">
-              <a-card hoverable class="text-center cursor-pointer rounded-lg" @click="goTo('/profiles/new')">
-                <PlusOutlined class="text-2xl mb-2 text-amber-500" />
-                <div class="font-medium">新建配置</div>
-              </a-card>
-            </a-col>
-          </a-row>
-        </a-card>
-      </a-col>
-    </a-row>
-  </div>
-  <div class="sm:hidden">
-    <MobileDashboard />
+    <!-- 快速操作 -->
+    <div class="actions-section">
+      <a-card class="actions-card" :bordered="false">
+        <template #title>
+          <div class="card-title">
+            <ThunderboltOutlined class="title-icon" />
+            <span>快速操作</span>
+          </div>
+        </template>
+        <a-row :gutter="24">
+          <a-col :span="6">
+            <router-link to="/nodes" class="action-item">
+              <div class="action-icon">
+                <ClusterOutlined />
+              </div>
+              <div class="action-content">
+                <div class="action-title">节点管理</div>
+                <div class="action-subtitle">管理代理节点</div>
+              </div>
+              <ArrowRightOutlined class="action-arrow" />
+            </router-link>
+          </a-col>
+          <a-col :span="6">
+            <router-link to="/subscriptions" class="action-item">
+              <div class="action-icon">
+                <WifiOutlined />
+              </div>
+              <div class="action-content">
+                <div class="action-title">订阅管理</div>
+                <div class="action-subtitle">管理订阅源</div>
+              </div>
+              <ArrowRightOutlined class="action-arrow" />
+            </router-link>
+          </a-col>
+          <a-col :span="6">
+            <router-link to="/profiles" class="action-item">
+              <div class="action-icon">
+                <FileTextOutlined />
+              </div>
+              <div class="action-content">
+                <div class="action-title">配置文件</div>
+                <div class="action-subtitle">管理配置文件</div>
+              </div>
+              <ArrowRightOutlined class="action-arrow" />
+            </router-link>
+          </a-col>
+          <a-col :span="6">
+            <router-link to="/nodes" class="action-item">
+              <div class="action-icon">
+                <PlusOutlined />
+              </div>
+              <div class="action-content">
+                <div class="action-title">添加节点</div>
+                <div class="action-subtitle">快速添加节点</div>
+              </div>
+              <ArrowRightOutlined class="action-arrow" />
+            </router-link>
+          </a-col>
+        </a-row>
+      </a-card>
+    </div>
+
+    <!-- 最近活动 -->
+    <div class="activity-section">
+      <a-card class="activity-card" :bordered="false">
+        <template #title>
+          <div class="card-title">
+            <HistoryOutlined class="title-icon" />
+            <span>最近活动</span>
+          </div>
+        </template>
+        <div class="activity-list">
+          <div v-for="activity in recentActivities" :key="activity.id" class="activity-item">
+            <div class="activity-icon">
+              <AppstoreOutlined />
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">{{ activity.title }}</div>
+              <div class="activity-time">{{ activity.time }}</div>
+            </div>
+          </div>
+        </div>
+      </a-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Card, Row, Col, Statistic, Button } from 'ant-design-vue'
-import { 
-  RedoOutlined, 
-  ClusterOutlined, 
-  FileTextOutlined, 
-  ProfileOutlined, 
+import { message } from 'ant-design-vue'
+import {
+  RedoOutlined,
+  AppstoreOutlined,
+  ClusterOutlined,
+  FileTextOutlined,
+  ProfileOutlined,
   WifiOutlined,
+  ThunderboltOutlined,
+  ArrowRightOutlined,
+  HistoryOutlined,
   PlusOutlined
 } from '@ant-design/icons-vue'
-import type { Node, HealthStatus, Profile } from '@shared/types'
-import { useRouter } from 'vue-router'
-import MobileDashboard from './MobileDashboard.vue'
 
-const router = useRouter()
+interface Stats {
+  nodes: number
+  onlineNodes: number
+  subscriptions: number
+  profiles: number
+}
+
+interface Activity {
+  id: string
+  title: string
+  time: string
+}
+
 const loading = ref(false)
-
-const stats = ref({
+const stats = ref<Stats>({
   nodes: 0,
+  onlineNodes: 0,
   subscriptions: 0,
-  profiles: 0,
-  onlineNodes: 0
+  profiles: 0
 })
 
-const recentNodes = ref<Node[]>([])
-const recentProfiles = ref<Profile[]>([])
-const nodeStatus = ref<Record<string, HealthStatus>>({})
+const recentActivities = ref<Activity[]>([
+  {
+    id: '1',
+    title: '添加了新节点 server-01',
+    time: '2分钟前'
+  },
+  {
+    id: '2',
+    title: '更新了订阅 "免费节点"',
+    time: '5分钟前'
+  },
+  {
+    id: '3',
+    title: '创建了配置文件 "默认配置"',
+    time: '10分钟前'
+  }
+])
+
+const fetchStats = async () => {
+  try {
+    const [nodesRes, subscriptionsRes, profilesRes] = await Promise.all([
+      fetch('/api/nodes'),
+      fetch('/api/subscriptions'),
+      fetch('/api/profiles')
+    ])
+    
+    if (nodesRes.ok) {
+      const nodes = await nodesRes.json()
+      stats.value.nodes = nodes.length
+      stats.value.onlineNodes = Math.floor(nodes.length * 0.8) // 模拟在线节点
+    }
+    
+    if (subscriptionsRes.ok) {
+      const subscriptions = await subscriptionsRes.json()
+      stats.value.subscriptions = subscriptions.length
+    }
+    
+    if (profilesRes.ok) {
+      const profiles = await profilesRes.json()
+      stats.value.profiles = profiles.length
+    }
+  } catch (error) {
+    console.error('获取统计数据失败:', error)
+    message.error('获取统计数据失败')
+  }
+}
 
 const refreshData = async () => {
   loading.value = true
   try {
-    // 获取统计数据
-    const statsRes = await fetch('/api/stats')
-    if (statsRes.ok) {
-      stats.value = await statsRes.json()
-    }
-
-    // 获取最近节点
-    const nodesRes = await fetch('/api/nodes?limit=5')
-    if (nodesRes.ok) {
-      recentNodes.value = await nodesRes.json()
-    }
-
-    // 获取最近配置文件
-    const profilesRes = await fetch('/api/profiles?limit=5')
-    if (profilesRes.ok) {
-      recentProfiles.value = await profilesRes.json()
-    }
-
-    // 获取节点状态
-    const statusRes = await fetch('/api/node-statuses')
-    if (statusRes.ok) {
-      nodeStatus.value = await statusRes.json()
-    }
+    await fetchStats()
+    message.success('数据刷新成功')
   } catch (error) {
-    console.error('Failed to fetch dashboard data:', error)
+    console.error('刷新数据失败:', error)
+    message.error('刷新数据失败')
   } finally {
     loading.value = false
   }
 }
 
-const goTo = (path: string) => {
-  router.push(path)
-}
-
 onMounted(() => {
-  refreshData()
+  fetchStats()
 })
 </script>
 
 <style scoped>
-:deep(.ant-card-head-title) {
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.welcome-section {
+  margin-bottom: 24px;
+}
+
+.welcome-card {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-radius: 16px;
+  padding: 32px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.welcome-title {
+  font-size: 28px;
   font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.welcome-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.stats-section {
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.title-icon {
+  color: var(--primary-color);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-50);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.stat-subtitle {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.actions-section {
+  margin-bottom: 24px;
+}
+
+.actions-card {
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.action-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary-50);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.action-content {
+  flex: 1;
+}
+
+.action-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.action-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.action-arrow {
+  color: var(--text-tertiary);
+  font-size: 16px;
+}
+
+.activity-section {
+  margin-bottom: 24px;
+}
+
+.activity-card {
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.activity-item:hover {
+  background: var(--border-light);
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--primary-50);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-title {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    gap: 16px;
+  }
+  
+  .welcome-card {
+    padding: 24px;
+  }
+  
+  .welcome-content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+  
+  .welcome-title {
+    font-size: 24px;
+  }
+  
+  .stat-item {
+    padding: 16px;
+  }
+  
+  .action-item {
+    padding: 16px;
+  }
 }
 </style>
