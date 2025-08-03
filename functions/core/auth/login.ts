@@ -64,10 +64,8 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
       id: adminUser.id,
       username: adminUser.username,
       role: adminUser.role
-    }, {
-      headers: {
-        'Set-Cookie': cookie
-      }
+    }, 200, {
+      'Set-Cookie': cookie
     });
   } catch (error) {
     console.error('登录失败:', error);

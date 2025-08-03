@@ -21,10 +21,8 @@ export async function handleLogout(request: Request, env: Env): Promise<Response
       path: '/'
     });
 
-    return jsonResponse({ message: '登出成功' }, {
-      headers: {
-        'Set-Cookie': cookie
-      }
+    return jsonResponse({ message: '登出成功' }, 200, {
+      'Set-Cookie': cookie
     });
   } catch (error) {
     console.error('登出失败:', error);
