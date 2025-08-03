@@ -33,31 +33,14 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
 
     let adminUser = await getAdminUser(env);
     
-    // 添加调试日志
-    console.log('Login attempt:', { username, password });
-    console.log('Existing admin user:', adminUser);
-    
     // 如果管理员用户不存在，创建默认用户
     if (!adminUser) {
-      console.log('Creating default admin user');
       adminUser = await createAdminUser(env);
-      console.log('Created admin user:', adminUser);
     }
-
-    // 检查用户数据格式
-    console.log('Comparing credentials:', {
-      providedUsername: username,
-      storedUsername: adminUser.username,
-      usernameMatch: username === adminUser.username,
-      passwordMatch: password === adminUser.password
-    });
 
     if (username !== adminUser.username || password !== adminUser.password) {
-      console.log('Authentication failed');
       return errorResponse('用户名或密码错误', 401);
     }
-
-    console.log('Authentication successful');
 
     // 生成会话令牌
     const token = crypto.randomUUID();
