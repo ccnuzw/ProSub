@@ -342,16 +342,18 @@ const filteredNodes = computed(() => {
   return result
 })
 
-// 表格行选择配置
-const rowSelection = {
-  selectedRowKeys: selectedRowKeys.value,
-  onChange: (keys: string[]) => {
-    selectedRowKeys.value = keys
-  }
-}
-
 // 表格列定义
 const columns = [
+  {
+    title: '序号',
+    key: 'index',
+    width: 60,
+    customRender: ({ index }: { index: number }) => {
+      const currentPage = pagination.value.current;
+      const pageSize = pagination.value.pageSize;
+      return (currentPage - 1) * pageSize + index + 1;
+    }
+  },
   {
     title: '节点名称',
     dataIndex: 'name',
@@ -382,6 +384,17 @@ const columns = [
     width: 200
   }
 ]
+
+// 表格行选择配置
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: string[]) => {
+    selectedRowKeys.value = keys
+  },
+  getCheckboxProps: (record: Node) => ({
+    disabled: false
+  })
+}))
 
 // 方法
 const fetchData = async () => {
@@ -578,27 +591,43 @@ const handleBatchImport = async (nodes: Node[]) => {
     
     for (const node of nodes) {
       try {
+        // 确保节点数据完整
+        const nodeData = {
+          name: node.name,
+          server: node.server,
+          port: node.port,
+          type: node.type,
+          password: node.password || '',
+          params: node.params || {}
+        }
+        
+        console.log('正在导入节点:', nodeData)
+        
         const response = await fetch('/api/nodes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(node)
+          body: JSON.stringify(nodeData)
         })
         
         if (response.ok) {
           successCount++
+          console.log(`节点 ${node.name} 导入成功`)
         } else {
           errorCount++
           const errorData = await response.json()
-          errors.push(`导入失败 ${node.name}: ${errorData.message || '未知错误'}`)
+          const errorMsg = `导入失败 ${node.name}: ${errorData.message || '未知错误'}`
+          errors.push(errorMsg)
+          console.error(errorMsg)
         }
       } catch (error) {
         errorCount++
-        errors.push(`导入失败 ${node.name}: ${error}`)
-        console.error('导入节点失败:', error)
+        const errorMsg = `导入失败 ${node.name}: ${error}`
+        errors.push(errorMsg)
+        console.error(errorMsg)
       }
     }
     
-    // 显示结果
+    // 显示详细结果
     if (successCount > 0) {
       message.success(`成功导入 ${successCount} 个节点`)
     }
@@ -608,7 +637,21 @@ const handleBatchImport = async (nodes: Node[]) => {
       console.error('导入错误详情:', errors)
     }
     
+    // 立即刷新数据
     await fetchData()
+    
+    // 清空选择
+    selectedRowKeys.value = []
+    
+    // 显示最终结果
+    if (successCount > 0 && errorCount === 0) {
+      message.success(`批量导入完成！成功导入 ${successCount} 个节点`)
+    } else if (successCount > 0 && errorCount > 0) {
+      message.warning(`批量导入完成！成功 ${successCount} 个，失败 ${errorCount} 个`)
+    } else if (successCount === 0) {
+      message.error('批量导入失败！请检查节点格式')
+    }
+    
   } catch (error) {
     console.error('批量导入失败:', error)
     message.error('批量导入失败')

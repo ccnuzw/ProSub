@@ -62,7 +62,7 @@ watch(nodeInput, (newValue) => {
             name: parsedNode.name || `节点 ${index + 1}`,
             server: parsedNode.server || '',
             port: parsedNode.port || 0,
-            type: parsedNode.type || 'unknown',
+            type: parsedNode.type || 'vmess',
             password: parsedNode.password || '',
             params: parsedNode.params || {}
           },
