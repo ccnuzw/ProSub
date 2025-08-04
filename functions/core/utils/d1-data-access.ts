@@ -226,9 +226,9 @@ export class SubscriptionDataAccess {
       subscription.id,
       subscription.name,
       subscription.url,
-      subscription.nodeCount,
-      subscription.lastUpdated,
-      subscription.error,
+      subscription.nodeCount || 0,
+      subscription.lastUpdated || null,
+      subscription.error || null,
       now,
       now
     ).run();
@@ -246,9 +246,9 @@ export class SubscriptionDataAccess {
     `).bind(
       subscription.name,
       subscription.url,
-      subscription.nodeCount,
-      subscription.lastUpdated,
-      subscription.error,
+      subscription.nodeCount || 0,
+      subscription.lastUpdated || null,
+      subscription.error || null,
       now,
       id
     ).run();

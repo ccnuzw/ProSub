@@ -126,6 +126,47 @@ VALUES ('admin', 'admin', 'admin123', 'admin', datetime('now'), datetime('now'))
 SELECT * FROM users WHERE username='admin';
 ```
 
+### **使用API测试数据库**
+
+如果上述SQL测试正常，但API仍然失败，可以访问以下URL进行API测试：
+
+```
+https://your-domain.pages.dev/api/test-db
+```
+
+这个测试会：
+- ✅ 验证数据库连接
+- ✅ 检查表结构
+- ✅ 测试创建订阅
+- ✅ 测试创建节点
+- ✅ 显示详细的错误信息
+
+### **常见API错误**
+
+#### **错误1: 字段名不匹配**
+```
+Error: no such column: nodeCount
+```
+**解决方案**: 确保数据库表使用下划线格式的字段名（如`node_count`）
+
+#### **错误2: 表不存在**
+```
+Error: no such table: subscriptions
+```
+**解决方案**: 重新执行schema.sql创建表
+
+#### **错误3: 外键约束失败**
+```
+Error: FOREIGN KEY constraint failed
+```
+**解决方案**: 检查关联表是否存在，确保数据完整性
+
+#### **错误4: 认证失败**
+```
+Error: 401 Unauthorized
+```
+**解决方案**: 确保已登录，检查session是否有效
+
 ## 🚀 替代部署方案
 
 ### **使用Wrangler CLI部署**
