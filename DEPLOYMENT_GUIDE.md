@@ -74,11 +74,11 @@ npm run build
 #### 4. 配置 D1 数据库绑定
 
 1. **在 Pages 项目中绑定 D1**
-   - 在项目设置中找到 **Settings** → **Functions**
-   - 在 **D1 database bindings** 部分
-   - 点击 **Add binding**
-   - 变量名：`DB`
-   - D1 数据库：选择刚创建的 `prosub-db`
+   - 在项目设置中找到 **Settings** → **Bindings**
+   - 点击 **+ 添加**
+   - **类型**: 选择 **D1 Database**
+   - **变量名**: `DB`
+   - **D1数据库**: 选择刚创建的 `prosub-db`
    - 点击 **Save**
 
 #### 5. 初始化数据库结构
@@ -203,71 +203,3 @@ SELECT * FROM node_health_status WHERE status = 'online';
 
 2. **表不存在**
    - 在 Cloudflare Dashboard 中重新执行 `schema.sql`
-   - 检查 SQL 执行是否有错误
-
-3. **部署失败**
-   - 检查构建日志中的错误信息
-   - 确认所有依赖都已正确安装
-   - 验证环境变量配置
-
-4. **API 调用失败**
-   - 检查认证是否正确
-   - 确认 API 路由配置正确
-   - 查看 Cloudflare Workers 日志
-
-### 📈 监控和维护
-
-#### 数据库监控
-
-- 在 Cloudflare Dashboard 中查看 D1 数据库使用情况
-- 监控查询性能和存储使用量
-- 定期备份重要数据
-
-#### 应用监控
-
-- 在 Pages 项目中查看访问统计
-- 监控错误率和性能指标
-- 设置告警通知
-
-### 🎉 部署完成
-
-部署完成后，您可以：
-
-1. **访问应用**
-   - 使用 Cloudflare Pages 提供的域名访问
-   - 或配置自定义域名
-
-2. **首次登录**
-   - 用户名：`admin`
-   - 密码：`admin123`
-   - 建议首次登录后修改密码
-
-3. **开始使用**
-   - 导入节点
-   - 管理订阅
-   - 创建配置文件
-
-### 📝 后续维护
-
-#### 代码更新
-
-```bash
-# 推送代码到 main 分支会自动触发部署
-git add .
-git commit -m "更新功能"
-git push origin main
-```
-
-#### 数据库维护
-
-- 定期在 Cloudflare Dashboard 中检查数据库状态
-- 监控存储使用量
-- 根据需要清理过期数据
-
-#### 安全更新
-
-- 定期更新依赖包
-- 监控安全漏洞
-- 及时应用安全补丁
-
-现在您的 ProSub 应用已经成功部署到 Cloudflare！🎉 

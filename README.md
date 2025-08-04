@@ -115,6 +115,65 @@ npm run dev:backend
    - 推送代码到 main 分支
    - 自动触发部署
 
+### 🍴 Fork 部署
+
+如果您想部署自己的实例，请参考：[📖 Fork部署指南](FORK_DEPLOYMENT_GUIDE.md)
+
+#### 快速Fork步骤：
+
+1. **Fork项目**
+   - 点击GitHub页面右上角的"Fork"按钮
+   - 选择您的GitHub账户
+
+2. **克隆到本地**
+   ```bash
+   git clone https://github.com/你的用户名/ProSub.git
+   cd ProSub
+   ```
+
+3. **创建Cloudflare资源**
+   ```bash
+   # 创建D1数据库
+   npx wrangler d1 create prosub-db
+   
+   # 创建KV命名空间
+   npx wrangler kv namespace create "PROSUB_KV"
+   ```
+
+4. **更新配置文件**
+   - 编辑 `wrangler.toml`，替换为您自己的UUID
+
+5. **初始化数据库**
+   ```bash
+   npx wrangler d1 execute prosub-db --remote --file=schema.sql
+   npx wrangler d1 execute prosub-db --remote --command="INSERT INTO users (id, username, password, role, created_at, updated_at) VALUES ('admin', 'admin', 'admin123', 'admin', datetime('now'), datetime('now'));"
+   ```
+
+6. **部署到Cloudflare Pages**
+   - 连接GitHub仓库
+   - 配置环境变量绑定
+
+### 🖥️ Dashboard 直接部署
+
+**5分钟快速部署，无需任何命令行操作！**
+
+详细指南请参考：[📖 Dashboard部署指南](DASHBOARD_DEPLOYMENT_GUIDE.md)
+
+#### 超简单步骤：
+
+1. **Fork项目** → 在GitHub中fork原项目
+2. **创建资源** → 在Dashboard中创建D1数据库和KV命名空间
+3. **创建Pages** → 连接GitHub仓库，配置构建设置
+4. **配置绑定** → 在Settings的Bindings部分添加D1和KV绑定
+5. **初始化DB** → 使用在线SQL编辑器执行数据库初始化
+6. **验证部署** → 访问域名，使用默认凭据登录
+
+**优势**：
+- ✅ **5分钟快速部署**
+- ✅ **无需本地环境**
+- ✅ **图形化操作**
+- ✅ **自动部署更新**
+
 ## 📖 使用指南
 
 ### 首次登录
