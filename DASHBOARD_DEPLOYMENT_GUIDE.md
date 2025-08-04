@@ -4,6 +4,14 @@
 
 **5分钟快速部署，无需任何命令行操作！**
 
+### ⚠️ 重要说明
+
+**本项目已优化，fork用户无需手动编辑`wrangler.toml`文件！**
+
+- ✅ **无需UUID配置**: `wrangler.toml`中的UUID已注释，避免冲突
+- ✅ **纯Dashboard配置**: 所有资源绑定都在Cloudflare Dashboard中完成
+- ✅ **零代码修改**: fork后可直接部署，无需任何文件编辑
+
 ### **步骤1: Fork项目**
 1. 访问 [ProSub GitHub页面](https://github.com/imzyb/ProSub)
 2. 点击右上角 **"Fork"** 按钮

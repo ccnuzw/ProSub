@@ -2,16 +2,5 @@ name = "prosub"
 compatibility_date = "2025-07-22"
 pages_build_output_dir = "dist"
 
-# 注意：这些UUID需要在Cloudflare Dashboard中通过绑定配置
-# 或者通过环境变量设置
-# 对于fork的用户，请删除这些配置，使用Dashboard绑定
-
-# [[kv_namespaces]]
-# binding = "KV"
-# id = "your-kv-namespace-id"
-# preview_id = "your-kv-namespace-id"
-
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "prosub-db"
-# database_id = "your-d1-database-id"
+# 注意：绑定配置已移除，请在Cloudflare Dashboard中配置
+# 这样可以避免UUID冲突，让fork的用户更容易部署
