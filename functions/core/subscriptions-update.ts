@@ -1,28 +1,20 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { parse } from 'cookie';
+import { requireAuth } from './utils/auth';
 import { Env } from '@shared/types';
 import { parseSubscriptionContent } from './utils/subscription-parser';
-import { SubscriptionDataAccess } from './utils/data-access';
+import { SubscriptionDataAccess } from './utils/d1-data-access';
 
 export async function handleSubscriptionsUpdate(request: Request, env: Env, id: string): Promise<Response> {
-  const cookies = parse(request.headers.get('Cookie') || '');
-  const token = cookies.auth_token;
-
-  if (!token) {
-    return errorResponse('未授权', 401);
-  }
-
-  const userId = await env.KV.get(`user_session:${token}`);
-
-  if (!userId) {
-    return errorResponse('未授权', 401);
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
   }
 
   try {
     const subscription = await SubscriptionDataAccess.getById(env, id);
 
     if (!subscription) {
-      console.log(`[Update] Subscription ${id} not found in KV.`);
+      console.log(`[Update] Subscription ${id} not found in database.`);
       return errorResponse('订阅不存在', 404);
     }
 

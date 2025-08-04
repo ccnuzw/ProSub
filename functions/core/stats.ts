@@ -1,6 +1,7 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { requireAuth } from './utils/auth';
-import { Env, Node, Profile, Subscription } from '@shared/types';
+import { NodeDataAccess, SubscriptionDataAccess, ProfileDataAccess } from './utils/d1-data-access';
+import { Env } from '@shared/types';
 
 export async function handleStatsGet(request: Request, env: Env): Promise<Response> {
   const authResult = await requireAuth(request, env);
@@ -9,21 +10,17 @@ export async function handleStatsGet(request: Request, env: Env): Promise<Respon
   }
 
   try {
-    const KV = env.KV;
-
-    const nodesJson = await KV.get('ALL_NODES');
-    const allNodes: Record<string, Node> = nodesJson ? JSON.parse(nodesJson) : {};
-    const nodesCount = Object.keys(allNodes).length;
-
-    const subsJson = await KV.get('ALL_SUBSCRIPTIONS');
-    const allSubscriptions: Record<string, Subscription> = subsJson ? JSON.parse(subsJson) : {};
-    const subscriptionsCount = Object.keys(allSubscriptions).length;
-
-    const profileIndexJson = await KV.get('_index:profiles');
-    const profileIds = profileIndexJson ? JSON.parse(profileIndexJson) : [];
-    const profilesCount = profileIds.length;
-
-    const onlineNodesCount = 0; // Placeholder
+    // 使用D1数据库获取统计数据
+    const nodes = await NodeDataAccess.getAll(env);
+    const subscriptions = await SubscriptionDataAccess.getAll(env);
+    const profiles = await ProfileDataAccess.getAll(env);
+    
+    const nodesCount = nodes.length;
+    const subscriptionsCount = subscriptions.length;
+    const profilesCount = profiles.length;
+    
+    // TODO: 从D1数据库获取在线节点数量
+    const onlineNodesCount = 0; // 暂时设为0，需要实现健康状态查询
 
     return jsonResponse({
       nodes: nodesCount,

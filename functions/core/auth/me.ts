@@ -1,5 +1,5 @@
-import { jsonResponse, errorResponse } from '../../utils/response';
-import { requireAuth } from '../../utils/auth';
+import { jsonResponse, errorResponse } from '../utils/response';
+import { requireAuth } from '../utils/auth';
 import { Env } from '@shared/types';
 
 export async function handleMe(request: Request, env: Env): Promise<Response> {

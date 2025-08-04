@@ -5,15 +5,15 @@ import { Env } from '@shared/types';
 export async function handleLogout(request: Request, env: Env): Promise<Response> {
   try {
     const cookies = parse(request.headers.get('Cookie') || '');
-    const token = cookies.auth_token;
+    const sessionToken = cookies.session;
 
-    if (token) {
+    if (sessionToken) {
       // 删除会话
-      await env.KV.delete(`user_session:${token}`);
+      await env.KV.delete(`session:${sessionToken}`);
     }
 
     // 清除Cookie
-    const cookie = serialize('auth_token', '', {
+    const cookie = serialize('session', '', {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',

@@ -1,54 +1,46 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { parse } from 'cookie';
+import { requireAuth } from './utils/auth';
 import { Env } from '@shared/types';
 import { parseSubscriptionContent } from './utils/subscription-parser';
-import { SubscriptionDataAccess } from './utils/data-access';
+import { SubscriptionDataAccess } from './utils/d1-data-access';
 
 export async function handleSubscriptionsPreview(request: Request, env: Env, id: string): Promise<Response> {
-  const cookies = parse(request.headers.get('Cookie') || '');
-  const token = cookies.auth_token;
-
-  if (!token) {
-    return errorResponse('未授权', 401);
-  }
-
-  const userId = await env.KV.get(`user_session:${token}`);
-
-  if (!userId) {
-    return errorResponse('未授权', 401);
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
   }
 
   try {
     const subscription = await SubscriptionDataAccess.getById(env, id);
 
     if (!subscription) {
+      console.log(`[Preview] Subscription ${id} not found in database.`);
       return errorResponse('订阅不存在', 404);
     }
 
-    console.log(`[Preview] Fetching subscription: ${subscription.name} - ${subscription.url}`);
+    console.log(`[Preview] Fetched subscription: ${subscription.name} - ${subscription.url}`);
+
+    console.log(`[Preview] Fetching content from URL: ${subscription.url}`);
     const response = await fetch(subscription.url, {
         headers: { 'User-Agent': 'ProSub/1.0' }
     });
 
     if (!response.ok) {
+      console.error(`[Preview] Failed to fetch URL content: ${response.status}`);
       throw new Error(`请求订阅链接失败，状态码: ${response.status}`);
     }
 
+    console.log('[Preview] Reading response content.');
     const content = await response.text();
     
     // 使用新的解析工具函数
     const nodes = await parseSubscriptionContent(content, subscription.url);
     
-    // 返回预览信息
-    const preview = {
+    return jsonResponse({
       subscription: subscription,
-      nodeCount: nodes.length,
-      nodes: nodes.slice(0, 10), // 只返回前10个节点作为预览
-      totalNodes: nodes.length,
-      previewTime: new Date().toISOString()
-    };
-
-    return jsonResponse(preview);
+      nodes: nodes,
+      nodeCount: nodes.length
+    });
 
   } catch (error) {
     console.error(`[Preview] Failed to preview subscription ${id}:`, error);

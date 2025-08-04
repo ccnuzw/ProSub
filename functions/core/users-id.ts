@@ -49,3 +49,6 @@ export async function handleUserUpdate(request: Request, env: Env, id: string): 
     return errorResponse('修改密码失败');
   }
 }
+
+// 为了向后兼容，导出别名
+export const handleUserChangePassword = handleUserUpdate;

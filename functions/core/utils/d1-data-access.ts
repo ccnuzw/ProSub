@@ -282,6 +282,85 @@ export class SubscriptionDataAccess {
   }
 }
 
+// 配置文件数据访问
+export class ProfileDataAccess {
+  static async getAll(env: Env): Promise<Profile[]> {
+    const result = await env.DB.prepare(`
+      SELECT id, name, description, client_type, created_at, updated_at
+      FROM profiles
+      ORDER BY created_at DESC
+    `).all();
+    
+    return result.results.map(row => ({
+      id: row.id as string,
+      name: row.name as string,
+      description: row.description as string,
+      clientType: row.client_type as string,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string
+    }));
+  }
+
+  static async getById(env: Env, id: string): Promise<Profile | null> {
+    const result = await env.DB.prepare(`
+      SELECT id, name, description, client_type, created_at, updated_at
+      FROM profiles
+      WHERE id = ?
+    `).bind(id).first();
+    
+    if (!result) return null;
+    
+    return {
+      id: result.id as string,
+      name: result.name as string,
+      description: result.description as string,
+      clientType: result.client_type as string,
+      createdAt: result.created_at as string,
+      updatedAt: result.updated_at as string
+    };
+  }
+
+  static async create(env: Env, profile: Profile): Promise<Profile> {
+    const now = new Date().toISOString();
+    
+    await env.DB.prepare(`
+      INSERT INTO profiles (id, name, description, client_type, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      profile.id,
+      profile.name,
+      profile.description || '',
+      profile.clientType,
+      now,
+      now
+    ).run();
+    
+    return { ...profile, createdAt: now, updatedAt: now };
+  }
+
+  static async update(env: Env, id: string, profile: Profile): Promise<Profile> {
+    const now = new Date().toISOString();
+    
+    await env.DB.prepare(`
+      UPDATE profiles 
+      SET name = ?, description = ?, client_type = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(
+      profile.name,
+      profile.description || '',
+      profile.clientType,
+      now,
+      id
+    ).run();
+    
+    return { ...profile, id, updatedAt: now };
+  }
+
+  static async delete(env: Env, id: string): Promise<void> {
+    await env.DB.prepare('DELETE FROM profiles WHERE id = ?').bind(id).run();
+  }
+}
+
 // 用户数据访问
 export class UserDataAccess {
   static async getById(env: Env, id: string): Promise<User | null> {

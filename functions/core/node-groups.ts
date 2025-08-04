@@ -1,22 +1,6 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { NodeGroup, Env } from '../../packages/shared/types/index.ts';
 import { requireAuth } from './utils/auth';
-
-const ALL_NODE_GROUPS_KEY = 'ALL_NODE_GROUPS';
-
-async function getAllNodeGroups(env: Env): Promise<Record<string, NodeGroup>> {
-  const groupsJson = await env.KV.get(ALL_NODE_GROUPS_KEY);
-  return groupsJson ? JSON.parse(groupsJson) : {};
-}
-
-async function putAllNodeGroups(env: Env, groups: Record<string, NodeGroup>): Promise<void> {
-  await env.KV.put(ALL_NODE_GROUPS_KEY, JSON.stringify(groups));
-}
-
-interface NodeGroupRequest {
-  name: string;
-  nodeIds?: string[];
-}
+import { Env } from '../../packages/shared/types';
 
 export async function handleNodeGroupsGet(request: Request, env: Env): Promise<Response> {
   const authResult = await requireAuth(request, env);
@@ -25,11 +9,12 @@ export async function handleNodeGroupsGet(request: Request, env: Env): Promise<R
   }
 
   try {
-    const allGroups = await getAllNodeGroups(env);
-    return jsonResponse(Object.values(allGroups));
+    // TODO: 实现NodeGroupDataAccess
+    // 暂时返回空数组
+    return jsonResponse([]);
   } catch (error) {
-    console.error('Failed to fetch node groups:', error);
-    return errorResponse('Failed to fetch node groups');
+    console.error('获取节点组失败:', error);
+    return errorResponse('获取节点组失败');
   }
 }
 
@@ -40,29 +25,11 @@ export async function handleNodeGroupsPost(request: Request, env: Env): Promise<
   }
 
   try {
-    const { name, nodeIds = [] } = (await request.json()) as NodeGroupRequest;
-    
-    if (!name) {
-      return errorResponse('Group name is required', 400);
-    }
-
-    const id = crypto.randomUUID();
-    const newGroup: NodeGroup = {
-      id,
-      name,
-      nodeIds,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    const allGroups = await getAllNodeGroups(env);
-    allGroups[id] = newGroup;
-    await putAllNodeGroups(env, allGroups);
-
-    return jsonResponse(newGroup, 201);
+    // TODO: 实现NodeGroupDataAccess
+    return errorResponse('功能暂未实现', 501);
   } catch (error) {
-    console.error('Failed to create node group:', error);
-    return errorResponse('Failed to create node group');
+    console.error('创建节点组失败:', error);
+    return errorResponse('创建节点组失败');
   }
 }
 
@@ -73,17 +40,11 @@ export async function handleNodeGroupsIdGet(request: Request, env: Env, groupId:
   }
 
   try {
-    const allGroups = await getAllNodeGroups(env);
-    const group = allGroups[groupId];
-    
-    if (!group) {
-      return errorResponse('Node group not found', 404);
-    }
-
-    return jsonResponse(group);
+    // TODO: 实现NodeGroupDataAccess
+    return errorResponse('功能暂未实现', 501);
   } catch (error) {
-    console.error('Failed to fetch node group:', error);
-    return errorResponse('Failed to fetch node group');
+    console.error('获取节点组失败:', error);
+    return errorResponse('获取节点组失败');
   }
 }
 
@@ -94,33 +55,11 @@ export async function handleNodeGroupsIdPut(request: Request, env: Env, groupId:
   }
 
   try {
-    const { name, nodeIds } = (await request.json()) as NodeGroupRequest;
-    
-    if (!name) {
-      return errorResponse('Group name is required', 400);
-    }
-
-    const allGroups = await getAllNodeGroups(env);
-    const existingGroup = allGroups[groupId];
-    
-    if (!existingGroup) {
-      return errorResponse('Node group not found', 404);
-    }
-
-    const updatedGroup: NodeGroup = {
-      ...existingGroup,
-      name,
-      nodeIds: nodeIds || existingGroup.nodeIds,
-      updatedAt: new Date().toISOString()
-    };
-
-    allGroups[groupId] = updatedGroup;
-    await putAllNodeGroups(env, allGroups);
-
-    return jsonResponse(updatedGroup);
+    // TODO: 实现NodeGroupDataAccess
+    return errorResponse('功能暂未实现', 501);
   } catch (error) {
-    console.error('Failed to update node group:', error);
-    return errorResponse('Failed to update node group');
+    console.error('更新节点组失败:', error);
+    return errorResponse('更新节点组失败');
   }
 }
 
@@ -131,19 +70,10 @@ export async function handleNodeGroupsIdDelete(request: Request, env: Env, group
   }
 
   try {
-    const allGroups = await getAllNodeGroups(env);
-    const existingGroup = allGroups[groupId];
-    
-    if (!existingGroup) {
-      return errorResponse('Node group not found', 404);
-    }
-
-    delete allGroups[groupId];
-    await putAllNodeGroups(env, allGroups);
-
-    return jsonResponse({ message: 'Node group deleted successfully' });
+    // TODO: 实现NodeGroupDataAccess
+    return errorResponse('功能暂未实现', 501);
   } catch (error) {
-    console.error('Failed to delete node group:', error);
-    return errorResponse('Failed to delete node group');
+    console.error('删除节点组失败:', error);
+    return errorResponse('删除节点组失败');
   }
 }

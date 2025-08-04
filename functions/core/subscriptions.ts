@@ -1,7 +1,7 @@
 import { jsonResponse, errorResponse } from './utils/response';
 import { Env, Subscription } from '@shared/types';
 import { requireAuth } from './utils/auth';
-import { SubscriptionDataAccess } from './utils/data-access';
+import { SubscriptionDataAccess } from './utils/d1-data-access';
 
 interface SubscriptionRequest {
   name: string;
@@ -15,8 +15,8 @@ export async function handleSubscriptionsGet(request: Request, env: Env): Promis
   }
 
   try {
-    const allSubscriptions = await SubscriptionDataAccess.getAll(env);
-    return jsonResponse(Object.values(allSubscriptions));
+    const subscriptions = await SubscriptionDataAccess.getAll(env);
+    return jsonResponse(subscriptions);
   } catch (error) {
     console.error('获取订阅列表失败:', error);
     return errorResponse('获取订阅列表失败');
@@ -36,18 +36,15 @@ export async function handleSubscriptionsPost(request: Request, env: Env): Promi
       return errorResponse('订阅名称和URL不能为空', 400);
     }
 
-    const id = crypto.randomUUID();
     const newSubscription: Subscription = {
-      id,
+      id: crypto.randomUUID(),
       name,
       url,
-      nodeCount: 0,
-      lastUpdated: null,
-      error: null
+      nodeCount: 0
     };
 
-    await SubscriptionDataAccess.create(env, newSubscription);
-    return jsonResponse(newSubscription);
+    const createdSubscription = await SubscriptionDataAccess.create(env, newSubscription);
+    return jsonResponse(createdSubscription);
   } catch (error) {
     console.error('创建订阅失败:', error);
     return errorResponse('创建订阅失败');
@@ -85,7 +82,17 @@ export async function handleSubscriptionUpdate(request: Request, env: Env, id: s
       return errorResponse('订阅名称和URL不能为空', 400);
     }
 
-    const updatedSubscription: Subscription = { id, name, url, nodeCount: 0, lastUpdated: null, error: null };
+    const existingSubscription = await SubscriptionDataAccess.getById(env, id);
+    if (!existingSubscription) {
+      return errorResponse('订阅不存在', 404);
+    }
+
+    const updatedSubscription: Subscription = {
+      ...existingSubscription,
+      name,
+      url
+    };
+
     const subscription = await SubscriptionDataAccess.update(env, id, updatedSubscription);
     return jsonResponse(subscription);
   } catch (error) {
@@ -101,6 +108,11 @@ export async function handleSubscriptionDelete(request: Request, env: Env, id: s
   }
 
   try {
+    const existingSubscription = await SubscriptionDataAccess.getById(env, id);
+    if (!existingSubscription) {
+      return errorResponse('订阅不存在', 404);
+    }
+
     await SubscriptionDataAccess.delete(env, id);
     return jsonResponse({ message: '订阅删除成功' });
   } catch (error) {

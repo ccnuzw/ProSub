@@ -1,28 +1,12 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { Env, Profile } from '@shared/types';
 import { requireAuth } from './utils/auth';
-
-const ALL_PROFILES_KEY = 'ALL_PROFILES';
-
-async function getAllProfiles(env: Env): Promise<Record<string, Profile>> {
-  const profilesJson = await env.KV.get(ALL_PROFILES_KEY);
-  return profilesJson ? JSON.parse(profilesJson) : {};
-}
-
-async function putAllProfiles(env: Env, profiles: Record<string, Profile>): Promise<void> {
-  await env.KV.put(ALL_PROFILES_KEY, JSON.stringify(profiles));
-}
+import { ProfileDataAccess } from './utils/d1-data-access';
+import { Env, Profile } from '@shared/types';
 
 interface ProfileRequest {
   name: string;
-  alias?: string;
-  nodeIds: string[];
-  subscriptionIds: string[];
-  ruleSets?: {
-    clash?: { type: 'built-in' | 'custom'; id: string };
-    surge?: { type: 'built-in' | 'custom'; id: string };
-    quantumultx?: { type: 'built-in' | 'custom'; id: string };
-  };
+  description?: string;
+  clientType: string;
 }
 
 export async function handleProfilesGet(request: Request, env: Env): Promise<Response> {
@@ -32,8 +16,8 @@ export async function handleProfilesGet(request: Request, env: Env): Promise<Res
   }
 
   try {
-    const allProfiles = await getAllProfiles(env);
-    return jsonResponse(Object.values(allProfiles));
+    const profiles = await ProfileDataAccess.getAll(env);
+    return jsonResponse(profiles);
   } catch (error) {
     console.error('获取配置文件列表失败:', error);
     return errorResponse('获取配置文件列表失败');
@@ -47,29 +31,25 @@ export async function handleProfilesPost(request: Request, env: Env): Promise<Re
   }
 
   try {
-    const { name, alias, nodeIds, subscriptionIds, ruleSets } = (await request.json()) as ProfileRequest;
+    const { name, description, clientType } = await request.json() as ProfileRequest;
     
     if (!name) {
       return errorResponse('配置文件名称不能为空', 400);
     }
 
-    const id = crypto.randomUUID();
+    if (!clientType) {
+      return errorResponse('客户端类型不能为空', 400);
+    }
+
     const newProfile: Profile = {
-      id,
+      id: crypto.randomUUID(),
       name,
-      alias,
-      nodeIds: nodeIds || [],
-      subscriptionIds: subscriptionIds || [],
-      ruleSets: ruleSets || {},
-      nodes: 0,
-      subscriptions: 0
+      description,
+      clientType
     };
 
-    const allProfiles = await getAllProfiles(env);
-    allProfiles[id] = newProfile;
-    await putAllProfiles(env, allProfiles);
-
-    return jsonResponse(newProfile);
+    const createdProfile = await ProfileDataAccess.create(env, newProfile);
+    return jsonResponse(createdProfile);
   } catch (error) {
     console.error('创建配置文件失败:', error);
     return errorResponse('创建配置文件失败');
@@ -83,12 +63,10 @@ export async function handleProfileUpdate(request: Request, env: Env, id: string
   }
 
   try {
-    const { name, alias, nodeIds, subscriptionIds, ruleSets } = (await request.json()) as ProfileRequest;
+    const { name, description, clientType } = await request.json() as ProfileRequest;
     
-    const allProfiles = await getAllProfiles(env);
-    const profile = allProfiles[id];
-
-    if (!profile) {
+    const existingProfile = await ProfileDataAccess.getById(env, id);
+    if (!existingProfile) {
       return errorResponse('配置文件不存在', 404);
     }
 
@@ -96,15 +74,19 @@ export async function handleProfileUpdate(request: Request, env: Env, id: string
       return errorResponse('配置文件名称不能为空', 400);
     }
 
-    profile.name = name;
-    profile.alias = alias;
-    profile.nodeIds = nodeIds || [];
-    profile.subscriptionIds = subscriptionIds || [];
-    profile.ruleSets = ruleSets || {};
+    if (!clientType) {
+      return errorResponse('客户端类型不能为空', 400);
+    }
 
-    await putAllProfiles(env, allProfiles);
+    const updatedProfile: Profile = {
+      ...existingProfile,
+      name,
+      description,
+      clientType
+    };
 
-    return jsonResponse(profile);
+    const result = await ProfileDataAccess.update(env, id, updatedProfile);
+    return jsonResponse(result);
   } catch (error) {
     console.error('更新配置文件失败:', error);
     return errorResponse('更新配置文件失败');
@@ -118,14 +100,12 @@ export async function handleProfileDelete(request: Request, env: Env, id: string
   }
 
   try {
-    const allProfiles = await getAllProfiles(env);
-    
-    if (!allProfiles[id]) {
+    const existingProfile = await ProfileDataAccess.getById(env, id);
+    if (!existingProfile) {
       return errorResponse('配置文件不存在', 404);
     }
 
-    delete allProfiles[id];
-    await putAllProfiles(env, allProfiles);
+    await ProfileDataAccess.delete(env, id);
 
     return jsonResponse({ message: '配置文件删除成功' });
   } catch (error) {

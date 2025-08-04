@@ -1,43 +1,31 @@
 // API调用组合式函数
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { getAuthToken, clearAuth } from '@/utils/auth'
-
-interface ApiResponse<T = any> {
-  success: boolean
-  data?: T
-  message?: string
-  error?: string
-}
-
-interface ApiOptions {
-  showError?: boolean
-  showSuccess?: boolean
-  loading?: boolean
-}
 
 export function useApi() {
   const loading = ref(false)
-  const error = ref<string | null>(null)
 
-  // 基础API调用函数
-  const callApi = async <T>(
-    url: string,
-    options: RequestInit = {},
-    apiOptions: ApiOptions = {}
-  ): Promise<T | null> => {
-    const { showError = true, showSuccess = false, loading: showLoading = true } = apiOptions
+  const getToken = () => {
+    // 从localStorage或cookie中获取token
+    return localStorage.getItem('token')
+  }
+
+  const setToken = (token: string) => {
+    localStorage.setItem('token', token)
+  }
+
+  const removeToken = () => {
+    localStorage.removeItem('token')
+  }
+
+  const request = async (url: string, options: RequestInit = {}) => {
+    loading.value = true
     
-    if (showLoading) {
-      loading.value = true
-    }
-    error.value = null
-
     try {
-      const token = getAuthToken()
-      const headers: HeadersInit = {
+      const token = getToken()
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...options.headers as Record<string, string>
       }
 
       if (token) {
@@ -46,105 +34,56 @@ export function useApi() {
 
       const response = await fetch(url, {
         ...options,
-        headers,
+        headers
       })
 
-      if (response.status === 401) {
-        clearAuth()
-        window.location.href = '/login'
-        return null
-      }
-
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        if (response.status === 401) {
+          removeToken()
+          window.location.href = '/login'
+          return null
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const result: ApiResponse<T> = await response.json()
-
-      if (!result.success) {
-        throw new Error(result.error || result.message || '请求失败')
-      }
-
-      if (showSuccess && result.message) {
-        message.success(result.message)
-      }
-
-      return result.data || null
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '请求失败'
-      error.value = errorMessage
-      
-      if (showError) {
-        message.error(errorMessage)
-      }
-      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('API请求失败:', error)
+      message.error('请求失败，请稍后重试')
       return null
     } finally {
-      if (showLoading) {
-        loading.value = false
-      }
+      loading.value = false
     }
   }
 
-  // GET请求
-  const get = <T>(url: string, options?: ApiOptions) => {
-    return callApi<T>(url, { method: 'GET' }, options)
+  const get = async <T = any>(url: string): Promise<T | null> => {
+    return request(url, { method: 'GET' })
   }
 
-  // POST请求
-  const post = <T>(url: string, data?: any, options?: ApiOptions) => {
-    return callApi<T>(url, {
+  const post = async <T = any>(url: string, data?: any): Promise<T | null> => {
+    return request(url, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    }, options)
+      body: data ? JSON.stringify(data) : undefined
+    })
   }
 
-  // PUT请求
-  const put = <T>(url: string, data?: any, options?: ApiOptions) => {
-    return callApi<T>(url, {
+  const put = async <T = any>(url: string, data?: any): Promise<T | null> => {
+    return request(url, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    }, options)
+      body: data ? JSON.stringify(data) : undefined
+    })
   }
 
-  // DELETE请求
-  const del = <T>(url: string, options?: ApiOptions) => {
-    return callApi<T>(url, { method: 'DELETE' }, options)
-  }
-
-  // 批量操作
-  const batch = async <T>(
-    operations: Array<{ url: string; method: string; data?: any }>,
-    options?: ApiOptions
-  ): Promise<T[]> => {
-    const results: T[] = []
-    
-    for (const operation of operations) {
-      const result = await callApi<T>(
-        operation.url,
-        {
-          method: operation.method as any,
-          body: operation.data ? JSON.stringify(operation.data) : undefined,
-        },
-        { ...options, loading: false }
-      )
-      
-      if (result !== null) {
-        results.push(result)
-      }
-    }
-    
-    return results
+  const del = async <T = any>(url: string): Promise<T | null> => {
+    return request(url, { method: 'DELETE' })
   }
 
   return {
-    loading: computed(() => loading.value),
-    error: computed(() => error.value),
     get,
     post,
     put,
     del,
-    batch,
-    callApi,
+    loading
   }
 } 

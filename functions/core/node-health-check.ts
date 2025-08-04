@@ -1,22 +1,10 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { Env, Node, HealthStatus } from '@shared/types';
 import { requireAuth } from './utils/auth';
-import { NodeDataAccess } from './utils/data-access';
+import { NodeHealthDataAccess } from './utils/d1-data-access';
+import { Env, HealthStatus } from '@shared/types';
 
-const NODE_STATUS_KEY = 'NODE_STATUS';
+const NODE_STATUS_KEY = 'node_status';
 
-async function getNodeStatus(env: Env, nodeId: string): Promise<HealthStatus | null> {
-  const statusJson = await env.KV.get(`${NODE_STATUS_KEY}:${nodeId}`);
-  return statusJson ? JSON.parse(statusJson) : null;
-}
-
-async function putNodeStatus(env: Env, nodeId: string, status: HealthStatus): Promise<void> {
-  await env.KV.put(`${NODE_STATUS_KEY}:${nodeId}`, JSON.stringify(status), {
-    expirationTtl: 300 // 5分钟过期
-  });
-}
-
-// 单个节点健康检查
 export async function handleSingleNodeHealthCheck(request: Request, env: Env, nodeId: string): Promise<Response> {
   const authResult = await requireAuth(request, env);
   if (authResult instanceof Response) {
@@ -24,42 +12,44 @@ export async function handleSingleNodeHealthCheck(request: Request, env: Env, no
   }
 
   try {
-    // 获取节点信息
-    const node = await NodeDataAccess.getById(env, nodeId);
-    if (!node) {
-      return errorResponse('节点不存在', 404);
-    }
-
     // 设置检查中状态
     const checkingStatus: HealthStatus = {
       nodeId,
       status: 'checking',
       lastChecked: new Date().toISOString()
     };
-    await putNodeStatus(env, nodeId, checkingStatus);
+    
+    await NodeHealthDataAccess.update(env, checkingStatus);
 
-    // 模拟健康检查（在实际实现中，这里应该进行真实的网络连接测试）
-    const isOnline = Math.random() > 0.3; // 70% 概率在线
-    const latency = isOnline ? Math.floor(Math.random() * 500) + 50 : null; // 50-550ms 延迟
-
+    // TODO: 实现实际的健康检查逻辑
+    // 这里应该调用实际的节点检查API
+    
+    // 模拟检查结果
     const status: HealthStatus = {
       nodeId,
-      status: isOnline ? 'online' : 'offline',
-      latency,
-      lastChecked: new Date().toISOString(),
-      error: isOnline ? null : '连接超时'
+      status: 'unknown',
+      lastChecked: new Date().toISOString()
     };
 
-    await putNodeStatus(env, nodeId, status);
+    await NodeHealthDataAccess.update(env, status);
 
     return jsonResponse(status);
   } catch (error) {
-    console.error('节点健康检查失败:', error);
-    return errorResponse('节点健康检查失败');
+    console.error(`健康检查失败 (节点 ${nodeId}):`, error);
+    
+    const errorStatus: HealthStatus = {
+      nodeId,
+      status: 'unknown',
+      lastChecked: new Date().toISOString(),
+      error: error instanceof Error ? error.message : '未知错误'
+    };
+    
+    await NodeHealthDataAccess.update(env, errorStatus);
+    
+    return errorResponse('健康检查失败');
   }
 }
 
-// 批量节点健康检查
 export async function handleBatchNodeHealthCheck(request: Request, env: Env): Promise<Response> {
   const authResult = await requireAuth(request, env);
   if (authResult instanceof Response) {
@@ -67,51 +57,63 @@ export async function handleBatchNodeHealthCheck(request: Request, env: Env): Pr
   }
 
   try {
-    const allNodes = await NodeDataAccess.getAll(env);
-    const nodeIds = Object.keys(allNodes);
+    const { nodeIds } = await request.json();
     
-    if (nodeIds.length === 0) {
-      return jsonResponse({ message: '没有节点需要检查' });
+    if (!Array.isArray(nodeIds)) {
+      return errorResponse('请提供节点ID列表', 400);
     }
 
-    // 为所有节点设置检查中状态
-    const checkingPromises = nodeIds.map(async (nodeId) => {
-      const checkingStatus: HealthStatus = {
-        nodeId,
-        status: 'checking',
-        lastChecked: new Date().toISOString()
-      };
-      await putNodeStatus(env, nodeId, checkingStatus);
-    });
+    const results = [];
+    const errors = [];
 
-    await Promise.all(checkingPromises);
+    for (const nodeId of nodeIds) {
+      try {
+        // 设置检查中状态
+        const checkingStatus: HealthStatus = {
+          nodeId,
+          status: 'checking',
+          lastChecked: new Date().toISOString()
+        };
+        
+        await NodeHealthDataAccess.update(env, checkingStatus);
 
-    // 模拟批量检查结果
-    const results = await Promise.all(
-      nodeIds.map(async (nodeId) => {
-        const isOnline = Math.random() > 0.3;
-        const latency = isOnline ? Math.floor(Math.random() * 500) + 50 : null;
-
+        // TODO: 实现实际的健康检查逻辑
+        // 这里应该调用实际的节点检查API
+        
+        // 模拟检查结果
         const status: HealthStatus = {
           nodeId,
-          status: isOnline ? 'online' : 'offline',
-          latency,
-          lastChecked: new Date().toISOString(),
-          error: isOnline ? null : '连接超时'
+          status: 'unknown',
+          lastChecked: new Date().toISOString()
         };
 
-        await putNodeStatus(env, nodeId, status);
-        return status;
-      })
-    );
+        await NodeHealthDataAccess.update(env, status);
+        results.push(status);
+      } catch (error) {
+        console.error(`健康检查失败 (节点 ${nodeId}):`, error);
+        
+        const errorStatus: HealthStatus = {
+          nodeId,
+          status: 'unknown',
+          lastChecked: new Date().toISOString(),
+          error: error instanceof Error ? error.message : '未知错误'
+        };
+        
+        await NodeHealthDataAccess.update(env, errorStatus);
+        errors.push({ nodeId, error: errorStatus.error });
+      }
+    }
 
     return jsonResponse({
-      message: `已检查 ${nodeIds.length} 个节点`,
-      results
+      success: true,
+      checked: results.length,
+      failed: errors.length,
+      results,
+      errors
     });
   } catch (error) {
-    console.error('批量节点健康检查失败:', error);
-    return errorResponse('批量节点健康检查失败');
+    console.error('批量健康检查失败:', error);
+    return errorResponse('批量健康检查失败');
   }
 }
 
@@ -122,13 +124,13 @@ export async function handleNodeStatusesGet(request: Request, env: Env): Promise
   }
 
   try {
-    const allNodes = await NodeDataAccess.getAll(env);
+    const allNodes = await NodeHealthDataAccess.getAll(env);
     const statuses: Record<string, HealthStatus> = {};
 
     // 获取所有节点的状态
     await Promise.all(
       Object.keys(allNodes).map(async (nodeId) => {
-        const status = await getNodeStatus(env, nodeId);
+        const status = await NodeHealthDataAccess.getById(env, nodeId);
         if (status) {
           statuses[nodeId] = status;
         }

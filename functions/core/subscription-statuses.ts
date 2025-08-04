@@ -1,30 +1,28 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { Subscription, Env } from '@shared/types';
+import { requireAuth } from './utils/auth';
+import { SubscriptionDataAccess } from './utils/d1-data-access';
+import { Env } from '@shared/types';
 
-const ALL_SUBSCRIPTIONS_KEY = 'ALL_SUBSCRIPTIONS';
+export async function handleSubscriptionStatusesGet(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
 
-async function getAllSubscriptions(env: Env): Promise<Record<string, Subscription>> {
-  const subsJson = await env.KV.get(ALL_SUBSCRIPTIONS_KEY);
-  return subsJson ? JSON.parse(subsJson) : {};
-}
-
-export async function handleSubscriptionStatuses(request: Request, env: Env): Promise<Response> {
   try {
-    const allSubscriptions = await getAllSubscriptions(env);
+    const subscriptions = await SubscriptionDataAccess.getAll(env);
     
-    const statuses: Record<string, any> = {};
-    for (const subId in allSubscriptions) {
-      const sub = allSubscriptions[subId];
-      statuses[subId] = {
-        nodeCount: sub.nodeCount || 0,
-        lastUpdated: sub.lastUpdated || null,
-        status: sub.error ? 'error' : 'success',
-        error: sub.error || undefined,
-      };
-    }
+    const statuses = subscriptions.map(subscription => ({
+      id: subscription.id,
+      name: subscription.name,
+      nodeCount: subscription.nodeCount,
+      lastUpdated: subscription.lastUpdated,
+      error: subscription.error
+    }));
+
     return jsonResponse(statuses);
   } catch (error) {
-    console.error('Failed to fetch subscription statuses:', error);
+    console.error('获取订阅状态失败:', error);
     return errorResponse('获取订阅状态失败');
   }
 }
