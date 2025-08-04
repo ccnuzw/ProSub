@@ -1,6 +1,6 @@
-import { jsonResponse, errorResponse } from '../utils/response';
-import { requireAuth } from '../utils/auth';
-import { UserDataAccess } from '../utils/d1-data-access';
+import { jsonResponse, errorResponse } from './utils/response';
+import { requireAuth } from './utils/auth';
+import { UserDataAccess } from './utils/d1-data-access';
 import { Env } from '@shared/types';
 
 export async function handleUserUpdate(request: Request, env: Env, id: string): Promise<Response> {
