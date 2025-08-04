@@ -4,8 +4,8 @@ pages_build_output_dir = "dist"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "e464ed9308e04d8aa4bdf38b1f3def3c"
-preview_id = "e464ed9308e04d8aa4bdf38b1f3def3c"
+id = "3afdd496f196482880762e55b480da4d"
+preview_id = "3afdd496f196482880762e55b480da4d"
 
 [[d1_databases]]
 binding = "DB"
