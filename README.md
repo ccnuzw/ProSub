@@ -161,6 +161,8 @@ npm run dev:backend
 
 详细指南请参考：[📖 Dashboard部署指南](DASHBOARD_DEPLOYMENT_GUIDE.md)
 
+**🔧 遇到问题？** 请查看：[故障排除指南](TROUBLESHOOTING.md)
+
 #### 超简单步骤：
 
 1. **Fork项目** → 在GitHub中fork原项目

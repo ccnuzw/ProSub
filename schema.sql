@@ -76,12 +76,12 @@ CREATE TABLE IF NOT EXISTS profile_subscriptions (
 -- 订阅规则表
 CREATE TABLE IF NOT EXISTS subscription_rules (
   id TEXT PRIMARY KEY,
-  profile_id TEXT NOT NULL,
+  subscription_id TEXT NOT NULL,
   type TEXT NOT NULL, -- 'include', 'exclude'
   pattern TEXT NOT NULL,
   description TEXT,
   created_at TEXT NOT NULL,
-  FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+  FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE
 );
 
 -- 节点组表

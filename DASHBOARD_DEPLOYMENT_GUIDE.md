@@ -154,8 +154,9 @@ CREATE TABLE IF NOT EXISTS profile_subscriptions (
 CREATE TABLE IF NOT EXISTS subscription_rules (
     id TEXT PRIMARY KEY,
     subscription_id TEXT NOT NULL,
-    rule_type TEXT NOT NULL,
-    rule_content TEXT NOT NULL,
+    type TEXT NOT NULL,
+    pattern TEXT NOT NULL,
+    description TEXT,
     created_at TEXT NOT NULL,
     FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE
 );
@@ -198,11 +199,50 @@ CREATE INDEX IF NOT EXISTS idx_traffic_records_timestamp ON traffic_records (tim
 
 3. 点击 **Run**
 
-4. 创建默认用户，执行：
+4. **验证表创建成功**，执行：
+```sql
+SELECT name FROM sqlite_master WHERE type='table';
+```
 
+5. **创建默认用户**，执行：
 ```sql
 INSERT INTO users (id, username, password, role, created_at, updated_at) 
 VALUES ('admin', 'admin', 'admin123', 'admin', datetime('now'), datetime('now'));
+```
+
+6. **验证用户创建成功**，执行：
+```sql
+SELECT * FROM users;
+```
+
+#### **如果创建用户失败，请尝试以下诊断步骤：**
+
+1. **检查表是否存在**：
+```sql
+SELECT name FROM sqlite_master WHERE type='table' AND name='users';
+```
+
+2. **检查表结构**：
+```sql
+PRAGMA table_info(users);
+```
+
+3. **检查是否有重复用户**：
+```sql
+SELECT * FROM users WHERE username='admin';
+```
+
+4. **如果表不存在，重新创建**：
+```sql
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 ```
 
 #### **方法B: 使用Wrangler CLI（一次性操作）**
