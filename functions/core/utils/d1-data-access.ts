@@ -38,7 +38,7 @@ export class NodeDataAccess {
       port: result.port as number,
       password: result.password as string,
       type: result.type as string,
-      params: result.params ? JSON.parse(result.params as string) : {},
+      params: row.params ? JSON.parse(row.params as string) : {},
       createdAt: result.created_at as string,
       updatedAt: result.updated_at as string
     };
@@ -286,7 +286,7 @@ export class SubscriptionDataAccess {
 export class ProfileDataAccess {
   static async getAll(env: Env): Promise<Profile[]> {
     const result = await env.DB.prepare(`
-      SELECT id, name, description, client_type, created_at, updated_at
+      SELECT id, name, alias, description, client_type, node_ids, subscription_ids, created_at, updated_at
       FROM profiles
       ORDER BY created_at DESC
     `).all();
@@ -294,8 +294,11 @@ export class ProfileDataAccess {
     return result.results.map(row => ({
       id: row.id as string,
       name: row.name as string,
+      alias: row.alias as string || '',
       description: row.description as string,
       clientType: row.client_type as string,
+      nodeIds: row.node_ids ? JSON.parse(row.node_ids as string) : [],
+      subscriptionIds: row.subscription_ids ? JSON.parse(row.subscription_ids as string) : [],
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string
     }));
@@ -303,7 +306,7 @@ export class ProfileDataAccess {
 
   static async getById(env: Env, id: string): Promise<Profile | null> {
     const result = await env.DB.prepare(`
-      SELECT id, name, description, client_type, created_at, updated_at
+      SELECT id, name, alias, description, client_type, node_ids, subscription_ids, created_at, updated_at
       FROM profiles
       WHERE id = ?
     `).bind(id).first();
@@ -313,8 +316,11 @@ export class ProfileDataAccess {
     return {
       id: result.id as string,
       name: result.name as string,
+      alias: result.alias as string || '',
       description: result.description as string,
       clientType: result.client_type as string,
+      nodeIds: result.node_ids ? JSON.parse(result.node_ids as string) : [],
+      subscriptionIds: result.subscription_ids ? JSON.parse(result.subscription_ids as string) : [],
       createdAt: result.created_at as string,
       updatedAt: result.updated_at as string
     };
@@ -322,15 +328,20 @@ export class ProfileDataAccess {
 
   static async create(env: Env, profile: Profile): Promise<Profile> {
     const now = new Date().toISOString();
+    const nodeIds = JSON.stringify(profile.nodeIds || []);
+    const subscriptionIds = JSON.stringify(profile.subscriptionIds || []);
     
     await env.DB.prepare(`
-      INSERT INTO profiles (id, name, description, client_type, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO profiles (id, name, alias, description, client_type, node_ids, subscription_ids, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       profile.id,
       profile.name,
+      profile.alias || '',
       profile.description || '',
-      profile.clientType,
+      profile.clientType || '',
+      nodeIds,
+      subscriptionIds,
       now,
       now
     ).run();
@@ -340,15 +351,20 @@ export class ProfileDataAccess {
 
   static async update(env: Env, id: string, profile: Profile): Promise<Profile> {
     const now = new Date().toISOString();
+    const nodeIds = JSON.stringify(profile.nodeIds || []);
+    const subscriptionIds = JSON.stringify(profile.subscriptionIds || []);
     
     await env.DB.prepare(`
       UPDATE profiles 
-      SET name = ?, description = ?, client_type = ?, updated_at = ?
+      SET name = ?, alias = ?, description = ?, client_type = ?, node_ids = ?, subscription_ids = ?, updated_at = ?
       WHERE id = ?
     `).bind(
       profile.name,
+      profile.alias || '',
       profile.description || '',
-      profile.clientType,
+      profile.clientType || '',
+      nodeIds,
+      subscriptionIds,
       now,
       id
     ).run();
@@ -453,4 +469,4 @@ export class UserDataAccess {
     
     return updatedUser;
   }
-} 
+}

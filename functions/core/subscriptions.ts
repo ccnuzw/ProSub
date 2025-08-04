@@ -101,6 +101,46 @@ export async function handleSubscriptionUpdate(request: Request, env: Env, id: s
   }
 }
 
+import { fetchNodesFromSubscription } from '../../packages/shared/subscription-generator';
+
+export async function handleSubscriptionRefresh(request: Request, env: Env, id: string): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
+  let nodeCount = 0;
+  let errorMessage: string | undefined;
+
+  try {
+    const existingSubscription = await SubscriptionDataAccess.getById(env, id);
+    if (!existingSubscription) {
+      return errorResponse('订阅不存在', 404);
+    }
+
+    try {
+      const nodes = await fetchNodesFromSubscription(existingSubscription.url);
+      nodeCount = nodes.length;
+      errorMessage = undefined; // Clear any previous errors
+    } catch (fetchError: any) {
+      console.error(`从 ${existingSubscription.url} 获取或解析订阅失败:`, fetchError);
+      errorMessage = `获取或解析订阅失败: ${fetchError.message || fetchError}`;
+      nodeCount = 0; // Reset node count on error
+    }
+
+    await SubscriptionDataAccess.updateStatus(env, id, nodeCount, errorMessage);
+    
+    return jsonResponse({ message: '订阅刷新完成', id: id, nodeCount: nodeCount, error: errorMessage });
+  } catch (error) {
+    console.error('刷新订阅失败:', error);
+    // If an error occurs before updating status, try to update with error message
+    if (id) {
+      await SubscriptionDataAccess.updateStatus(env, id, 0, `刷新失败: ${error.message || error}`);
+    }
+    return errorResponse('刷新订阅失败');
+  }
+}
+
 export async function handleSubscriptionDelete(request: Request, env: Env, id: string): Promise<Response> {
   const authResult = await requireAuth(request, env);
   if (authResult instanceof Response) {

@@ -1,127 +1,138 @@
 <template>
   <div class="client-layout">
-    <!-- 顶部导航栏 -->
-    <header class="top-nav">
-      <div class="nav-container">
-        <div class="nav-left">
-          <div class="logo" @click="goHome" style="cursor: pointer;">
-            <div class="logo-icon">
-              <ThunderboltOutlined />
-            </div>
-            <span class="logo-text">ProSub</span>
+    <!-- PC端侧边导航 -->
+    <aside class="sidebar" v-show="!isMobile" :class="{ 'collapsed': isSidebarCollapsed }">
+      <div class="sidebar-header">
+        <div class="logo" @click="goHome" style="cursor: pointer;">
+          <div class="logo-icon">
+            <ThunderboltOutlined />
           </div>
-        </div>
-
-        <div class="nav-center">
-          <div class="search-box">
-            <SearchOutlined class="search-icon" />
-            <input 
-              type="text" 
-              placeholder="搜索..." 
-              class="search-input"
-              v-model="searchQuery"
-            />
-          </div>
-        </div>
-        
-        <div class="nav-right">
-          <div class="nav-actions">
-            <a-button 
-              type="text" 
-              class="action-btn"
-              @click="toggleTheme"
-            >
-              <template #icon>
-                <BulbOutlined />
-              </template>
-            </a-button>
-            
-            <a-dropdown :trigger="['click']" placement="bottomRight">
-              <a-button type="text" class="action-btn user-btn">
-                <template #icon>
-                  <UserOutlined />
-                </template>
-                <span class="user-name">管理员</span>
-                <DownOutlined class="dropdown-arrow" />
-              </a-button>
-              <template #overlay>
-                <a-menu class="user-menu">
-                  <a-menu-item key="profile" @click="goToProfile">
-                    <UserOutlined />
-                    <span>个人资料</span>
-                  </a-menu-item>
-                  <a-menu-divider />
-                  <a-menu-item key="logout" @click="logout">
-                    <LogoutOutlined />
-                    <span>退出登录</span>
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
-          </div>
+          <span class="logo-text" v-show="!isSidebarCollapsed">ProSub</span>
         </div>
       </div>
-    </header>
+      <nav class="sidebar-nav">
+        <router-link 
+          to="/" 
+          class="sidebar-nav-item"
+          :class="{ active: $route.path === '/' }"
+        >
+          <AppstoreOutlined />
+          <span>仪表板</span>
+        </router-link>
+        
+        <router-link 
+          to="/nodes" 
+          class="sidebar-nav-item"
+          :class="{ active: $route.path.startsWith('/nodes') }"
+        >
+          <ClusterOutlined />
+          <span>节点管理</span>
+        </router-link>
+        
+        <router-link 
+          to="/subscriptions" 
+          class="sidebar-nav-item"
+          :class="{ active: $route.path.startsWith('/subscriptions') }"
+        >
+          <WifiOutlined />
+          <span>订阅管理</span>
+        </router-link>
+        
+        <router-link 
+          to="/profiles" 
+          class="sidebar-nav-item"
+          :class="{ active: $route.path.startsWith('/profiles') }"
+        >
+          <FileTextOutlined />
+          <span>配置文件</span>
+        </router-link>
+        
+        <router-link 
+          to="/user" 
+          class="sidebar-nav-item"
+          :class="{ active: $route.path.startsWith('/user') }"
+        >
+          <UserOutlined />
+          <span>用户设置</span>
+        </router-link>
+      </nav>
+    </aside>
 
-    <!-- 主要内容区域 -->
-    <main class="main-content">
-      <div class="content-container">
-        <!-- PC端侧边导航 -->
-        <aside class="sidebar" v-show="!isMobile">
-          <nav class="sidebar-nav">
-            <router-link 
-              to="/" 
-              class="sidebar-nav-item"
-              :class="{ active: $route.path === '/' }"
-            >
-              <AppstoreOutlined />
-              <span>仪表板</span>
-            </router-link>
-            
-            <router-link 
-              to="/nodes" 
-              class="sidebar-nav-item"
-              :class="{ active: $route.path.startsWith('/nodes') }"
-            >
-              <ClusterOutlined />
-              <span>节点管理</span>
-            </router-link>
-            
-            <router-link 
-              to="/subscriptions" 
-              class="sidebar-nav-item"
-              :class="{ active: $route.path.startsWith('/subscriptions') }"
-            >
-              <WifiOutlined />
-              <span>订阅管理</span>
-            </router-link>
-            
-            <router-link 
-              to="/profiles" 
-              class="sidebar-nav-item"
-              :class="{ active: $route.path.startsWith('/profiles') }"
-            >
-              <FileTextOutlined />
-              <span>配置文件</span>
-            </router-link>
-            
-            <router-link 
-              to="/user" 
-              class="sidebar-nav-item"
-              :class="{ active: $route.path.startsWith('/user') }"
-            >
-              <UserOutlined />
-              <span>用户设置</span>
-            </router-link>
-          </nav>
-        </aside>
+    <!-- 右侧内容区域 -->
+    <div class="right-content-area">
+      <!-- 顶部导航栏 -->
+      <header class="top-nav">
+        <div class="nav-container">
+          <div class="nav-left">
+            <!-- Collapse button here -->
+            <a-button type="text" class="collapse-btn" @click="toggleSidebar">
+              <template #icon>
+                <MenuUnfoldOutlined v-if="isSidebarCollapsed" />
+                <MenuFoldOutlined v-else />
+              </template>
+            </a-button>
+            <!-- Original nav-left content (if any, currently empty) -->
+          </div>
 
+          <div class="nav-center">
+            <div class="search-box">
+              <SearchOutlined class="search-icon" />
+              <input 
+                type="text" 
+                placeholder="搜索..." 
+                class="search-input"
+                v-model="searchQuery"
+              />
+            </div>
+          </div>
+          
+          <div class="nav-right">
+            <div class="nav-actions">
+              <a-button 
+                type="text" 
+                class="action-btn"
+                @click="toggleTheme"
+              >
+                <template #icon>
+                  <BulbOutlined />
+                </template>
+              </a-button>
+              
+              <a-dropdown :trigger="['click']" placement="bottomRight">
+                <a-button type="text" class="action-btn user-btn">
+                  <template #icon>
+                    <UserOutlined />
+                  </template>
+                  <span class="user-name">管理员</span>
+                  <DownOutlined class="dropdown-arrow" />
+                </a-button>
+                <template #overlay>
+                  <a-menu class="user-menu">
+                    <a-menu-item key="profile" @click="goToProfile">
+                      <UserOutlined />
+                      <span>个人资料</span>
+                    </a-menu-item>
+                    <a-menu-divider />
+                    <a-menu-item key="logout" @click="logout">
+                      <LogoutOutlined />
+                      <span>退出登录</span>
+                    </a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- 主要内容区域 -->
+      <main class="main-content">
         <!-- 主内容区域 -->
         <div class="main-content-area">
           <router-view />
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
 
     <!-- 移动端底部导航 -->
     <nav class="mobile-nav">
@@ -188,13 +199,16 @@ import {
   AppstoreOutlined,
   ClusterOutlined,
   WifiOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  MenuFoldOutlined, // New import
+  MenuUnfoldOutlined // New import
 } from '@ant-design/icons-vue'
 
 const router = useRouter()
 const searchQuery = ref('')
 const isDarkMode = ref(false)
 const isMobile = ref(false)
+const isSidebarCollapsed = ref(false) // New reactive property
 
 // 检测移动端
 const checkMobile = () => {
@@ -208,6 +222,10 @@ const toggleTheme = () => {
   isDarkMode.value = !isDarkMode.value
   document.documentElement.classList.toggle('dark', isDarkMode.value)
   localStorage.setItem('theme', isDarkMode.value ? 'dark' : 'light')
+}
+
+const toggleSidebar = () => { // New method
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
 const goHome = () => {
@@ -251,10 +269,16 @@ onMounted(() => {
 
 <style scoped>
 .client-layout {
+  display: flex;
+  flex-direction: row; /* Changed to row for side-by-side layout */
+  background: var(--background-color);
   min-height: 100vh;
+}
+
+.right-content-area {
   display: flex;
   flex-direction: column;
-  background: var(--background-color);
+  flex: 1; /* Takes remaining width */
 }
 
 .top-nav {
@@ -267,7 +291,7 @@ onMounted(() => {
 }
 
 .nav-container {
-  max-width: 1200px;
+  max-width: 100%; /* Adjust for full width within right-content-area */
   margin: 0 auto;
   padding: 0 24px;
   height: 64px;
@@ -279,6 +303,7 @@ onMounted(() => {
 .nav-left {
   display: flex;
   align-items: center;
+  gap: 8px; /* Add gap for collapse button and other elements */
 }
 
 .logo {
@@ -353,7 +378,7 @@ onMounted(() => {
 }
 
 .action-btn:hover {
-  color: var(--text-primary);
+  color: var(--primary-color);
   background: var(--border-light);
 }
 
@@ -381,15 +406,8 @@ onMounted(() => {
 
 .main-content {
   flex: 1;
-  padding: 24px 0;
-}
-
-.content-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: flex;
-  gap: 24px;
+  padding: 24px;
+  overflow-y: auto; /* Allow main content to scroll independently */
 }
 
 .sidebar {
@@ -398,10 +416,10 @@ onMounted(() => {
   background: var(--surface-color);
   border-radius: var(--radius-lg);
   padding: 16px;
-  height: fit-content;
-  position: sticky;
-  top: 88px;
-  border: 1px solid var(--border-color);
+  height: 100vh; /* Fill viewport height */
+  border-right: 1px solid var(--border-color); /* Add right border */
+  transition: width 0.3s ease; /* Add transition for smooth collapse */
+  overflow-y: auto; /* Allow sidebar content to scroll */
 }
 
 .sidebar-nav {
@@ -438,10 +456,51 @@ onMounted(() => {
   font-size: 16px;
 }
 
-.main-content-area {
-  flex: 1;
-  min-width: 0;
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
 }
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 8px;
+}
+
+.sidebar.collapsed .sidebar-header .logo-text {
+  display: none;
+}
+
+
+
+.collapse-btn {
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+
+.collapse-btn:hover {
+  color: var(--primary-color);
+}
+
+/* Collapsed Sidebar */
+.sidebar.collapsed {
+  width: 80px; /* Collapsed width */
+}
+
+.sidebar.collapsed .sidebar-nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar.collapsed .sidebar-nav-item span {
+  display: none;
+}
+
+
 
 .mobile-nav {
   display: none;
@@ -487,6 +546,20 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .client-layout {
+    flex-direction: column; /* Stack top-nav and main-wrapper vertically */
+  }
+
+  .right-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar {
+    display: none; /* Hide sidebar on mobile */
+  }
+
   .nav-container {
     padding: 0 16px;
   }
@@ -500,43 +573,11 @@ onMounted(() => {
   }
   
   .main-content {
-    padding-bottom: 80px;
-  }
-  
-  .content-container {
-    padding: 0 16px;
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .sidebar {
-    width: 100%;
-    position: static;
-    order: 2;
-  }
-  
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-  
-  .sidebar-nav-item {
-    flex-shrink: 0;
-    min-width: 120px;
-    justify-content: center;
-    text-align: center;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px 8px;
-  }
-  
-  .sidebar-nav-item span {
-    font-size: 12px;
+    padding: 16px;
   }
   
   .main-content-area {
-    order: 1;
+    padding: 16px;
   }
 }
 </style>

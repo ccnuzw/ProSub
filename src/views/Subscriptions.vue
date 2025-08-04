@@ -236,7 +236,11 @@ const fetchData = async () => {
     }
     
     if (statusesRes.ok) {
-      statuses.value = await statusesRes.json()
+      const statusesArray = await statusesRes.json()
+      statuses.value = statusesArray.reduce((acc: Record<string, SubscriptionStatus>, status: SubscriptionStatus) => {
+        acc[status.id] = status
+        return acc
+      }, {})
     }
   } catch (error) {
     console.error('获取订阅数据失败:', error)
@@ -412,12 +416,14 @@ const handlePreview = async (record: Subscription) => {
   previewLoading.value = true
   
   try {
-    // 这里应该调用实际的预览API
-    // 暂时使用模拟数据
-    previewNodes.value = [
-      { name: '节点1', type: 'vmess', server: 'server1.com', port: 443 },
-      { name: '节点2', type: 'trojan', server: 'server2.com', port: 443 }
-    ]
+    const response = await fetch(`/api/subscriptions/preview/${record.id}`)
+    if (response.ok) {
+      const data = await response.json()
+      previewNodes.value = data.nodes
+    } else {
+      const error = await response.json()
+      message.error(error.message || '获取预览失败')
+    }
   } catch (error) {
     console.error('预览失败:', error)
     message.error('预览失败')

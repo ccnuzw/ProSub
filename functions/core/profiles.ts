@@ -31,21 +31,19 @@ export async function handleProfilesPost(request: Request, env: Env): Promise<Re
   }
 
   try {
-    const { name, description, clientType } = await request.json() as ProfileRequest;
+    const { name, alias, nodeIds, subscriptionIds, clientType } = await request.json() as Profile;
     
     if (!name) {
       return errorResponse('配置文件名称不能为空', 400);
     }
 
-    if (!clientType) {
-      return errorResponse('客户端类型不能为空', 400);
-    }
-
     const newProfile: Profile = {
       id: crypto.randomUUID(),
       name,
-      description,
-      clientType
+      alias,
+      nodeIds,
+      subscriptionIds,
+      clientType: clientType || 'default', // Provide a default value
     };
 
     const createdProfile = await ProfileDataAccess.create(env, newProfile);
@@ -63,7 +61,7 @@ export async function handleProfileUpdate(request: Request, env: Env, id: string
   }
 
   try {
-    const { name, description, clientType } = await request.json() as ProfileRequest;
+    const { name, alias, nodeIds, subscriptionIds, clientType } = await request.json() as Profile;
     
     const existingProfile = await ProfileDataAccess.getById(env, id);
     if (!existingProfile) {
@@ -74,15 +72,13 @@ export async function handleProfileUpdate(request: Request, env: Env, id: string
       return errorResponse('配置文件名称不能为空', 400);
     }
 
-    if (!clientType) {
-      return errorResponse('客户端类型不能为空', 400);
-    }
-
     const updatedProfile: Profile = {
       ...existingProfile,
       name,
-      description,
-      clientType
+      alias,
+      nodeIds,
+      subscriptionIds,
+      clientType: clientType || existingProfile.clientType || 'default', // Provide a default value or use existing
     };
 
     const result = await ProfileDataAccess.update(env, id, updatedProfile);
