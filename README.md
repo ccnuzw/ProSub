@@ -93,11 +93,13 @@ npm run dev:backend
 
 ### 生产部署
 
-详细部署指南请参考：[📖 部署指南](DEPLOYMENT_GUIDE.md)
+详细部署指南请参考：[📖 简化部署指南](DEPLOYMENT_SIMPLIFIED.md)
 
 #### 快速部署步骤：
 
 1. **准备项目**
+   - 项目已优化为纯Dashboard部署，无需wrangler.toml配置文件
+   - 所有绑定都在Cloudflare Dashboard中手动配置
    ```bash
    npm install
    npm run build
