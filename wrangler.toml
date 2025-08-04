@@ -2,12 +2,16 @@ name = "prosub"
 compatibility_date = "2025-07-22"
 pages_build_output_dir = "dist"
 
-[[kv_namespaces]]
-binding = "KV"
-id = "3afdd496f196482880762e55b480da4d"
-preview_id = "3afdd496f196482880762e55b480da4d"
+# 注意：这些UUID需要在Cloudflare Dashboard中通过绑定配置
+# 或者通过环境变量设置
+# 对于fork的用户，请删除这些配置，使用Dashboard绑定
 
-[[d1_databases]]
-binding = "DB"
-database_name = "prosub-db"
-database_id = "12135af2-6981-42ef-b969-44771903e858"
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "your-kv-namespace-id"
+# preview_id = "your-kv-namespace-id"
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "prosub-db"
+# database_id = "your-d1-database-id"
