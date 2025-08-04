@@ -1,5 +1,5 @@
-import { jsonResponse, errorResponse } from '../../utils/response';
-import { UserDataAccess } from '../../utils/d1-data-access';
+import { jsonResponse, errorResponse } from '../utils/response';
+import { UserDataAccess } from '../utils/d1-data-access';
 import { Env, User } from '@shared/types';
 import { parse, serialize } from 'cookie';
 import { createHash } from 'crypto';

@@ -1,4 +1,4 @@
-import { jsonResponse } from '../../utils/response';
+import { jsonResponse } from '../utils/response';
 import { parse, serialize } from 'cookie';
 import { Env } from '@shared/types';
 
