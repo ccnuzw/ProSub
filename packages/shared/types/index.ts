@@ -7,6 +7,8 @@ export interface Node {
   password?: string;
   type: 'ss' | 'ssr' | 'vmess' | 'vless' | 'trojan' | 'socks5' | 'anytls' | 'tuic' | 'hysteria' | 'hysteria2' | 'vless-reality';
   params?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Subscription {
@@ -16,6 +18,8 @@ export interface Subscription {
   nodeCount: number;
   lastUpdated: string | null;
   error: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Profile {
@@ -31,9 +35,11 @@ export interface Profile {
 }
 
 export interface SubscriptionRule {
+  id?: string;
   type: 'include' | 'exclude';
   pattern: string;
   description?: string;
+  createdAt?: string;
 }
 
 export interface RuleSetConfig {
@@ -44,6 +50,7 @@ export interface RuleSetConfig {
 
 export interface Env {
   KV: KVNamespace;
+  DB: D1Database;
   __STATIC_CONTENT: KVNamespace;
 }
 
@@ -78,10 +85,11 @@ export interface HealthStatus {
 
 // 流量统计类型
 export interface TrafficRecord {
-  timestamp: string;
+  id?: string;
   profileId: string;
   alias: string;
   bytes?: number;
+  timestamp: string;
 }
 
 // API响应类型

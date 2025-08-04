@@ -1,7 +1,7 @@
 import { jsonResponse, errorResponse } from './utils/response';
-import { Node, Env } from '@shared/types';
 import { requireAuth } from './utils/auth';
-import { NodeDataAccess } from './utils/data-access';
+import { NodeDataAccess, NodeHealthDataAccess } from './utils/d1-data-access';
+import { Node, Env } from '@shared/types';
 
 interface NodeRequest {
   name: string;
@@ -19,8 +19,8 @@ export async function handleNodesGet(request: Request, env: Env): Promise<Respon
   }
 
   try {
-    const allNodes = await NodeDataAccess.getAll(env);
-    return jsonResponse(Object.values(allNodes));
+    const nodes = await NodeDataAccess.getAll(env);
+    return jsonResponse(nodes);
   } catch (error) {
     console.error('获取节点列表失败:', error);
     return errorResponse('获取节点列表失败');
@@ -56,13 +56,13 @@ export async function handleNodesPost(request: Request, env: Env): Promise<Respo
       type,
       params: params || {}
     };
-
+    
     console.log('正在创建节点:', { id, name, server, port, type });
     
-    await NodeDataAccess.create(env, newNode);
+    const createdNode = await NodeDataAccess.create(env, newNode);
     
     console.log('节点创建成功:', id);
-    return jsonResponse(newNode);
+    return jsonResponse(createdNode);
   } catch (error) {
     console.error('创建节点失败:', error);
     return errorResponse('创建节点失败');
@@ -153,11 +153,11 @@ export async function handleNodesBatchCreate(request: Request, env: Env): Promis
 
           console.log(`正在创建节点 ${globalIndex + 1}:`, { id, name, server, port, type });
           
-          await NodeDataAccess.create(env, newNode);
+          const createdNode = await NodeDataAccess.create(env, newNode);
           
           console.log(`节点 ${globalIndex + 1} 创建成功:`, id);
           successCount++
-          results.push({ success: true, node: newNode })
+          results.push({ success: true, node: createdNode })
         } catch (error) {
           errorCount++
           console.error(`创建节点 ${globalIndex + 1} 失败:`, error)
@@ -169,7 +169,7 @@ export async function handleNodesBatchCreate(request: Request, env: Env): Promis
         }
       }
       
-      // 每批处理完后稍作延迟，避免KV写入冲突
+      // 每批处理完后稍作延迟，避免数据库写入冲突
       if (batchIndex < batches.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
@@ -256,6 +256,8 @@ export async function handleNodeDelete(request: Request, env: Env, id: string): 
 
   try {
     await NodeDataAccess.delete(env, id);
+    // 同时删除健康状态记录
+    await NodeHealthDataAccess.deleteByNodeId(env, id);
     return jsonResponse({ message: '节点删除成功' });
   } catch (error) {
     console.error('删除节点失败:', error);

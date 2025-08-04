@@ -1,43 +1,21 @@
-import { jsonResponse, errorResponse } from '../utils/response';
-import { parse } from 'cookie';
-import { Env, User } from '@shared/types';
-
-const ADMIN_USER_KEY = 'ADMIN_USER';
-
-async function getAdminUser(env: Env): Promise<User | null> {
-  const userJson = await env.KV.get(ADMIN_USER_KEY);
-  return userJson ? JSON.parse(userJson) : null;
-}
+import { jsonResponse, errorResponse } from '../../utils/response';
+import { requireAuth } from '../../utils/auth';
+import { Env } from '@shared/types';
 
 export async function handleMe(request: Request, env: Env): Promise<Response> {
+  const authResult = await requireAuth(request, env);
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
   try {
-    const cookies = parse(request.headers.get('Cookie') || '');
-    const token = cookies.auth_token;
-
-    if (!token) {
-      return errorResponse('未授权', 401);
-    }
-
-    const userId = await env.KV.get(`user_session:${token}`);
-
-    if (!userId) {
-      return errorResponse('未授权', 401);
-    }
-
-    const adminUser = await getAdminUser(env);
-
-    if (!adminUser || adminUser.id !== userId) {
-      return errorResponse('未授权', 401);
-    }
-
-    // Return user data without sensitive information like password
-    return jsonResponse({ 
-      id: adminUser.id, 
-      username: adminUser.username, 
-      role: adminUser.role 
+    return jsonResponse({
+      id: authResult.id,
+      username: authResult.username,
+      role: authResult.role
     });
   } catch (error) {
-    console.error('获取当前用户失败:', error);
-    return errorResponse('获取当前用户失败');
+    console.error('获取用户信息失败:', error);
+    return errorResponse('获取用户信息失败');
   }
 }
