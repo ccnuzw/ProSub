@@ -13,6 +13,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/",
     "test": "vitest",
+    "test:local": "node scripts/test-local-db.js",
     "deploy": "npm run build && npm run build:backend",
     "init-db": "node scripts/init-db.js",
     "db:migrate": "wrangler d1 execute prosub-db --local --file=schema.sql",

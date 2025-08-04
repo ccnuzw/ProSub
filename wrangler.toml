@@ -1,0 +1,12 @@
+name = "prosub"
+compatibility_date = "2025-07-22"
+pages_build_output_dir = "dist"
+
+# 注意：此文件仅用于构建配置，绑定在Dashboard中管理
+# 如果需要本地开发，请创建wrangler.local.toml文件
+
+# 本地开发用的D1数据库配置
+[[d1_databases]]
+binding = "DB"
+database_name = "prosub-db"
+database_id = "local" # 本地开发使用local 
