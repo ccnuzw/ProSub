@@ -6,11 +6,16 @@
 
 ### ⚠️ 重要说明
 
-**本项目已优化，fork用户无需手动编辑`wrangler.toml`文件！**
+**本项目已优化为纯Dashboard部署！**
+- ✅ `wrangler.toml`中已移除所有绑定配置
+- ✅ Dashboard绑定界面现在应该可以正常使用
+- ✅ Fork用户无需手动编辑任何配置文件
+- ✅ 避免了UUID冲突问题
 
-- ✅ **无需UUID配置**: `wrangler.toml`中的UUID已注释，避免冲突
-- ✅ **纯Dashboard配置**: 所有资源绑定都在Cloudflare Dashboard中完成
-- ✅ **零代码修改**: fork后可直接部署，无需任何文件编辑
+**如果Dashboard绑定界面仍然被禁用，请尝试以下步骤：**
+1. 确保您的Pages项目是全新创建的
+2. 删除并重新创建Pages项目
+3. 或者联系Cloudflare支持获取帮助
 
 ### **步骤1: Fork项目**
 1. 访问 [ProSub GitHub页面](https://github.com/imzyb/ProSub)

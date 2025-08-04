@@ -1,6 +1,0 @@
-name = "prosub"
-compatibility_date = "2025-07-22"
-pages_build_output_dir = "dist"
-
-# 注意：绑定配置已移除，请在Cloudflare Dashboard中配置
-# 这样可以避免UUID冲突，让fork的用户更容易部署

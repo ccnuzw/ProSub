@@ -157,6 +157,8 @@ npm run dev:backend
 
 **5分钟快速部署，无需任何命令行操作！**
 
+**✨ 最新优化**: `wrangler.toml`已移除硬编码UUID，Dashboard绑定界面现在完全可用！
+
 详细指南请参考：[📖 Dashboard部署指南](DASHBOARD_DEPLOYMENT_GUIDE.md)
 
 #### 超简单步骤：
