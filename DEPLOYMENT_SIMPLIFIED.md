@@ -2,7 +2,7 @@
 
 ## ✨ 最新优化
 
-- **移除硬编码配置**：删除了`wrangler.toml`中的UUID绑定
+- **智能配置管理**：本地开发使用`wrangler.toml`，部署时自动删除避免冲突
 - **纯Dashboard部署**：所有配置都在Cloudflare Dashboard中完成
 - **零命令行操作**：完全通过Web界面部署
 
@@ -16,6 +16,9 @@ cd prosub
 
 # 安装依赖
 npm install
+
+# 删除wrangler.toml以避免部署冲突
+rm -f wrangler.toml
 
 # 构建项目
 npm run build
@@ -83,7 +86,7 @@ npm run dev
 npm run dev:backend
 ```
 
-本地开发使用 `wrangler.local.toml` 配置文件，不会影响生产部署。
+本地开发使用 `wrangler.toml` 配置文件，部署时会自动删除以避免UUID冲突。
 
 ## 🎯 优势
 
@@ -96,4 +99,4 @@ npm run dev:backend
 
 - 确保在绑定配置中正确设置变量名（`DB`和`KV`）
 - 数据库初始化需要访问`/api/test-db`端点
-- 本地开发使用`wrangler.local.toml`，生产部署不需要任何配置文件 
+- 本地开发使用`wrangler.toml`，部署前需要删除该文件以避免UUID冲突 

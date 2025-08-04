@@ -6,4 +6,10 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "prosub-db"
-database_id = "local" # 本地开发使用local 
+database_id = "619151c7-5f57-4c6a-9eb0-551c3e2dea51" # 使用实际的数据库UUID
+
+# 本地开发用的KV命名空间配置
+[[kv_namespaces]]
+binding = "KV"
+id = "local"
+preview_id = "local" 
