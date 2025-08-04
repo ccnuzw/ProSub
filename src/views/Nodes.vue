@@ -173,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, h } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   ReloadOutlined,
@@ -290,7 +290,32 @@ const columns = [
   },
   {
     title: '状态',
-    key: 'status'
+    key: 'status',
+    customRender: ({ record }: { record: Node }) => {
+      const status = nodeStatus.value[record.id]
+      if (!status) {
+        return h('a-tag', { color: 'default' }, '未知')
+      }
+      
+      let color = 'default'
+      let text = '未知'
+      
+      if (status.status === 'offline') {
+        color = 'error'
+        text = '离线'
+      } else if (status.status === 'checking') {
+        color = 'processing'
+        text = '检查中'
+      } else if (status.status === 'online') {
+        color = 'success'
+        text = status.latency ? `${status.latency}ms` : '在线'
+      } else if (status.status === 'unknown') {
+        color = 'default'
+        text = '未知'
+      }
+      
+      return h('a-tag', { color }, text)
+    }
   },
   {
     title: '操作',

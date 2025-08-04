@@ -86,91 +86,6 @@
         </a-row>
       </a-card>
     </div>
-
-    <!-- 快速操作 -->
-    <div class="actions-section">
-      <a-card class="actions-card" :bordered="false">
-        <template #title>
-          <div class="card-title">
-            <ThunderboltOutlined class="title-icon" />
-            <span>快速操作</span>
-          </div>
-        </template>
-        <a-row :gutter="24">
-          <a-col :span="6">
-            <router-link to="/nodes" class="action-item">
-              <div class="action-icon">
-                <ClusterOutlined />
-              </div>
-              <div class="action-content">
-                <div class="action-title">节点管理</div>
-                <div class="action-subtitle">管理代理节点</div>
-              </div>
-              <ArrowRightOutlined class="action-arrow" />
-            </router-link>
-          </a-col>
-          <a-col :span="6">
-            <router-link to="/subscriptions" class="action-item">
-              <div class="action-icon">
-                <WifiOutlined />
-              </div>
-              <div class="action-content">
-                <div class="action-title">订阅管理</div>
-                <div class="action-subtitle">管理订阅源</div>
-              </div>
-              <ArrowRightOutlined class="action-arrow" />
-            </router-link>
-          </a-col>
-          <a-col :span="6">
-            <router-link to="/profiles" class="action-item">
-              <div class="action-icon">
-                <FileTextOutlined />
-              </div>
-              <div class="action-content">
-                <div class="action-title">配置文件</div>
-                <div class="action-subtitle">管理配置文件</div>
-              </div>
-              <ArrowRightOutlined class="action-arrow" />
-            </router-link>
-          </a-col>
-          <a-col :span="6">
-            <router-link to="/nodes" class="action-item">
-              <div class="action-icon">
-                <PlusOutlined />
-              </div>
-              <div class="action-content">
-                <div class="action-title">添加节点</div>
-                <div class="action-subtitle">快速添加节点</div>
-              </div>
-              <ArrowRightOutlined class="action-arrow" />
-            </router-link>
-          </a-col>
-        </a-row>
-      </a-card>
-    </div>
-
-    <!-- 最近活动 -->
-    <div class="activity-section">
-      <a-card class="activity-card" :bordered="false">
-        <template #title>
-          <div class="card-title">
-            <HistoryOutlined class="title-icon" />
-            <span>最近活动</span>
-          </div>
-        </template>
-        <div class="activity-list">
-          <div v-for="activity in recentActivities" :key="activity.id" class="activity-item">
-            <div class="activity-icon">
-              <AppstoreOutlined />
-            </div>
-            <div class="activity-content">
-              <div class="activity-title">{{ activity.title }}</div>
-              <div class="activity-time">{{ activity.time }}</div>
-            </div>
-          </div>
-        </div>
-      </a-card>
-    </div>
   </div>
 </template>
 
@@ -183,11 +98,7 @@ import {
   ClusterOutlined,
   FileTextOutlined,
   ProfileOutlined,
-  WifiOutlined,
-  ThunderboltOutlined,
-  ArrowRightOutlined,
-  HistoryOutlined,
-  PlusOutlined
+  WifiOutlined
 } from '@ant-design/icons-vue'
 
 interface Stats {
@@ -197,12 +108,6 @@ interface Stats {
   profiles: number
 }
 
-interface Activity {
-  id: string
-  title: string
-  time: string
-}
-
 const loading = ref(false)
 const stats = ref<Stats>({
   nodes: 0,
@@ -210,24 +115,6 @@ const stats = ref<Stats>({
   subscriptions: 0,
   profiles: 0
 })
-
-const recentActivities = ref<Activity[]>([
-  {
-    id: '1',
-    title: '添加了新节点 server-01',
-    time: '2分钟前'
-  },
-  {
-    id: '2',
-    title: '更新了订阅 "免费节点"',
-    time: '5分钟前'
-  },
-  {
-    id: '3',
-    title: '创建了配置文件 "默认配置"',
-    time: '10分钟前'
-  }
-])
 
 const fetchStats = async () => {
   try {
@@ -386,123 +273,6 @@ onMounted(() => {
   color: var(--text-tertiary);
 }
 
-.actions-section {
-  margin-bottom: 24px;
-}
-
-.actions-card {
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.action-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  text-decoration: none;
-  color: var(--text-primary);
-  transition: all 0.2s;
-}
-
-.action-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-color);
-}
-
-.action-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--primary-50);
-  color: var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.action-content {
-  flex: 1;
-}
-
-.action-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.action-subtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.action-arrow {
-  color: var(--text-tertiary);
-  font-size: 16px;
-}
-
-.activity-section {
-  margin-bottom: 24px;
-}
-
-.activity-card {
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.activity-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  border-radius: 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  transition: all 0.2s;
-}
-
-.activity-item:hover {
-  background: var(--border-light);
-}
-
-.activity-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--primary-50);
-  color: var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.activity-content {
-  flex: 1;
-}
-
-.activity-title {
-  font-size: 14px;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-
-.activity-time {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
 @media (max-width: 768px) {
   .dashboard {
     gap: 16px;
@@ -523,10 +293,6 @@ onMounted(() => {
   }
   
   .stat-item {
-    padding: 16px;
-  }
-  
-  .action-item {
     padding: 16px;
   }
 }
