@@ -25,8 +25,11 @@ export interface Subscription {
 export interface Profile {
   id: string;
   name: string;
+  alias?: string; // 新增
   description?: string;
-  clientType: string;
+  clientType?: string; // 修改为可选
+  nodeIds?: string[]; // 新增
+  subscriptionIds?: string[]; // 新增
   createdAt?: string;
   updatedAt?: string;
 }

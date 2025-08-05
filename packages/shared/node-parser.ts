@@ -1,75 +1,92 @@
 import { Node } from './types';
 
-function base64Decode(str: string): string {
-  const uriDecodedStr = decodeURIComponent(str);
-  const base64 = uriDecodedStr.replace(/_/g, '/').replace(/-/g, '+');
-  const padded = base64.length % 4 === 0 ? base64 : base64 + '='.repeat(4 - (base64.length % 4));
-  const binaryString = atob(padded);
+function base64Decode(str: string): string | null {
   try {
-    return decodeURIComponent(escape(binaryString));
-  } catch (e) {
-    return binaryString;
+    const base64 = str.replace(/_/g, '/').replace(/-/g, '+');
+    const padded = base64.length % 4 === 0 ? base64 : base64 + '='.repeat(4 - (base64.length % 4));
+    const binaryString = atob(padded);
+    return new TextDecoder('utf-8').decode(Uint8Array.from(binaryString, char => char.charCodeAt(0)));
+  } catch (e: any) {
+    console.warn(`Base64 decoding failed for: ${str.substring(0, Math.min(str.length, 50))}... Error: ${e.message}`);
+    return null;
   }
+}
+
+function parseShadowsocksLink(link: string): Partial<Node> | null {
+    try {
+        const hashIndex = link.lastIndexOf('#');
+        const name = hashIndex !== -1 ? decodeURIComponent(link.substring(hashIndex + 1)) : '';
+        const coreUrl = link.substring(5, hashIndex !== -1 ? hashIndex : link.length); // Part after ss:// and before #
+
+        const atIndex = coreUrl.lastIndexOf('@');
+        if (atIndex === -1) throw new Error("无效的 SS 格式: 缺少 '@'");
+
+        const credentialsPartEncoded = coreUrl.substring(0, atIndex);
+        const serverInfoPartEncoded = coreUrl.substring(atIndex + 1);
+
+        let method, password;
+
+        // Try to decode credentials part. It might be plain or base64 encoded.
+        let credentialsDecoded: string;
+        try {
+            credentialsDecoded = base64Decode(credentialsPartEncoded) || decodeURIComponent(credentialsPartEncoded);
+        } catch (e) {
+            credentialsDecoded = decodeURIComponent(credentialsPartEncoded);
+        }
+
+        const colonIndex = credentialsDecoded.indexOf(':');
+        if (colonIndex === -1) {
+            method = 'aes-256-gcm'; // Default method if not specified
+            password = credentialsDecoded;
+        } else {
+            method = credentialsDecoded.substring(0, colonIndex);
+            password = credentialsDecoded.substring(colonIndex + 1);
+        }
+
+        if (!password) {
+            throw new Error("无效的 SS 格式: 密码为空");
+        }
+
+        let server: string, port: number;
+        const serverInfoDecoded = decodeURIComponent(serverInfoPartEncoded);
+
+        const ipv6Match = serverInfoDecoded.match(/^\[(.+)\]:(\d+)$/);
+        if (ipv6Match) {
+            server = ipv6Match[1];
+            port = parseInt(ipv6Match[2], 10);
+        } else {
+            const lastColonIndex = serverInfoDecoded.lastIndexOf(':');
+            if (lastColonIndex === -1) throw new Error("无效的 SS 格式: 找不到端口");
+            server = serverInfoDecoded.substring(0, lastColonIndex);
+            port = parseInt(serverInfoDecoded.substring(lastColonIndex + 1), 10);
+        }
+
+        return {
+            id: crypto.randomUUID(),
+            name: name || `${server}:${port}`,
+            server,
+            port,
+            password,
+            type: 'ss',
+            params: { method },
+        };
+    } catch (e) {
+        console.error('解析 SS 链接失败:', link, e);
+        return null;
+    }
 }
 
 export function parseNodeLink(link: string): Partial<Node> | null {
     link = link.trim();
 
     if (link.startsWith('ss://')) {
-        try {
-            const hashIndex = link.lastIndexOf('#');
-            const name = hashIndex !== -1 ? decodeURIComponent(link.substring(hashIndex + 1)) : '';
-            const coreUrl = (hashIndex !== -1 ? link.substring(0, hashIndex) : link).substring(5);
-            
-            const atIndex = coreUrl.lastIndexOf('@');
-            if (atIndex === -1) throw new Error("无效的 SS 格式: 缺少 '@'");
-
-            const credentialsBase64 = coreUrl.substring(0, atIndex);
-            const credentials = base64Decode(credentialsBase64);
-            const colonIndex = credentials.indexOf(':');
-
-            let method, password;
-            
-            if (colonIndex === -1) {
-                // 如果没有冒号，则整个部分都是密码，cipher 使用一个安全的默认值
-                method = 'aes-256-gcm'; 
-                password = credentials;
-            } else {
-                method = credentials.substring(0, colonIndex);
-                password = credentials.substring(colonIndex + 1);
-            }
-            
-            if (!password) {
-                 throw new Error("无效的 SS 格式: 密码为空");
-            }
-
-            const serverInfo = coreUrl.substring(atIndex + 1);
-            let server: string, port: number;
-
-            const ipv6Match = serverInfo.match(/^\[(.+)\]:(\d+)$/);
-            if (ipv6Match) {
-                server = ipv6Match[1];
-                port = parseInt(ipv6Match[2], 10);
-            } else {
-                const lastColonIndex = serverInfo.lastIndexOf(':');
-                if (lastColonIndex === -1) throw new Error("无效的 SS 格式: 找不到端口");
-                server = serverInfo.substring(0, lastColonIndex);
-                port = parseInt(serverInfo.substring(lastColonIndex + 1), 10);
-            }
-
-            return {
-                name: name || `${server}:${port}`, server, port, password,
-                type: 'ss', params: { method },
-            };
-        } catch (e) {
-            console.error('解析 SS 链接失败:', link, e);
-            return null;
-        }
+        return parseShadowsocksLink(link);
     }
 
     if (link.startsWith('vmess://')) {
         try {
-            const jsonStr = base64Decode(link.substring(8));
+            const jsonStr = base64Decode(decodeURIComponent(link.substring(8)));
+            if (jsonStr === null) throw new Error("VMess Base64 解码失败");
             const config = JSON.parse(jsonStr);
             
             // 验证必要字段
@@ -78,6 +95,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             }
             
             return {
+                id: crypto.randomUUID(),
                 name: config.ps || `${config.add}:${config.port}`,
                 server: config.add,
                 port: parseInt(config.port, 10),
@@ -123,6 +141,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             const finalPassword = username || password;
             
             return {
+                id: crypto.randomUUID(),
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
@@ -143,6 +162,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             url.searchParams.forEach((value, key) => { params[key] = value; });
             
             return {
+                id: crypto.randomUUID(),
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
@@ -159,7 +179,8 @@ export function parseNodeLink(link: string): Partial<Node> | null {
     if (link.startsWith('ssr://')) {
         try {
             const base64Part = link.substring(6);
-            const decoded = base64Decode(base64Part);
+            const decoded = base64Decode(decodeURIComponent(base64Part));
+            if (decoded === null) throw new Error("SSR Base64 解码失败");
             const atIndex = decoded.lastIndexOf('@');
             if (atIndex === -1) throw new Error("无效的 SSR 格式");
             
@@ -171,6 +192,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             const port = parseInt(serverPart.substring(colonIndex + 1), 10);
             
             return {
+                id: crypto.randomUUID(),
                 name: `${server}:${port}`,
                 server, 
                 port,
@@ -194,6 +216,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             url.searchParams.forEach((value, key) => { params[key] = value; });
             
             return {
+                id: crypto.randomUUID(),
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
@@ -216,6 +239,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             
             if (server && port && !isNaN(port)) {
                 return {
+                    id: crypto.randomUUID(),
                     name: `${server}:${port}`,
                     server,
                     port,

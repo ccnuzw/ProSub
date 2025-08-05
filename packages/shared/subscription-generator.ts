@@ -351,25 +351,46 @@ async function generateSingBoxSubscription(nodes: Node[], ruleConfig?: RuleSetCo
 // #endregion
 
 // #region Data Fetching and Processing
-async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
+export async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
+    console.log(`[DEBUG] 尝试从 URL 获取订阅: ${url}`);
     try {
         const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
-        if (!response.ok) { return []; }
+        console.log(`[DEBUG] URL: ${url}, 响应状态: ${response.status}, OK: ${response.ok}`);
+        if (!response.ok) {
+            console.warn(`[DEBUG] 获取订阅失败，HTTP 状态码: ${response.status}`);
+            return [];
+        }
         const content = await response.text();
+        console.log(`[DEBUG] 接收到的内容 (前500字符):\n${content.substring(0, 500)}`);
+
         let nodes: Node[] = parseClashYaml(content);
+        console.log(`[DEBUG] parseClashYaml 结果 (节点数量): ${nodes.length}`);
+
         if (nodes.length === 0) {
+            console.log(`[DEBUG] Clash YAML 解析未找到节点，尝试 Base64 或原始链接解析。`);
             let decodedContent = '';
             try {
                 decodedContent = atob(decodeURIComponent(content.replace(/_/g, '/').replace(/-/g, '+')));
+                console.log(`[DEBUG] Base64 解码内容 (前500字符):\n${decodedContent.substring(0, 500)}`);
             } catch (e) {
                 decodedContent = content;
+                console.log(`[DEBUG] Base64 解码失败，使用原始内容。`);
             }
-            const lines = decodedContent.split(/[\r\n]+/).filter(Boolean);
-            nodes = lines.map(link => parseNodeLink(link)).filter(Boolean) as Node[];
+            const lines = decodedContent.split(/\r?\n/)
+                .filter(Boolean);
+            nodes = lines.map(link => {
+                const parsedNode = parseNodeLink(link);
+                if (!parsedNode) {
+                    console.warn(`[DEBUG] 无法解析链接: ${link.substring(0, 100)}...`);
+                }
+                return parsedNode;
+            }).filter(Boolean) as Node[];
+            console.log(`[DEBUG] 原始链接解析结果 (节点数量): ${nodes.length}`);
         }
+        console.log(`[DEBUG] 最终解析到的节点数量: ${nodes.length}`);
         return nodes;
-    } catch (error) {
-        console.error(`从 ${url} 获取订阅时发生错误:`, error);
+    } catch (error: any) {
+        console.error(`[DEBUG] 从 ${url} 获取或解析订阅时发生错误:`, error);
         return [];
     }
 }

@@ -469,8 +469,11 @@ const handleCheck = async (record: Node) => {
 const handleCheckAllNodes = async () => {
   checkingAll.value = true
   try {
+    const allNodeIds = nodes.value.map(node => node.id);
     const response = await fetch('/api/node-health-check', {
-      method: 'POST'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodeIds: allNodeIds })
     })
     
     if (response.ok) {
