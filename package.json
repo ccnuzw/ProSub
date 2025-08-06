@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:backend": "wrangler pages dev --local",
+    "dev:backend": "wrangler pages dev --local --ip 0.0.0.0",
     "build": "vite build",
     "build:backend": "wrangler deploy",
     "clean": "rimraf dist dev-dist",

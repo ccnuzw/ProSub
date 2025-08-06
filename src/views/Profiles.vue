@@ -99,44 +99,53 @@
           </a-col>
         </a-row>
 
-        <a-form-item label="描述" name="description">
-          <a-textarea v-model:value="formData.description" placeholder="请输入配置文件描述" :rows="3" />
-        </a-form-item>
-
-        <a-form-item label="客户端类型" name="clientType">
-          <a-tabs v-model:activeKey="formData.clientType" type="card">
-            <a-tab-pane key="clash" tab="Clash" />
-            <a-tab-pane key="surge" tab="Surge" />
-            <a-tab-pane key="quantumult-x" tab="Quantumult X" />
-            <a-tab-pane key="loon" tab="Loon" />
-            <a-tab-pane key="sing-box" tab="Sing-Box" />
-          </a-tabs>
-        </a-form-item>
-        
-        <a-form-item label="选择节点">
-          <a-transfer
-            v-model:target-keys="selectedNodeIds"
-            :data-source="availableNodes"
-            :titles="['可用节点', '已选节点']"
-            :render="item => item.title"
-            :show-search="true"
-            :filter-option="filterOption"
-            @change="handleNodeChange"
-          />
-        </a-form-item>
-        
-        <a-form-item label="选择订阅">
-          <a-transfer
-            v-model:target-keys="selectedSubscriptionIds"
-            :data-source="availableSubscriptions"
-            :titles="['可用订阅', '已选订阅']"
-            :render="item => item.title"
-            :show-search="true"
-            :filter-option="filterOption"
-            @change="handleSubscriptionChange"
-          />
-        </a-form-item>
+        <a-tabs type="card">
+          <a-tab-pane key="nodes" tab="选择节点">
+            <a-transfer
+              v-model:target-keys="selectedNodeIds"
+              :data-source="availableNodes"
+              :titles="['可用节点', '已选节点']"
+              :render="item => item.title"
+              :show-search="true"
+              :filter-option="filterOption"
+              @change="handleNodeChange"
+            />
+          </a-tab-pane>
+          <a-tab-pane key="subscriptions" tab="选择订阅">
+            <a-transfer
+              v-model:target-keys="selectedSubscriptionIds"
+              :data-source="availableSubscriptions"
+              :titles="['可用订阅', '已选订阅']"
+              :render="item => item.title"
+              :show-search="true"
+              :filter-option="filterOption"
+              @change="handleSubscriptionChange"
+            />
+          </a-tab-pane>
+        </a-tabs>
       </a-form>
+      <template #footer>
+        <a-button key="back" @click="handleCancel">取消</a-button>
+        <a-button key="template" type="default" @click="showTemplateSelectModal">配置模板</a-button>
+        <a-button key="submit" type="primary" :loading="submitting" @click="handleSubmit">确定</a-button>
+      </template>
+    </a-modal>
+
+    <!-- 配置模板选择模态框 -->
+    <a-modal
+      v-model:open="templateSelectModalVisible"
+      title="配置模板"
+      width="600px"
+      @ok="handleTemplateSelectConfirm"
+      @cancel="templateSelectModalVisible = false"
+    >
+      <a-tabs v-model:activeKey="formData.clientType" type="card">
+        <a-tab-pane key="clash" tab="Clash" />
+        <a-tab-pane key="surge" tab="Surge" />
+        <a-tab-pane key="quantumult-x" tab="Quantumult X" />
+        <a-tab-pane key="loon" tab="Loon" />
+        <a-tab-pane key="sing-box" tab="Sing-Box" />
+      </a-tabs>
     </a-modal>
 
     <!-- 二维码模态框 -->
@@ -180,6 +189,7 @@ const subscriptions = ref<Subscription[]>([])
 // 模态框状态
 const modalVisible = ref(false)
 const qrModalVisible = ref(false)
+const templateSelectModalVisible = ref(false)
 const isEdit = ref(false)
 const currentId = ref('')
 
@@ -187,7 +197,6 @@ const currentId = ref('')
 const formData = ref({
   name: '',
   alias: '',
-  description: '',
   clientType: 'clash' // Default to Clash
 })
 
@@ -279,7 +288,7 @@ const fetchData = async () => {
 
 const showCreateModal = () => {
   isEdit.value = false
-  formData.value = { name: '', alias: '', description: '', clientType: 'clash' }
+  formData.value = { name: '', alias: '', clientType: 'clash' }
   selectedNodeIds.value = []
   selectedSubscriptionIds.value = []
   modalVisible.value = true
@@ -291,7 +300,6 @@ const handleEdit = (record: Profile) => {
   formData.value = {
     name: record.name,
     alias: record.alias || '',
-    description: record.description || '',
     clientType: record.clientType || 'clash' // Default to Clash if not set
   }
   selectedNodeIds.value = record.nodeIds || []
@@ -348,6 +356,14 @@ const handleDelete = async (id: string) => {
     console.error('删除失败:', error)
     message.error('删除失败')
   }
+}
+
+const showTemplateSelectModal = () => {
+  templateSelectModalVisible.value = true;
+}
+
+const handleTemplateSelectConfirm = () => {
+  templateSelectModalVisible.value = false;
 }
 
 const handleNodeChange = (targetKeys: string[]) => {
