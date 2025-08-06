@@ -378,30 +378,41 @@ const handleImport = async () => {
   importing.value = true
   try {
     const urls = importUrls.value.split('\n').filter(url => url.trim())
-    let successCount = 0
     
-    for (const url of urls) {
-      try {
-        const response = await fetch('/api/subscriptions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: `导入订阅 ${successCount + 1}`,
-            url: url.trim()
-          })
-        })
-        
-        if (response.ok) {
-          successCount++
+    // Prepare subscriptions array for batch import
+    const subscriptionsToImport = urls.map((url, index) => ({
+      id: crypto.randomUUID(), // Generate a unique ID for each subscription
+      name: `导入订阅 ${index + 1}`, // Generate a default name, can be improved later
+      url: url.trim()
+    }));
+
+    const response = await fetch('/api/subscriptions/batch-import', { // <-- New API endpoint
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriptions: subscriptionsToImport }) // <-- New request body structure
+    })
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        let messageText = `批量导入完成！成功导入 ${result.created} 个订阅`;
+        if (result.failed > 0) {
+          messageText += `，失败 ${result.failed} 个。`;
+          // Optionally, display detailed errors
+          result.errors.forEach((err: any) => {
+            console.error(`导入失败: ${err.subscription} - ${err.error}`);
+          });
         }
-      } catch (error) {
-        console.error('导入订阅失败:', error)
+        message.success(messageText);
+      } else {
+        message.error(result.message || '批量导入失败');
       }
+      importModalVisible.value = false
+      await fetchData()
+    } else {
+      const errorData = await response.json()
+      message.error(errorData.message || '批量导入失败')
     }
-    
-    message.success(`成功导入 ${successCount} 个订阅`)
-    importModalVisible.value = false
-    await fetchData()
   } catch (error) {
     console.error('批量导入失败:', error)
     message.error('批量导入失败')
