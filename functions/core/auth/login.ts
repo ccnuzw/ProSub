@@ -58,8 +58,8 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
     // 设置Cookie
     const cookie = serialize('session', sessionToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
+      secure: false, // 修改为 false，允许 HTTP
+      sameSite: 'lax', // 修改为 'lax'，允许跨站发送
       maxAge: 86400,
       path: '/'
     });

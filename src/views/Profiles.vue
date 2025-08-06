@@ -37,7 +37,7 @@
               <span>{{ record.subscriptionIds?.length || 0 }}</span>
             </a-space>
           </template>
-          
+
           <template v-if="column.key === 'subscribe_url'">
             <a-space>
               <a-button type="text" size="small" @click="handleCopy(getSubscriptionUrl(record))">
@@ -92,35 +92,62 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="别名" name="alias">
-              <a-input v-model:value="formData.alias" placeholder="可选，用于自定义订阅链接" />
+              <a-tooltip title="可选，用于自定义订阅链接，如果留空则使用配置文件ID">
+                <a-input v-model:value="formData.alias" placeholder="可选，用于自定义订阅链接" />
+              </a-tooltip>
             </a-form-item>
           </a-col>
         </a-row>
-        
-        <a-form-item label="选择节点">
-          <a-transfer
-            v-model:target-keys="selectedNodeIds"
-            :data-source="availableNodes"
-            :titles="['可用节点', '已选节点']"
-            :render="item => item.title"
-            :show-search="true"
-            :filter-option="filterOption"
-            @change="handleNodeChange"
-          />
-        </a-form-item>
-        
-        <a-form-item label="选择订阅">
-          <a-transfer
-            v-model:target-keys="selectedSubscriptionIds"
-            :data-source="availableSubscriptions"
-            :titles="['可用订阅', '已选订阅']"
-            :render="item => item.title"
-            :show-search="true"
-            :filter-option="filterOption"
-            @change="handleSubscriptionChange"
-          />
-        </a-form-item>
+
+        <a-tabs type="card" class="node-sub-tabs">
+          <a-tab-pane key="nodes" tab="选择节点">
+            <a-transfer
+              v-model:target-keys="selectedNodeIds"
+              :data-source="availableNodes"
+              :titles="['可用节点', '已选节点']"
+              :render="item => item.title"
+              :show-search="true"
+              :filter-option="filterOption"
+              @change="handleNodeChange"
+              class="full-width-transfer"
+            />
+          </a-tab-pane>
+          <a-tab-pane key="subscriptions" tab="选择订阅">
+            <a-transfer
+              v-model:target-keys="selectedSubscriptionIds"
+              :data-source="availableSubscriptions"
+              :titles="['可用订阅', '已选订阅']"
+              :render="item => item.title"
+              :show-search="true"
+              :filter-option="filterOption"
+              @change="handleSubscriptionChange"
+              class="full-width-transfer"
+            />
+          </a-tab-pane>
+        </a-tabs>
       </a-form>
+      <template #footer>
+        <a-button key="back" @click="handleCancel">取消</a-button>
+        <a-button key="template" type="default" @click="showTemplateSelectModal">配置模板</a-button>
+        <a-button key="submit" type="primary" :loading="submitting" @click="handleSubmit">确定</a-button>
+      </template>
+    </a-modal>
+
+    <!-- 配置模板选择模态框 -->
+    <a-modal
+      v-model:open="templateSelectModalVisible"
+      title="配置模板"
+      width="600px"
+      @ok="handleTemplateSelectConfirm"
+      @cancel="templateSelectModalVisible = false"
+    >
+      <a-tabs v-model:activeKey="formData.clientType" type="card">
+        <a-tab-pane key="clash" tab="Clash" />
+        <a-tab-pane key="surge" tab="Surge" />
+        <a-tab-pane key="quantumult-x" tab="Quantumult X" />
+        <a-tab-pane key="loon" tab="Loon" />
+        <a-tab-pane key="sing-box" tab="Sing-Box" />
+      </a-tabs>
     </a-modal>
 
     <!-- 二维码模态框 -->
@@ -164,13 +191,15 @@ const subscriptions = ref<Subscription[]>([])
 // 模态框状态
 const modalVisible = ref(false)
 const qrModalVisible = ref(false)
+const templateSelectModalVisible = ref(false)
 const isEdit = ref(false)
 const currentId = ref('')
 
 // 表单数据
 const formData = ref({
   name: '',
-  alias: ''
+  alias: '',
+  clientType: 'clash' // Default to Clash
 })
 
 const selectedNodeIds = ref<string[]>([])
@@ -181,7 +210,8 @@ const qrCodeUrl = ref('')
 
 // 表单验证规则
 const formRules = {
-  name: [{ required: true, message: '请输入配置文件名称' }]
+  name: [{ required: true, message: '请输入配置文件名称' }],
+  clientType: [{ required: true, message: '请选择客户端类型' }]
 }
 
 // 计算属性
@@ -260,7 +290,7 @@ const fetchData = async () => {
 
 const showCreateModal = () => {
   isEdit.value = false
-  formData.value = { name: '', alias: '' }
+  formData.value = { name: '', alias: '', clientType: 'clash' }
   selectedNodeIds.value = []
   selectedSubscriptionIds.value = []
   modalVisible.value = true
@@ -269,7 +299,11 @@ const showCreateModal = () => {
 const handleEdit = (record: Profile) => {
   isEdit.value = true
   currentId.value = record.id
-  formData.value = { name: record.name, alias: record.alias || '' }
+  formData.value = {
+    name: record.name,
+    alias: record.alias || '',
+    clientType: record.clientType || 'clash' // Default to Clash if not set
+  }
   selectedNodeIds.value = record.nodeIds || []
   selectedSubscriptionIds.value = record.subscriptionIds || []
   modalVisible.value = true
@@ -297,13 +331,14 @@ const handleSubmit = async () => {
       await fetchData()
     } else {
       const error = await response.json()
+      console.error('后端操作失败响应:', error) // Added console.error
       message.error(error.message || '操作失败')
     }
   } catch (error) {
     console.error('操作失败:', error)
     message.error('操作失败')
   } finally {
-    submitting.value = false
+    submitting.value = false // Ensure submitting is always reset
   }
 }
 
@@ -324,6 +359,14 @@ const handleDelete = async (id: string) => {
     console.error('删除失败:', error)
     message.error('删除失败')
   }
+}
+
+const showTemplateSelectModal = () => {
+  templateSelectModalVisible.value = true;
+}
+
+const handleTemplateSelectConfirm = () => {
+  templateSelectModalVisible.value = false;
 }
 
 const handleNodeChange = (targetKeys: string[]) => {
@@ -425,6 +468,11 @@ onMounted(() => {
   word-break: break-all;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.full-width-transfer .ant-transfer-list {
+  width: 100%;
+  height: 300px; /* Adjust height as needed */
 }
 
 @media (max-width: 768px) {

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 CREATE TABLE IF NOT EXISTS profiles (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  alias TEXT, -- 新增别名列
   description TEXT,
   client_type TEXT NOT NULL, -- 'clash', 'surge', 'quantumult-x', 'loon', 'sing-box'
   created_at TEXT NOT NULL,
