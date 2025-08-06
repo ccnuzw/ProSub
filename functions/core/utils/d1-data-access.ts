@@ -286,19 +286,31 @@ export class SubscriptionDataAccess {
 export class ProfileDataAccess {
   static async getAll(env: Env): Promise<Profile[]> {
     const result = await env.DB.prepare(`
-      SELECT id, name, alias, description, client_type, node_ids, subscription_ids, created_at, updated_at
-      FROM profiles
-      ORDER BY created_at DESC
+      SELECT
+        p.id,
+        p.name,
+        p.alias,
+        p.description,
+        p.client_type,
+        p.created_at,
+        p.updated_at,
+        GROUP_CONCAT(pn.node_id) AS node_ids_str,
+        GROUP_CONCAT(ps.subscription_id) AS subscription_ids_str
+      FROM profiles AS p
+      LEFT JOIN profile_nodes AS pn ON p.id = pn.profile_id
+      LEFT JOIN profile_subscriptions AS ps ON p.id = ps.profile_id
+      GROUP BY p.id, p.name, p.alias, p.description, p.client_type, p.created_at, p.updated_at
+      ORDER BY p.created_at DESC
     `).all();
-    
+
     return result.results.map(row => ({
       id: row.id as string,
       name: row.name as string,
       alias: row.alias as string || '',
       description: row.description as string,
       clientType: row.client_type as string,
-      nodeIds: row.node_ids ? JSON.parse(row.node_ids as string) : [],
-      subscriptionIds: row.subscription_ids ? JSON.parse(row.subscription_ids as string) : [],
+      nodeIds: row.node_ids_str ? (row.node_ids_str as string).split(',') : [],
+      subscriptionIds: row.subscription_ids_str ? (row.subscription_ids_str as string).split(',') : [],
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string
     }));
@@ -306,21 +318,33 @@ export class ProfileDataAccess {
 
   static async getById(env: Env, id: string): Promise<Profile | null> {
     const result = await env.DB.prepare(`
-      SELECT id, name, alias, description, client_type, node_ids, subscription_ids, created_at, updated_at
-      FROM profiles
-      WHERE id = ?
+      SELECT
+        p.id,
+        p.name,
+        p.alias,
+        p.description,
+        p.client_type,
+        p.created_at,
+        p.updated_at,
+        GROUP_CONCAT(pn.node_id) AS node_ids_str,
+        GROUP_CONCAT(ps.subscription_id) AS subscription_ids_str
+      FROM profiles AS p
+      LEFT JOIN profile_nodes AS pn ON p.id = pn.profile_id
+      LEFT JOIN profile_subscriptions AS ps ON p.id = ps.profile_id
+      WHERE p.id = ?
+      GROUP BY p.id, p.name, p.alias, p.description, p.client_type, p.created_at, p.updated_at
     `).bind(id).first();
-    
+
     if (!result) return null;
-    
+
     return {
       id: result.id as string,
       name: result.name as string,
       alias: result.alias as string || '',
       description: result.description as string,
       clientType: result.client_type as string,
-      nodeIds: result.node_ids ? JSON.parse(result.node_ids as string) : [],
-      subscriptionIds: result.subscription_ids ? JSON.parse(result.subscription_ids as string) : [],
+      nodeIds: result.node_ids_str ? (result.node_ids_str as string).split(',') : [],
+      subscriptionIds: result.subscription_ids_str ? (result.subscription_ids_str as string).split(',') : [],
       createdAt: result.created_at as string,
       updatedAt: result.updated_at as string
     };
@@ -328,47 +352,73 @@ export class ProfileDataAccess {
 
   static async create(env: Env, profile: Profile): Promise<Profile> {
     const now = new Date().toISOString();
-    const nodeIds = JSON.stringify(profile.nodeIds || []);
-    const subscriptionIds = JSON.stringify(profile.subscriptionIds || []);
-    
+
     await env.DB.prepare(`
-      INSERT INTO profiles (id, name, alias, description, client_type, node_ids, subscription_ids, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO profiles (id, name, alias, description, client_type, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(
       profile.id,
       profile.name,
-      profile.alias || '',
+      profile.alias || null,
       profile.description || '',
       profile.clientType || '',
-      nodeIds,
-      subscriptionIds,
       now,
       now
     ).run();
-    
+
+    // Insert into profile_nodes
+    if (profile.nodeIds && profile.nodeIds.length > 0) {
+      const nodeInsertPromises = profile.nodeIds.map(nodeId =>
+        env.DB.prepare(`INSERT INTO profile_nodes (profile_id, node_id) VALUES (?, ?)`).bind(profile.id, nodeId).run()
+      );
+      await Promise.all(nodeInsertPromises);
+    }
+
+    // Insert into profile_subscriptions
+    if (profile.subscriptionIds && profile.subscriptionIds.length > 0) {
+      const subscriptionInsertPromises = profile.subscriptionIds.map(subscriptionId =>
+        env.DB.prepare(`INSERT INTO profile_subscriptions (profile_id, subscription_id) VALUES (?, ?)`).bind(profile.id, subscriptionId).run()
+      );
+      await Promise.all(subscriptionInsertPromises);
+    }
+
     return { ...profile, createdAt: now, updatedAt: now };
   }
 
   static async update(env: Env, id: string, profile: Profile): Promise<Profile> {
     const now = new Date().toISOString();
-    const nodeIds = JSON.stringify(profile.nodeIds || []);
-    const subscriptionIds = JSON.stringify(profile.subscriptionIds || []);
-    
+
     await env.DB.prepare(`
       UPDATE profiles 
-      SET name = ?, alias = ?, description = ?, client_type = ?, node_ids = ?, subscription_ids = ?, updated_at = ?
+      SET name = ?, alias = ?, description = ?, client_type = ?, updated_at = ?
       WHERE id = ?
     `).bind(
       profile.name,
-      profile.alias || '',
+      profile.alias || null,
       profile.description || '',
       profile.clientType || '',
-      nodeIds,
-      subscriptionIds,
       now,
       id
     ).run();
-    
+
+    // Update profile_nodes
+    await env.DB.prepare(`DELETE FROM profile_nodes WHERE profile_id = ?`).bind(id).run();
+    if (profile.nodeIds && profile.nodeIds.length > 0) {
+      const nodeInsertPromises = profile.nodeIds.map(nodeId =>
+        env.DB.prepare(`INSERT INTO profile_nodes (profile_id, node_id) VALUES (?, ?)`).bind(profile.id, nodeId).run()
+      );
+      await Promise.all(nodeInsertPromises);
+    }
+
+    // Update profile_subscriptions
+    await env.DB.prepare(`DELETE FROM profile_subscriptions WHERE profile_id = ?`).bind(id).run();
+    if (profile.subscriptionIds && profile.subscriptionIds.length > 0) {
+      const subscriptionInsertPromises = profile.subscriptionIds.map(subscriptionId =>
+        env.DB.prepare(`INSERT INTO profile_subscriptions (profile_id, subscription_id) VALUES (?, ?)`).bind(profile.id, subscriptionId).run()
+      );
+      await Promise.all(subscriptionInsertPromises);
+    }
+
     return { ...profile, id, updatedAt: now };
   }
 

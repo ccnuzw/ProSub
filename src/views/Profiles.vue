@@ -37,7 +37,7 @@
               <span>{{ record.subscriptionIds?.length || 0 }}</span>
             </a-space>
           </template>
-          
+
           <template v-if="column.key === 'subscribe_url'">
             <a-space>
               <a-button type="text" size="small" @click="handleCopy(getSubscriptionUrl(record))">
@@ -92,10 +92,26 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="别名" name="alias">
-              <a-input v-model:value="formData.alias" placeholder="可选，用于自定义订阅链接" />
+              <a-tooltip title="可选，用于自定义订阅链接，如果留空则使用配置文件ID">
+                <a-input v-model:value="formData.alias" placeholder="可选，用于自定义订阅链接" />
+              </a-tooltip>
             </a-form-item>
           </a-col>
         </a-row>
+
+        <a-form-item label="描述" name="description">
+          <a-textarea v-model:value="formData.description" placeholder="请输入配置文件描述" :rows="3" />
+        </a-form-item>
+
+        <a-form-item label="客户端类型" name="clientType">
+          <a-tabs v-model:activeKey="formData.clientType" type="card">
+            <a-tab-pane key="clash" tab="Clash" />
+            <a-tab-pane key="surge" tab="Surge" />
+            <a-tab-pane key="quantumult-x" tab="Quantumult X" />
+            <a-tab-pane key="loon" tab="Loon" />
+            <a-tab-pane key="sing-box" tab="Sing-Box" />
+          </a-tabs>
+        </a-form-item>
         
         <a-form-item label="选择节点">
           <a-transfer
@@ -170,7 +186,9 @@ const currentId = ref('')
 // 表单数据
 const formData = ref({
   name: '',
-  alias: ''
+  alias: '',
+  description: '',
+  clientType: 'clash' // Default to Clash
 })
 
 const selectedNodeIds = ref<string[]>([])
@@ -181,7 +199,8 @@ const qrCodeUrl = ref('')
 
 // 表单验证规则
 const formRules = {
-  name: [{ required: true, message: '请输入配置文件名称' }]
+  name: [{ required: true, message: '请输入配置文件名称' }],
+  clientType: [{ required: true, message: '请选择客户端类型' }]
 }
 
 // 计算属性
@@ -260,7 +279,7 @@ const fetchData = async () => {
 
 const showCreateModal = () => {
   isEdit.value = false
-  formData.value = { name: '', alias: '' }
+  formData.value = { name: '', alias: '', description: '', clientType: 'clash' }
   selectedNodeIds.value = []
   selectedSubscriptionIds.value = []
   modalVisible.value = true
@@ -269,7 +288,12 @@ const showCreateModal = () => {
 const handleEdit = (record: Profile) => {
   isEdit.value = true
   currentId.value = record.id
-  formData.value = { name: record.name, alias: record.alias || '' }
+  formData.value = {
+    name: record.name,
+    alias: record.alias || '',
+    description: record.description || '',
+    clientType: record.clientType || 'clash' // Default to Clash if not set
+  }
   selectedNodeIds.value = record.nodeIds || []
   selectedSubscriptionIds.value = record.subscriptionIds || []
   modalVisible.value = true
