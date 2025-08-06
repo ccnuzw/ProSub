@@ -12,6 +12,16 @@ function base64Encode(str: string): string {
         .replace(/=/g, '');
 }
 
+function isValidSubscriptionLink(line: string): boolean {
+    // 排除注释行和空行
+    if (line.trim().startsWith('#') || line.trim() === '') {
+        return false;
+    }
+    // 检查是否是已知的节点协议
+    const knownProtocols = ['ss://', 'vmess://', 'vless://', 'trojan://', 'ssr://', 'socks://', 'tuic://', 'hysteria://', 'hysteria2://', 'anytls://'];
+    return knownProtocols.some(protocol => line.startsWith(protocol));
+}
+
 function convertNodeToUri(node: Node): string {
     const encodedName = encodeURIComponent(node.name);
     try {
@@ -114,7 +124,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                 if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
                         path: node.params?.['ws-path'] || node.params?.path || '/',
-                        headers: node.params?.['ws-headers'] || { Host: node.params?.host || node.server },
+                        headers: { Host: node.params?.host || node.server },
                     };
                 }
                 if(proxy.tls) {
@@ -131,7 +141,7 @@ async function generateClashSubscription(nodes: Node[], ruleConfig?: RuleSetConf
                  if (proxy.network === 'ws') {
                     proxy['ws-opts'] = {
                         path: node.params?.['ws-path'] || node.params?.path || '/',
-                        headers: node.params?.['ws-headers'] || { Host: node.params?.host || node.server },
+                        headers: { Host: node.params?.['ws-headers'] || { Host: node.params?.host || node.server } },
                     };
                 }
                 if (node.type === 'vless-reality' || node.params?.security === 'reality') {
@@ -377,7 +387,7 @@ export async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
                 console.log(`[DEBUG] Base64 解码失败，使用原始内容。`);
             }
             const lines = decodedContent.split(/\r?\n/)
-                .filter(Boolean);
+                .filter(line => isValidSubscriptionLink(line));
             nodes = lines.map(link => {
                 const parsedNode = parseNodeLink(link);
                 if (!parsedNode) {

@@ -20,6 +20,13 @@ export async function handleSubscriptionsBatchImport(request: Request, env: Env)
     const errors = [];
 
     for (const subscription of subscriptions) {
+      if (!subscription.url || !subscription.url.startsWith('https://')) {
+        errors.push({
+          subscription: subscription.name || '未知订阅',
+          error: '订阅链接必须使用 HTTPS 协议'
+        });
+        continue;
+      }
       try {
         const createdSubscription = await SubscriptionDataAccess.create(env, subscription);
         results.push(createdSubscription);
