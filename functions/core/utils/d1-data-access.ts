@@ -294,8 +294,8 @@ export class ProfileDataAccess {
         p.client_type,
         p.created_at,
         p.updated_at,
-        GROUP_CONCAT(pn.node_id) AS node_ids_str,
-        GROUP_CONCAT(ps.subscription_id) AS subscription_ids_str
+        COALESCE(GROUP_CONCAT(DISTINCT pn.node_id), '') AS node_ids_str,
+        COALESCE(GROUP_CONCAT(DISTINCT ps.subscription_id), '') AS subscription_ids_str
       FROM profiles AS p
       LEFT JOIN profile_nodes AS pn ON p.id = pn.profile_id
       LEFT JOIN profile_subscriptions AS ps ON p.id = ps.profile_id
@@ -326,8 +326,8 @@ export class ProfileDataAccess {
         p.client_type,
         p.created_at,
         p.updated_at,
-        GROUP_CONCAT(pn.node_id) AS node_ids_str,
-        GROUP_CONCAT(ps.subscription_id) AS subscription_ids_str
+        COALESCE(GROUP_CONCAT(DISTINCT pn.node_id), '') AS node_ids_str,
+        COALESCE(GROUP_CONCAT(DISTINCT ps.subscription_id), '') AS subscription_ids_str
       FROM profiles AS p
       LEFT JOIN profile_nodes AS pn ON p.id = pn.profile_id
       LEFT JOIN profile_subscriptions AS ps ON p.id = ps.profile_id
@@ -368,18 +368,18 @@ export class ProfileDataAccess {
 
     // Insert into profile_nodes
     if (profile.nodeIds && profile.nodeIds.length > 0) {
-      const nodeInsertPromises = profile.nodeIds.map(nodeId =>
-        env.DB.prepare(`INSERT INTO profile_nodes (profile_id, node_id) VALUES (?, ?)`).bind(profile.id, nodeId).run()
+      const nodeInsertStatements = profile.nodeIds.map(nodeId =>
+        env.DB.prepare(`INSERT INTO profile_nodes (profile_id, node_id) VALUES (?, ?)`).bind(profile.id, nodeId)
       );
-      await Promise.all(nodeInsertPromises);
+      await env.DB.batch(nodeInsertStatements);
     }
 
     // Insert into profile_subscriptions
     if (profile.subscriptionIds && profile.subscriptionIds.length > 0) {
-      const subscriptionInsertPromises = profile.subscriptionIds.map(subscriptionId =>
-        env.DB.prepare(`INSERT INTO profile_subscriptions (profile_id, subscription_id) VALUES (?, ?)`).bind(profile.id, subscriptionId).run()
+      const subscriptionInsertStatements = profile.subscriptionIds.map(subscriptionId =>
+        env.DB.prepare(`INSERT INTO profile_subscriptions (profile_id, subscription_id) VALUES (?, ?)`).bind(profile.id, subscriptionId)
       );
-      await Promise.all(subscriptionInsertPromises);
+      await env.DB.batch(subscriptionInsertStatements);
     }
 
     return { ...profile, createdAt: now, updatedAt: now };
@@ -404,19 +404,19 @@ export class ProfileDataAccess {
     // Update profile_nodes
     await env.DB.prepare(`DELETE FROM profile_nodes WHERE profile_id = ?`).bind(id).run();
     if (profile.nodeIds && profile.nodeIds.length > 0) {
-      const nodeInsertPromises = profile.nodeIds.map(nodeId =>
-        env.DB.prepare(`INSERT INTO profile_nodes (profile_id, node_id) VALUES (?, ?)`).bind(profile.id, nodeId).run()
+      const nodeInsertStatements = profile.nodeIds.map(nodeId =>
+        env.DB.prepare(`INSERT INTO profile_nodes (profile_id, node_id) VALUES (?, ?)`).bind(profile.id, nodeId)
       );
-      await Promise.all(nodeInsertPromises);
+      await env.DB.batch(nodeInsertStatements);
     }
 
     // Update profile_subscriptions
     await env.DB.prepare(`DELETE FROM profile_subscriptions WHERE profile_id = ?`).bind(id).run();
     if (profile.subscriptionIds && profile.subscriptionIds.length > 0) {
-      const subscriptionInsertPromises = profile.subscriptionIds.map(subscriptionId =>
-        env.DB.prepare(`INSERT INTO profile_subscriptions (profile_id, subscription_id) VALUES (?, ?)`).bind(profile.id, subscriptionId).run()
+      const subscriptionInsertStatements = profile.subscriptionIds.map(subscriptionId =>
+        env.DB.prepare(`INSERT INTO profile_subscriptions (profile_id, subscription_id) VALUES (?, ?)`).bind(profile.id, subscriptionId)
       );
-      await Promise.all(subscriptionInsertPromises);
+      await env.DB.batch(subscriptionInsertStatements);
     }
 
     return { ...profile, id, updatedAt: now };

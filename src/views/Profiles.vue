@@ -99,7 +99,7 @@
           </a-col>
         </a-row>
 
-        <a-tabs type="card">
+        <a-tabs type="card" class="node-sub-tabs">
           <a-tab-pane key="nodes" tab="选择节点">
             <a-transfer
               v-model:target-keys="selectedNodeIds"
@@ -109,6 +109,7 @@
               :show-search="true"
               :filter-option="filterOption"
               @change="handleNodeChange"
+              class="full-width-transfer"
             />
           </a-tab-pane>
           <a-tab-pane key="subscriptions" tab="选择订阅">
@@ -120,6 +121,7 @@
               :show-search="true"
               :filter-option="filterOption"
               @change="handleSubscriptionChange"
+              class="full-width-transfer"
             />
           </a-tab-pane>
         </a-tabs>
@@ -329,13 +331,14 @@ const handleSubmit = async () => {
       await fetchData()
     } else {
       const error = await response.json()
+      console.error('后端操作失败响应:', error) // Added console.error
       message.error(error.message || '操作失败')
     }
   } catch (error) {
     console.error('操作失败:', error)
     message.error('操作失败')
   } finally {
-    submitting.value = false
+    submitting.value = false // Ensure submitting is always reset
   }
 }
 
@@ -465,6 +468,11 @@ onMounted(() => {
   word-break: break-all;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.full-width-transfer .ant-transfer-list {
+  width: 100%;
+  height: 300px; /* Adjust height as needed */
 }
 
 @media (max-width: 768px) {
