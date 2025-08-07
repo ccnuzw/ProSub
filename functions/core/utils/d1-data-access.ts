@@ -1,4 +1,4 @@
-import { Node, Subscription, Profile, User, HealthStatus, NodeGroup, TrafficRecord, Env } from '@shared/types';
+import { Node, Subscription, Profile, User, HealthStatus, NodeGroup, TrafficRecord, Env, Template } from '@shared/types';
 
 // 节点数据访问
 export class NodeDataAccess {
@@ -210,7 +210,7 @@ export class SubscriptionDataAccess {
       url: result.url as string,
       nodeCount: result.node_count as number,
       lastUpdated: result.last_updated as string,
-      error: result.error as string,
+      error: row.error as string,
       createdAt: result.created_at as string,
       updatedAt: result.updated_at as string
     };
@@ -518,5 +518,104 @@ export class UserDataAccess {
     if (!updatedUser) throw new Error('User not found');
     
     return updatedUser;
+  }
+}
+
+// 配置模板数据访问
+export class TemplateDataAccess {
+  static async getAll(env: Env): Promise<Template[]> {
+    const result = await env.DB.prepare(`
+      SELECT id, name, description, client_type, content, created_at, updated_at
+      FROM templates
+      ORDER BY updated_at DESC
+    `).all();
+    
+    return result.results.map(row => ({
+      id: row.id as string,
+      name: row.name as string,
+      description: row.description as string,
+      clientType: row.client_type as string,
+      content: row.content as string,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string
+    }));
+  }
+
+  static async getById(env: Env, id: string): Promise<Template | null> {
+    const result = await env.DB.prepare(`
+      SELECT id, name, description, client_type, content, created_at, updated_at
+      FROM templates
+      WHERE id = ?
+    `).bind(id).first();
+    
+    if (!result) return null;
+    
+    return {
+      id: result.id as string,
+      name: result.name as string,
+      description: result.description as string,
+      clientType: result.client_type as string,
+      content: result.content as string,
+      createdAt: result.created_at as string,
+      updatedAt: result.updated_at as string
+    };
+  }
+
+  static async create(env: Env, template: Template): Promise<Template> {
+    const now = new Date().toISOString();
+    
+    await env.DB.prepare(`
+      INSERT INTO templates (id, name, description, client_type, content, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      template.id,
+      template.name,
+      template.description || '',
+      template.clientType,
+      template.content,
+      now,
+      now
+    ).run();
+    
+    return { ...template, createdAt: now, updatedAt: now };
+  }
+
+  static async update(env: Env, id: string, template: Partial<Template>): Promise<Template> {
+    const now = new Date().toISOString();
+    
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (template.name !== undefined) {
+      updates.push('name = ?');
+      values.push(template.name);
+    }
+    if (template.description !== undefined) {
+      updates.push('description = ?');
+      values.push(template.description);
+    }
+    if (template.content !== undefined) {
+      updates.push('content = ?');
+      values.push(template.content);
+    }
+
+    updates.push('updated_at = ?');
+    values.push(now);
+    values.push(id);
+
+    await env.DB.prepare(`
+      UPDATE templates 
+      SET ${updates.join(', ')}
+      WHERE id = ?
+    `).bind(...values).run();
+
+    const updatedTemplate = await this.getById(env, id);
+    if (!updatedTemplate) throw new Error('Template not found');
+
+    return updatedTemplate;
+  }
+
+  static async delete(env: Env, id: string): Promise<void> {
+    await env.DB.prepare('DELETE FROM templates WHERE id = ?').bind(id).run();
   }
 }

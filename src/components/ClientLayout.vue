@@ -46,6 +46,15 @@
           <FileTextOutlined />
           <span>配置文件</span>
         </router-link>
+
+        <router-link 
+          to="/templates" 
+          class="sidebar-nav-item"
+          :class="{ active: $route.path.startsWith('/templates') }"
+        >
+          <ControlOutlined />
+          <span>配置模板</span>
+        </router-link>
         
         <router-link 
           to="/user" 
@@ -171,6 +180,15 @@
         <FileTextOutlined />
         <span>配置</span>
       </router-link>
+
+      <router-link 
+        to="/templates" 
+        class="mobile-nav-item"
+        :class="{ active: $route.path.startsWith('/templates') }"
+      >
+        <ControlOutlined />
+        <span>模板</span>
+      </router-link>
       
       <router-link 
         to="/user" 
@@ -200,8 +218,9 @@ import {
   ClusterOutlined,
   WifiOutlined,
   FileTextOutlined,
-  MenuFoldOutlined, // New import
-  MenuUnfoldOutlined // New import
+  ControlOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons-vue'
 
 const router = useRouter()
@@ -494,10 +513,16 @@ onMounted(() => {
 .sidebar.collapsed .sidebar-nav-item {
   justify-content: center;
   padding: 12px 0;
+  gap: 0;
 }
 
 .sidebar.collapsed .sidebar-nav-item span {
   display: none;
+}
+
+.sidebar.collapsed .sidebar-nav-item .anticon {
+  font-size: 20px;
+  margin: 0;
 }
 
 

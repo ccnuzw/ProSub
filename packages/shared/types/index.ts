@@ -76,6 +76,16 @@ export interface TrafficRecord {
   timestamp: string;
 }
 
+export interface Template {
+  id?: string;
+  name: string;
+  description?: string;
+  clientType: string;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // API 响应类型
 export interface ApiResponse<T = any> {
   success: boolean;

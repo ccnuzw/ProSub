@@ -23,6 +23,8 @@ declare module 'vue' {
     AMenuItem: typeof import('ant-design-vue/es')['MenuItem']
     AModal: typeof import('ant-design-vue/es')['Modal']
     APopconfirm: typeof import('ant-design-vue/es')['Popconfirm']
+    ARadioButton: typeof import('ant-design-vue/es')['RadioButton']
+    ARadioGroup: typeof import('ant-design-vue/es')['RadioGroup']
     ARow: typeof import('ant-design-vue/es')['Row']
     ASelect: typeof import('ant-design-vue/es')['Select']
     ASelectOption: typeof import('ant-design-vue/es')['SelectOption']
@@ -51,6 +53,7 @@ declare module 'vue' {
     StatsCard: typeof import('./src/components/StatsCard.vue')['default']
     SubscriptionForm: typeof import('./src/components/SubscriptionForm.vue')['default']
     SubscriptionRuleModal: typeof import('./src/components/SubscriptionRuleModal.vue')['default']
+    TemplateFormModal: typeof import('./src/components/TemplateFormModal.vue')['default']
     UserForm: typeof import('./src/components/UserForm.vue')['default']
   }
 }

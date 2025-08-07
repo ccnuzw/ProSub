@@ -113,6 +113,17 @@ CREATE TABLE IF NOT EXISTS traffic_records (
   FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
 );
 
+-- 配置模板表
+CREATE TABLE IF NOT EXISTS templates (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  client_type TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 创建索引以提高查询性能
 CREATE INDEX IF NOT EXISTS idx_nodes_type ON nodes(type);
 CREATE INDEX IF NOT EXISTS idx_nodes_server ON nodes(server);
@@ -120,4 +131,7 @@ CREATE INDEX IF NOT EXISTS idx_node_health_status ON node_health_status(status);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_url ON subscriptions(url);
 CREATE INDEX IF NOT EXISTS idx_profiles_client_type ON profiles(client_type);
 CREATE INDEX IF NOT EXISTS idx_traffic_records_timestamp ON traffic_records(timestamp);
-CREATE INDEX IF NOT EXISTS idx_traffic_records_profile ON traffic_records(profile_id); 
+CREATE INDEX IF NOT EXISTS idx_traffic_records_profile ON traffic_records(profile_id);
+CREATE INDEX IF NOT EXISTS idx_templates_client_type ON templates(client_type);
+
+

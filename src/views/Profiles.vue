@@ -81,7 +81,7 @@
       @ok="handleSubmit"
       @cancel="handleCancel"
       :confirm-loading="submitting"
-      width="800px"
+      width="1200px"
     >
       <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
         <a-row :gutter="16">
@@ -110,6 +110,7 @@
               :filter-option="filterOption"
               @change="handleNodeChange"
               class="full-width-transfer"
+              :list-style="{ width: '550px', height: '500px' }"
             />
           </a-tab-pane>
           <a-tab-pane key="subscriptions" tab="选择订阅">
@@ -122,6 +123,7 @@
               :filter-option="filterOption"
               @change="handleSubscriptionChange"
               class="full-width-transfer"
+              :list-style="{ width: '550px', height: '500px' }"
             />
           </a-tab-pane>
         </a-tabs>
@@ -141,12 +143,102 @@
       @ok="handleTemplateSelectConfirm"
       @cancel="templateSelectModalVisible = false"
     >
-      <a-tabs v-model:activeKey="formData.clientType" type="card">
-        <a-tab-pane key="clash" tab="Clash" />
-        <a-tab-pane key="surge" tab="Surge" />
-        <a-tab-pane key="quantumult-x" tab="Quantumult X" />
-        <a-tab-pane key="loon" tab="Loon" />
-        <a-tab-pane key="sing-box" tab="Sing-Box" />
+      <a-tabs v-model:activeKey="activeTemplateTab" type="card">
+        <a-tab-pane key="clash" tab="Clash">
+          <div class="flex justify-center mb-4">
+            <a-radio-group v-model:value="formData.ruleSets.clash.type" button-style="solid">
+              <a-radio-button value="built-in">内置规则</a-radio-button>
+              <a-radio-button value="remote">远程配置</a-radio-button>
+            </a-radio-group>
+          </div>
+          <div>
+            <a-form-item v-if="formData.ruleSets.clash.type === 'built-in'">
+              <a-select v-model:value="formData.ruleSets.clash.id" class="w-full">
+                <a-select-option value="default">默认规则 (全面分流)</a-select-option>
+                <a-select-option value="lite">精简规则 (仅代理)</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item v-if="formData.ruleSets.clash.type === 'remote'" help="粘贴您的远程规则文件 URL。系统会自动合并节点列表。">
+              <a-input v-model:value="formData.ruleSets.clash.url" placeholder="https://example.com/my-rules.json" class="w-full" />
+            </a-form-item>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="surge" tab="Surge">
+          <div class="flex justify-center mb-4">
+            <a-radio-group v-model:value="formData.ruleSets.surge.type" button-style="solid">
+              <a-radio-button value="built-in">内置规则</a-radio-button>
+              <a-radio-button value="remote">远程配置</a-radio-button>
+            </a-radio-group>
+          </div>
+          <div>
+            <a-form-item v-if="formData.ruleSets.surge.type === 'built-in'">
+              <a-select v-model:value="formData.ruleSets.surge.id" class="w-full">
+                <a-select-option value="default">默认规则 (全面分流)</a-select-option>
+                <a-select-option value="lite">精简规则 (仅代理)</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item v-if="formData.ruleSets.surge.type === 'remote'" help="粘贴您的远程规则文件 URL。系统会自动合并节点列表。">
+              <a-input v-model:value="formData.ruleSets.surge.url" placeholder="https://example.com/my-surge-rules.conf" class="w-full" />
+            </a-form-item>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="quantumult-x" tab="Quantumult X">
+          <div class="flex justify-center mb-4">
+            <a-radio-group v-model:value="formData.ruleSets.quantumultx.type" button-style="solid">
+              <a-radio-button value="built-in">内置规则</a-radio-button>
+              <a-radio-button value="remote">远程配置</a-radio-button>
+            </a-radio-group>
+          </div>
+          <div>
+            <a-form-item v-if="formData.ruleSets.quantumultx.type === 'built-in'">
+              <a-select v-model:value="formData.ruleSets.quantumultx.id" class="w-full">
+                <a-select-option value="default">默认规则 (全面分流)</a-select-option>
+                <a-select-option value="lite">精简规则 (仅代理)</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item v-if="formData.ruleSets.quantumultx.type === 'remote'" help="粘贴您的远程规则文件 URL。系统会自动合并节点列表。">
+              <a-input v-model:value="formData.ruleSets.quantumultx.url" placeholder="https://example.com/my-qx-rules.conf" class="w-full" />
+            </a-form-item>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="loon" tab="Loon">
+          <div class="flex justify-center mb-4">
+            <a-radio-group v-model:value="formData.ruleSets.loon.type" button-style="solid">
+              <a-radio-button value="built-in">内置规则</a-radio-button>
+              <a-radio-button value="remote">远程配置</a-radio-button>
+            </a-radio-group>
+          </div>
+          <div>
+            <a-form-item v-if="formData.ruleSets.loon.type === 'built-in'">
+              <a-select v-model:value="formData.ruleSets.loon.id" class="w-full">
+                <a-select-option value="default">默认规则 (全面分流)</a-select-option>
+                <a-select-option value="lite">精简规则 (仅代理)</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item v-if="formData.ruleSets.loon.type === 'remote'" help="粘贴您的远程规则文件 URL。系统会自动合并节点列表。">
+              <a-input v-model:value="formData.ruleSets.loon.url" placeholder="https://example.com/my-loon-rules.conf" class="w-full" />
+            </a-form-item>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="sing-box" tab="Sing-Box">
+          <div class="flex justify-center mb-4">
+            <a-radio-group v-model:value="formData.ruleSets.singbox.type" button-style="solid">
+              <a-radio-button value="built-in">内置规则</a-radio-button>
+              <a-radio-button value="remote">远程配置</a-radio-button>
+            </a-radio-group>
+          </div>
+          <div>
+            <a-form-item v-if="formData.ruleSets.singbox.type === 'built-in'">
+              <a-select v-model:value="formData.ruleSets.singbox.id" class="w-full">
+                <a-select-option value="default">默认规则 (全面分流)</a-select-option>
+                <a-select-option value="lite">精简规则 (仅代理)</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item v-if="formData.ruleSets.singbox.type === 'remote'" help="粘贴您的远程规则文件 URL。系统会自动合并节点列表。">
+              <a-input v-model:value="formData.ruleSets.singbox.url" placeholder="https://example.com/my-singbox-rules.json" class="w-full" />
+            </a-form-item>
+          </div>
+        </a-tab-pane>
       </a-tabs>
     </a-modal>
 
@@ -178,7 +270,7 @@ import {
   DeleteOutlined
 } from '@ant-design/icons-vue'
 import QrcodeVue from 'qrcode.vue'
-import type { Profile, Node, Subscription } from '@shared/types'
+import type { Profile, Node, Subscription, RuleSetConfig } from '@shared/types'
 
 // 响应式数据
 const loading = ref(false)
@@ -194,12 +286,25 @@ const qrModalVisible = ref(false)
 const templateSelectModalVisible = ref(false)
 const isEdit = ref(false)
 const currentId = ref('')
+const activeTemplateTab = ref('clash')
 
 // 表单数据
-const formData = ref({
+const defaultRuleSets = () => ({
+  clash: { type: 'built-in', id: 'default' },
+  surge: { type: 'built-in', id: 'default' },
+  quantumultx: { type: 'built-in', id: 'default' },
+  loon: { type: 'built-in', id: 'default' },
+  singbox: { type: 'built-in', id: 'default' },
+});
+
+const formData = ref<{
+  name: string;
+  alias: string;
+  ruleSets: Record<string, RuleSetConfig>;
+}>({ 
   name: '',
   alias: '',
-  clientType: 'clash' // Default to Clash
+  ruleSets: defaultRuleSets(),
 })
 
 const selectedNodeIds = ref<string[]>([])
@@ -211,7 +316,6 @@ const qrCodeUrl = ref('')
 // 表单验证规则
 const formRules = {
   name: [{ required: true, message: '请输入配置文件名称' }],
-  clientType: [{ required: true, message: '请选择客户端类型' }]
 }
 
 // 计算属性
@@ -290,7 +394,11 @@ const fetchData = async () => {
 
 const showCreateModal = () => {
   isEdit.value = false
-  formData.value = { name: '', alias: '', clientType: 'clash' }
+  formData.value = { 
+    name: '', 
+    alias: '', 
+    ruleSets: defaultRuleSets(),
+  }
   selectedNodeIds.value = []
   selectedSubscriptionIds.value = []
   modalVisible.value = true
@@ -302,7 +410,7 @@ const handleEdit = (record: Profile) => {
   formData.value = {
     name: record.name,
     alias: record.alias || '',
-    clientType: record.clientType || 'clash' // Default to Clash if not set
+    ruleSets: record.ruleSets || defaultRuleSets(),
   }
   selectedNodeIds.value = record.nodeIds || []
   selectedSubscriptionIds.value = record.subscriptionIds || []
@@ -389,13 +497,31 @@ const getSubscriptionUrl = (profile: Profile) => {
   return `${baseUrl}/api/subscribe/${profile.id}`
 }
 
-const handleCopy = async (url: string) => {
-  try {
-    await navigator.clipboard.writeText(url)
-    message.success('链接已复制到剪贴板')
-  } catch (error) {
-    console.error('复制失败:', error)
-    message.error('复制失败')
+const handleCopy = (url: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url).then(() => {
+      message.success('链接已复制到剪贴板');
+    }).catch(error => {
+      console.error('使用 navigator.clipboard 复制失败:', error);
+      message.error('复制失败');
+    });
+  } else {
+    const textArea = document.createElement('textarea');
+    textArea.value = url;
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      message.success('链接已复制到剪贴板');
+    } catch (error) {
+      console.error('使用 execCommand 复制失败:', error);
+      message.error('复制失败');
+    } finally {
+      document.body.removeChild(textArea);
+    }
   }
 }
 
@@ -472,7 +598,7 @@ onMounted(() => {
 
 .full-width-transfer .ant-transfer-list {
   width: 100%;
-  height: 300px; /* Adjust height as needed */
+  height: 500px; /* Adjust height as needed */
 }
 
 @media (max-width: 768px) {

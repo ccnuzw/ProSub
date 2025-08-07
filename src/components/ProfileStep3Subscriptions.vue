@@ -1,7 +1,7 @@
 <template>
   <a-typography-title :level="5" class="mt-6">选择订阅</a-typography-title>
   <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-    <div class="flex-1 w-full sm:w-auto min-w-0">
+    <div class="flex-1 w-full min-w-0">
       <a-card :title="`可选订阅 (${availableSubs.length})`" size="small">
         <template #extra>
           <a-input-search placeholder="搜索..." v-model:value="subSearchTerm" class="w-full sm:w-48" />
@@ -18,7 +18,7 @@
                 </a-list-item-meta>
               </a-checkbox>
               <template #actions>
-                <a-button shape="circle" size="small" :icon="h(ArrowRightOutlined)" @click="() => toggleSubSelection(sub.id)" />
+                <a-button shape="circle" size="small" :icon="h-96" @click="() => toggleSubSelection(sub.id)" />
               </template>
             </a-list-item>
           </template>
@@ -27,11 +27,11 @@
     </div>
     
     <div class="flex flex-col sm:flex-row items-center justify-center gap-2 my-4 sm:my-0">
-      <a-button :icon="h(ArrowRightOutlined)" @click="moveCheckedSubs" :disabled="checkedSubIds.filter((id) => !selectedSubIds.map(s => s.id).includes(id)).length === 0" />
+      <a-button :icon="h-96" @click="moveCheckedSubs" :disabled="checkedSubIds.filter((id) => !selectedSubIds.map(s => s.id).includes(id)).length === 0" />
       <a-button :icon="h(ArrowLeftOutlined)" @click="removeCheckedSubs" :disabled="checkedSubIds.filter((id) => selectedSubIds.map(s => s.id).includes(id)).length === 0" />
     </div>
     
-    <div class="flex-1 w-full sm:w-auto min-w-0">
+    <div class="flex-1 w-full min-w-0">
       <a-card :title="`已选订阅 (${selectedSubs.length})`" size="small">
         <div class="h-8 mb-2"></div>
         <a-list style="height: 200px; overflow: auto" :data-source="selectedSubs">

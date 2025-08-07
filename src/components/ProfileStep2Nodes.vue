@@ -1,7 +1,7 @@
 <template>
   <a-typography-title :level="5" class="mt-6">选择节点</a-typography-title>
   <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-    <div class="flex-1 w-full sm:w-auto min-w-0">
+    <div class="flex-1 w-full min-w-0">
       <a-card :title="`可选节点 (${availableNodes.length})`" size="small">
         <template #extra>
           <a-input-search
@@ -10,7 +10,7 @@
             class="w-full sm:w-48"
           />
         </template>
-        <a-list style="height: 400px; overflow: auto" :data-source="availableNodes">
+        <a-list style="height: 600px; overflow: auto" :data-source="availableNodes">
           <template #renderItem="{ item: node }">
             <a-list-item>
               <a-checkbox
@@ -65,10 +65,10 @@
         :disabled="checkedNodeIds.filter((id) => selectedNodeIds.includes(id)).length === 0"
       />
     </div>
-    <div class="flex-1 w-full sm:w-auto min-w-0">
+    <div class="flex-1 w-full min-w-0">
       <a-card :title="`已选节点 (${selectedNodes.length})`" size="small">
         <div class="h-8 mb-2"></div>
-        <a-list style="height: 400px; overflow: auto" :data-source="selectedNodes">
+        <a-list style="height: 600px; overflow: auto" :data-source="selectedNodes">
           <template #renderItem="{ item: node }">
             <a-list-item>
               <a-checkbox
