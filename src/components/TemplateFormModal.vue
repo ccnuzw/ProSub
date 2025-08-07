@@ -14,9 +14,16 @@
       <a-form-item label="描述" name="description">
         <a-textarea v-model:value="formState.description" placeholder="请输入模板描述" :rows="2" />
       </a-form-item>
-      <a-form-item label="模板内容" name="content">
+
+      <a-form-item label="模板内容" name="content" v-if="clientType !== 'clash'">
         <a-textarea v-model:value="formState.content" placeholder="请输入模板内容 (YAML/JSON)" :rows="10" />
       </a-form-item>
+
+      <ClashConfigEditor
+        v-if="clientType === 'clash'"
+        :initial-content="formState.content"
+        @update:content="formState.content = $event"
+      />
     </a-form>
   </a-modal>
 </template>
@@ -25,6 +32,7 @@
 import { ref, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
+import ClashConfigEditor from './ClashConfigEditor.vue';
 
 interface TemplateFormState {
   id?: string;
