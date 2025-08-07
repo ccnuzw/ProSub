@@ -81,7 +81,7 @@
       @ok="handleSubmit"
       @cancel="handleCancel"
       :confirm-loading="submitting"
-      width="800px"
+      width="1200px"
     >
       <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
         <a-row :gutter="16">
@@ -110,6 +110,7 @@
               :filter-option="filterOption"
               @change="handleNodeChange"
               class="full-width-transfer"
+              :list-style="{ width: '550px', height: '500px' }"
             />
           </a-tab-pane>
           <a-tab-pane key="subscriptions" tab="选择订阅">
@@ -122,6 +123,7 @@
               :filter-option="filterOption"
               @change="handleSubscriptionChange"
               class="full-width-transfer"
+              :list-style="{ width: '550px', height: '500px' }"
             />
           </a-tab-pane>
         </a-tabs>
@@ -472,7 +474,7 @@ onMounted(() => {
 
 .full-width-transfer .ant-transfer-list {
   width: 100%;
-  height: 300px; /* Adjust height as needed */
+  height: 500px; /* Adjust height as needed */
 }
 
 @media (max-width: 768px) {
