@@ -18,9 +18,6 @@ declare module 'vue' {
     AInput: typeof import('ant-design-vue/es')['Input']
     AInputPassword: typeof import('ant-design-vue/es')['InputPassword']
     AInputSearch: typeof import('ant-design-vue/es')['InputSearch']
-    AList: typeof import('ant-design-vue/es')['List']
-    AListItem: typeof import('ant-design-vue/es')['ListItem']
-    AListItemMeta: typeof import('ant-design-vue/es')['ListItemMeta']
     AMenu: typeof import('ant-design-vue/es')['Menu']
     AMenuDivider: typeof import('ant-design-vue/es')['MenuDivider']
     AMenuItem: typeof import('ant-design-vue/es')['MenuItem']
@@ -56,6 +53,7 @@ declare module 'vue' {
     StatsCard: typeof import('./src/components/StatsCard.vue')['default']
     SubscriptionForm: typeof import('./src/components/SubscriptionForm.vue')['default']
     SubscriptionRuleModal: typeof import('./src/components/SubscriptionRuleModal.vue')['default']
+    TemplateFormModal: typeof import('./src/components/TemplateFormModal.vue')['default']
     UserForm: typeof import('./src/components/UserForm.vue')['default']
   }
 }

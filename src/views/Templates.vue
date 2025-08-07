@@ -16,43 +16,61 @@
               </a-button>
             </a-space>
           </div>
-          <a-list
-            class="template-list"
-            :loading="loading"
-            item-layout="horizontal"
+          <a-table
+            :columns="columns"
             :data-source="templates[client.key]"
+            :loading="loading"
+            row-key="id"
+            :pagination="false"
           >
-            <template #renderItem="{ item }">
-              <a-list-item>
-                <template #actions>
-                  <a-button type="text" size="small">编辑</a-button>
-                  <a-button type="text" size="small" danger>删除</a-button>
-                </template>
-                <a-list-item-meta
-                  :description="`这是一个${client.name}的模板描述...`"
-                >
-                  <template #title>
-                    <a>{{ item.name }}</a>
-                  </template>
-                  <template #avatar>
-                    <FileTextOutlined />
-                  </template>
-                </a-list-item-meta>
-              </a-list-item>
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'updatedAt'">
+                {{ formatDateTime(record.updatedAt) }}
+              </template>
+              <template v-if="column.key === 'actions'">
+                <a-space>
+                  <a-button type="text" size="small" @click="showEditModal(record)">编辑</a-button>
+                  <a-button type="text" size="small" danger @click="handleDelete(record)">删除</a-button>
+                </a-space>
+              </template>
             </template>
-          </a-list>
+          </a-table>
         </div>
       </a-tab-pane>
     </a-tabs>
+
+    <TemplateFormModal
+      :visible="isModalVisible"
+      :is-edit="isEditMode"
+      :initial-data="currentTemplate"
+      :client-type="activeKey"
+      @update:visible="isModalVisible = $event"
+      @saved="fetchTemplates"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { PlusOutlined, FileTextOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { ref, reactive, onMounted } from 'vue';
+import { PlusOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
+import TemplateFormModal from '../components/TemplateFormModal.vue';
+
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  clientType: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const activeKey = ref('clash');
 const loading = ref(false);
+const isModalVisible = ref(false);
+const isEditMode = ref(false);
+const currentTemplate = ref<Template | null>(null);
 
 const clients = [
   { key: 'clash', name: 'Clash' },
@@ -62,27 +80,105 @@ const clients = [
   { key: 'sing-box', name: 'Sing-Box' },
 ];
 
-// Placeholder data
-const templates = reactive({
-  clash: [
-    { id: 'clash-1', name: '默认Clash模板' },
-    { id: 'clash-2', name: '精简Clash模板' },
-  ],
-  surge: [
-    { id: 'surge-1', name: '默认Surge模板' },
-  ],
-  quantumultx: [
-    { id: 'qx-1', name: '默认Quantumult X模板' },
-  ],
+const columns = [
+  {
+    title: '模板名称',
+    dataIndex: 'name',
+    key: 'name',
+    width: 200,
+  },
+  {
+    title: '描述',
+    dataIndex: 'description',
+    key: 'description',
+    width: 350,
+  },
+  {
+    title: '修改时间',
+    dataIndex: 'updatedAt',
+    key: 'updatedAt',
+    width: 250,
+    align: 'center',
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 150,
+    align: 'center',
+  },
+];
+
+const templates = reactive<Record<string, Template[]>>({
+  clash: [],
+  surge: [],
+  quantumultx: [],
   loon: [],
-  'sing-box': [
-    { id: 'sb-1', name: '默认Sing-Box模板' },
-  ],
+  'sing-box': [],
 });
 
+const fetchTemplates = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch('/api/templates');
+    if (response.ok) {
+      const data: Template[] = await response.json();
+      // Clear existing data
+      for (const key in templates) {
+        templates[key] = [];
+      }
+      // Populate templates by clientType
+      data.forEach(template => {
+        if (templates[template.clientType]) {
+          templates[template.clientType].push(template);
+        }
+      });
+    } else {
+      message.error('获取模板失败');
+    }
+  } catch (error) {
+    console.error('获取模板失败:', error);
+    message.error('获取模板失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const formatDateTime = (dateTimeString: string) => {
+  if (!dateTimeString) return '';
+  // Assuming format is ISO string like "YYYY-MM-DDTHH:mm:ss.sssZ"
+  return dateTimeString.slice(0, 19).replace('T', ' ');
+};
+
 const showAddModal = (clientKey: string) => {
-  console.log(`Adding new template for ${clientKey}`);
-  // Logic to show a modal will be added later
+  isEditMode.value = false;
+  currentTemplate.value = null;
+  activeKey.value = clientKey; // Ensure modal opens on correct tab
+  isModalVisible.value = true;
+};
+
+const showEditModal = (template: Template) => {
+  isEditMode.value = true;
+  currentTemplate.value = template;
+  activeKey.value = template.clientType; // Ensure modal opens on correct tab
+  isModalVisible.value = true;
+};
+
+const handleDelete = async (template: Template) => {
+  try {
+    const response = await fetch(`/api/templates/${template.id}`, {
+      method: 'DELETE',
+    });
+    if (response.ok) {
+      message.success('模板删除成功');
+      fetchTemplates();
+    } else {
+      const errorData = await response.json();
+      message.error(errorData.message || '删除失败');
+    }
+  } catch (error) {
+    console.error('删除模板失败:', error);
+    message.error('删除模板失败');
+  }
 };
 
 const showImportModal = (clientKey: string) => {
@@ -90,6 +186,9 @@ const showImportModal = (clientKey: string) => {
   // Logic to show a modal will be added later
 };
 
+onMounted(() => {
+  fetchTemplates();
+});
 </script>
 
 <style scoped>
@@ -116,9 +215,5 @@ const showImportModal = (clientKey: string) => {
   font-size: 20px;
   font-weight: 600;
   margin: 0;
-}
-
-.template-list {
-  background-color: transparent;
 }
 </style>
