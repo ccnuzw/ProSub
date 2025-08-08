@@ -384,8 +384,20 @@ const handleImport = async () => {
     const urls = importUrls.value.split('\n').filter(url => url.trim())
     
     // Prepare subscriptions array for batch import
+    const generateUUID = () => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        } else {
+            // Fallback for environments where crypto.randomUUID is not available
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    };
+
     const subscriptionsToImport = urls.map((url, index) => ({
-      id: crypto.randomUUID(), // Generate a unique ID for each subscription
+      id: generateUUID(), // Generate a unique ID for each subscription
       name: `导入订阅 ${index + 1}`, // Generate a default name, can be improved later
       url: url.trim()
     }));

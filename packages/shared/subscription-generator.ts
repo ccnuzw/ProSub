@@ -367,40 +367,58 @@ export async function fetchNodesFromSubscription(url: string): Promise<Node[]> {
         const response = await fetch(url, { headers: { 'User-Agent': 'ProSub/1.0' } });
         console.log(`[DEBUG] URL: ${url}, 响应状态: ${response.status}, OK: ${response.ok}`);
         if (!response.ok) {
-            console.warn(`[DEBUG] 获取订阅失败，HTTP 状态码: ${response.status}`);
+            console.warn(`[DEBUG] 获取订阅失败，HTTP 状态码: ${response.status}, 响应文本: ${await response.text().catch(() => 'N/A')}`);
             return [];
         }
         const content = await response.text();
         console.log(`[DEBUG] 接收到的内容 (前500字符):\n${content.substring(0, 500)}`);
 
-        let nodes: Node[] = parseClashYaml(content);
-        console.log(`[DEBUG] parseClashYaml 结果 (节点数量): ${nodes.length}`);
+        let nodes: Node[] = [];
+        try {
+            nodes = parseClashYaml(content);
+            console.log(`[DEBUG] parseClashYaml 结果 (节点数量): ${nodes.length}`);
+        } catch (clashError) {
+            console.warn(`[DEBUG] parseClashYaml 失败: ${clashError}`);
+        }
 
         if (nodes.length === 0) {
             console.log(`[DEBUG] Clash YAML 解析未找到节点，尝试 Base64 或原始链接解析。`);
             let decodedContent = '';
             try {
-                decodedContent = atob(decodeURIComponent(content.replace(/_/g, '/').replace(/-/g, '+')));
+                // Attempt to decode as Base64, handling URL-safe Base64 variants
+                decodedContent = atob(content.replace(/_/g, '/').replace(/-/g, '+'));
                 console.log(`[DEBUG] Base64 解码内容 (前500字符):\n${decodedContent.substring(0, 500)}`);
             } catch (e) {
-                decodedContent = content;
-                console.log(`[DEBUG] Base64 解码失败，使用原始内容。`);
+                // If Base64 decoding fails, try URI decoding
+                try {
+                    decodedContent = decodeURIComponent(content);
+                    console.log(`[DEBUG] URI 解码内容 (前500字符):\n${decodedContent.substring(0, 500)}`);
+                } catch (uriError) {
+                    // If both fail, use original content and log a warning
+                    decodedContent = content;
+                    console.warn(`[DEBUG] Base64 和 URI 解码失败，使用原始内容。错误: ${e}, ${uriError}`);
+                }
             }
             const lines = decodedContent.split(/\r?\n/)
                 .filter(line => isValidSubscriptionLink(line));
             nodes = lines.map(link => {
-                const parsedNode = parseNodeLink(link);
-                if (!parsedNode) {
-                    console.warn(`[DEBUG] 无法解析链接: ${link.substring(0, 100)}...`);
+                try {
+                    const parsedNode = parseNodeLink(link);
+                    if (!parsedNode) {
+                        console.warn(`[DEBUG] 无法解析链接: ${link.substring(0, Math.min(link.length, 100))}...`);
+                    }
+                    return parsedNode;
+                } catch (parseError) {
+                    console.warn(`[DEBUG] parseNodeLink 失败 for link: ${link.substring(0, Math.min(link.length, 100))}... 错误: ${parseError}`);
+                    return null;
                 }
-                return parsedNode;
             }).filter(Boolean) as Node[];
             console.log(`[DEBUG] 原始链接解析结果 (节点数量): ${nodes.length}`);
         }
         console.log(`[DEBUG] 最终解析到的节点数量: ${nodes.length}`);
         return nodes;
     } catch (error: any) {
-        console.error(`[DEBUG] 从 ${url} 获取或解析订阅时发生错误:`, error);
+        console.error(`[DEBUG] 从 ${url} 获取或解析订阅时发生未捕获错误:`, error);
         return [];
     }
 }

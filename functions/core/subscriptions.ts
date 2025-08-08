@@ -131,13 +131,13 @@ export async function handleSubscriptionRefresh(request: Request, env: Env, id: 
     await SubscriptionDataAccess.updateStatus(env, id, nodeCount, errorMessage);
     
     return jsonResponse({ message: '订阅刷新完成', id: id, nodeCount: nodeCount, error: errorMessage });
-  } catch (error) {
+  } catch (error: any) {
     console.error('刷新订阅失败:', error);
     // If an error occurs before updating status, try to update with error message
     if (id) {
       await SubscriptionDataAccess.updateStatus(env, id, 0, `刷新失败: ${error.message || error}`);
     }
-    return errorResponse('刷新订阅失败');
+    return errorResponse(`刷新订阅失败: ${error.message || error}`);
   }
 }
 

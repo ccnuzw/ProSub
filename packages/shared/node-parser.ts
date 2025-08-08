@@ -1,5 +1,17 @@
 import { Node } from './types';
 
+const generateUUID = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    } else {
+        // Fallback for environments where crypto.randomUUID is not available
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+};
+
 function base64Decode(str: string): string | null {
   try {
     const base64 = str.replace(/_/g, '/').replace(/-/g, '+');
@@ -27,11 +39,14 @@ function parseShadowsocksLink(link: string): Partial<Node> | null {
         let method, password;
 
         // Try to decode credentials part. It might be plain or base64 encoded.
+        const credentialsPart = decodeURIComponent(credentialsPartEncoded); // First, URL-decode
+
         let credentialsDecoded: string;
         try {
-            credentialsDecoded = base64Decode(credentialsPartEncoded) || decodeURIComponent(credentialsPartEncoded);
+            // Then, try Base64 decode. If it fails, use the URL-decoded string directly.
+            credentialsDecoded = base64Decode(credentialsPart) || credentialsPart;
         } catch (e) {
-            credentialsDecoded = decodeURIComponent(credentialsPartEncoded);
+            credentialsDecoded = credentialsPart; // Fallback to URL-decoded if Base64 fails
         }
 
         const colonIndex = credentialsDecoded.indexOf(':');
@@ -62,7 +77,7 @@ function parseShadowsocksLink(link: string): Partial<Node> | null {
         }
 
         return {
-            id: crypto.randomUUID(),
+            id: generateUUID(),
             name: name || `${server}:${port}`,
             server,
             port,
@@ -95,7 +110,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             }
             
             return {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 name: config.ps || `${config.add}:${config.port}`,
                 server: config.add,
                 port: parseInt(config.port, 10),
@@ -141,7 +156,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             const finalPassword = username || password;
             
             return {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
@@ -162,7 +177,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             url.searchParams.forEach((value, key) => { params[key] = value; });
             
             return {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
@@ -192,7 +207,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             const port = parseInt(serverPart.substring(colonIndex + 1), 10);
             
             return {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 name: `${server}:${port}`,
                 server, 
                 port,
@@ -216,7 +231,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             url.searchParams.forEach((value, key) => { params[key] = value; });
             
             return {
-                id: crypto.randomUUID(),
+                id: generateUUID(),
                 name: url.hash ? decodeURIComponent(url.hash.substring(1)) : `${url.hostname}:${url.port}`,
                 server: url.hostname, 
                 port: parseInt(url.port, 10),
@@ -239,7 +254,7 @@ export function parseNodeLink(link: string): Partial<Node> | null {
             
             if (server && port && !isNaN(port)) {
                 return {
-                    id: crypto.randomUUID(),
+                    id: generateUUID(),
                     name: `${server}:${port}`,
                     server,
                     port,
