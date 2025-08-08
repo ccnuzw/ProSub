@@ -195,6 +195,11 @@ const generateNodeLink = (node: Node): string => {
   cursor: pointer;
 }
 
+.dark .node-card {
+  background: #1c1c1e;
+  border-color: var(--color-border);
+}
+
 .node-card:hover {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
@@ -229,6 +234,10 @@ const generateNodeLink = (node: Node): string => {
   white-space: nowrap;
 }
 
+.dark .node-card__name {
+  color: var(--color-text);
+}
+
 .node-card__type {
   display: inline-block;
   font-size: var(--font-size-xs);
@@ -237,6 +246,11 @@ const generateNodeLink = (node: Node): string => {
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   margin-top: var(--spacing-xs);
+}
+
+.dark .node-card__type {
+  color: var(--color-text-secondary);
+  background: rgba(152, 152, 159, 0.1);
 }
 
 .node-card__actions {
@@ -267,6 +281,10 @@ const generateNodeLink = (node: Node): string => {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   font-family: var(--font-family-mono);
+}
+
+.dark .node-card__server {
+  color: var(--color-text-secondary);
 }
 
 .node-card__status {
@@ -306,10 +324,18 @@ const generateNodeLink = (node: Node): string => {
   color: var(--color-text-secondary);
 }
 
+.dark .node-card__status-text {
+  color: var(--color-text-secondary);
+}
+
 .node-card__latency {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
   font-family: var(--font-family-mono);
+}
+
+.dark .node-card__latency {
+  color: var(--color-text-tertiary);
 }
 
 .node-card__tags {
@@ -331,6 +357,10 @@ const generateNodeLink = (node: Node): string => {
 
 .node-card__created {
   font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+.dark .node-card__created {
   color: var(--color-text-tertiary);
 }
 

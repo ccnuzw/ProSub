@@ -581,8 +581,314 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.dark .profiles-content {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
 .profiles-table {
   border-radius: 12px;
+}
+
+.profiles-content :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-select) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-select-selector) {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.profiles-content :deep(.ant-btn) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-btn:hover) {
+  background: var(--primary-50);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.profiles-content :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.profiles-content :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.profiles-content :deep(.ant-btn-danger) {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+}
+
+.profiles-content :deep(.ant-btn-danger:hover) {
+  background: #ff7875;
+  border-color: #ff7875;
+  color: white;
+}
+
+.profiles-content :deep(.ant-tabs) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-tabs-tab) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-tabs-tab-active) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--primary-color);
+}
+
+.profiles-content :deep(.ant-transfer) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-transfer-list) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-transfer-list-header) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-transfer-list-content) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-transfer-list-search) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-select) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-select-selector) {
+  background: #2c2c2e !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .profiles-content :deep(.ant-btn) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-btn:hover) {
+  background: rgba(10, 132, 255, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .profiles-content :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .profiles-content :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.dark .profiles-content :deep(.ant-btn-danger) {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+}
+
+.dark .profiles-content :deep(.ant-btn-danger:hover) {
+  background: #ff7875;
+  border-color: #ff7875;
+  color: white;
+}
+
+.dark .profiles-content :deep(.ant-tabs) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-tabs-tab) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-tabs-tab-active) {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+  color: var(--primary-color);
+}
+
+.dark .profiles-content :deep(.ant-transfer) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-transfer-list) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-transfer-list-header) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-transfer-list-content) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-transfer-list-search) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .profiles-content :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.profiles-content :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-content :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profiles-content :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .profiles-content :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.profiles-content :deep(.ant-transfer-list-search-action) {
+  color: var(--text-tertiary);
+}
+
+.dark .profiles-content :deep(.ant-transfer-list-search-action) {
+  color: var(--text-tertiary);
+}
+
+.profiles-table :deep(.ant-table-thead > tr > th) {
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profiles-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.profiles-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--primary-50);
+}
+
+.profiles-table :deep(.ant-table) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.profiles-table :deep(.ant-table-container) {
+  background: var(--surface-color);
+}
+
+.profiles-table :deep(.ant-table-content) {
+  background: var(--surface-color);
+}
+
+.profiles-table :deep(.ant-table-body) {
+  background: var(--surface-color);
+}
+
+.dark .profiles-table :deep(.ant-table-thead > tr > th) {
+  background: #2c2c2e;
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profiles-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--border-light);
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .profiles-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(10, 132, 255, 0.1);
+}
+
+.dark .profiles-table :deep(.ant-table) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .profiles-table :deep(.ant-table-container) {
+  background: #1c1c1e;
+}
+
+.dark .profiles-table :deep(.ant-table-content) {
+  background: #1c1c1e;
+}
+
+.dark .profiles-table :deep(.ant-table-body) {
+  background: #1c1c1e;
 }
 
 .qr-content {

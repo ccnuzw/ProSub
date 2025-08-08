@@ -421,6 +421,51 @@ onMounted(() => {
   border-radius: 8px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-color);
+  background: var(--surface-color);
+}
+
+.dark .user-menu {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.user-menu :deep(.ant-dropdown-menu-item) {
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.user-menu :deep(.ant-dropdown-menu-item:hover) {
+  background: var(--primary-50);
+  color: var(--primary-color);
+}
+
+.dark .user-menu :deep(.ant-dropdown-menu-item) {
+  color: var(--text-primary);
+}
+
+.dark .user-menu :deep(.ant-dropdown-menu-item:hover) {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--primary-color);
+}
+
+.user-menu :deep(.ant-dropdown-menu-item .anticon) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  min-width: 16px;
+}
+
+.user-menu :deep(.ant-dropdown-menu-item) {
+  display: flex !important;
+  align-items: center !important;
+  padding: 5px 12px !important;
+}
+
+.user-menu :deep(.ant-dropdown-menu-item > *) {
+  display: flex;
+  align-items: center;
 }
 
 .main-content {
@@ -514,6 +559,37 @@ onMounted(() => {
 
 .collapse-btn:hover {
   color: var(--primary-color);
+}
+
+.action-btn {
+  font-size: 18px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  color: var(--primary-color);
+}
+
+.user-btn {
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dark .action-btn {
+  color: var(--text-secondary);
+}
+
+.dark .action-btn:hover {
+  color: var(--primary-color);
+}
+
+.dark .user-btn {
+  color: var(--text-primary);
 }
 
 /* Collapsed Sidebar */

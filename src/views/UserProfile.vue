@@ -202,6 +202,128 @@ onMounted(() => {
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
+  background: var(--surface-color);
+}
+
+.dark .profile-card {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.profile-card :deep(.ant-card-head) {
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.profile-card :deep(.ant-card-body) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.dark .profile-card :deep(.ant-card-head) {
+  background: #2c2c2e;
+  border-bottom-color: var(--border-color);
+}
+
+.dark .profile-card :deep(.ant-card-body) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.profile-card :deep(.ant-form-item-label > label) {
+  color: var(--text-primary);
+}
+
+.profile-card :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profile-card :deep(.ant-input-password) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profile-card :deep(.ant-btn) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.profile-card :deep(.ant-btn:hover) {
+  background: var(--primary-50);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.profile-card :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.profile-card :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.dark .profile-card :deep(.ant-form-item-label > label) {
+  color: var(--text-primary);
+}
+
+.dark .profile-card :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profile-card :deep(.ant-input-password) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profile-card :deep(.ant-btn) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .profile-card :deep(.ant-btn:hover) {
+  background: rgba(10, 132, 255, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .profile-card :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .profile-card :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.profile-card :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .profile-card :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.profile-card :deep(.ant-form-item-explain-error) {
+  color: var(--error-color);
+}
+
+.dark .profile-card :deep(.ant-form-item-explain-error) {
+  color: var(--error-color);
 }
 
 .card-title {

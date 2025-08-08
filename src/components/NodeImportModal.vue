@@ -264,9 +264,23 @@ defineExpose({
   background: var(--surface-color);
 }
 
+.dark .input-section {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
 .node-input {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 12px;
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .node-input {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 .parse-results {
@@ -276,11 +290,20 @@ defineExpose({
   background: var(--surface-color);
 }
 
+.dark .parse-results {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
 .parse-results h4 {
   margin: 0 0 12px 0;
   color: var(--text-primary);
   font-size: 16px;
   font-weight: 600;
+}
+
+.dark .parse-results h4 {
+  color: var(--text-primary);
 }
 
 .stats {
@@ -292,6 +315,10 @@ defineExpose({
   border-radius: 6px;
 }
 
+.dark .stats {
+  background: #2c2c2e;
+}
+
 .stat-item {
   display: flex;
   align-items: center;
@@ -301,6 +328,10 @@ defineExpose({
 .stat-label {
   color: var(--text-secondary);
   font-size: 14px;
+}
+
+.dark .stat-label {
+  color: var(--text-secondary);
 }
 
 .stat-value {
@@ -319,8 +350,17 @@ defineExpose({
   border-radius: 6px;
 }
 
+.dark .nodes-table-container {
+  border-color: var(--border-light);
+}
+
 .nodes-table {
   border-radius: 6px;
+  background: var(--surface-color);
+}
+
+.dark .nodes-table {
+  background: #1c1c1e;
 }
 
 .nodes-table :deep(.ant-table-thead > tr > th) {
@@ -330,10 +370,33 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 1;
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-table-thead > tr > th) {
+  background: #2c2c2e;
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 .nodes-table :deep(.ant-table-tbody > tr > td) {
   border-bottom: 1px solid var(--border-light);
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--border-light);
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.nodes-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--primary-50);
+}
+
+.dark .nodes-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(10, 132, 255, 0.1);
 }
 
 .node-name {
@@ -353,6 +416,10 @@ defineExpose({
   background: #fff2f0;
 }
 
+.dark .remove-btn:hover {
+  background: rgba(255, 77, 79, 0.1);
+}
+
 .error-message {
   color: #ff4d4f;
   font-size: 12px;
@@ -364,6 +431,40 @@ defineExpose({
   justify-content: flex-end;
   padding-top: 16px;
   border-top: 1px solid var(--border-light);
+}
+
+.dark .modal-footer {
+  border-top-color: var(--border-light);
+}
+
+.input-section :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .input-section :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.input-section :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .input-section :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.parse-results :deep(.ant-table) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.dark .parse-results :deep(.ant-table) {
+  background: #1c1c1e;
+  color: var(--text-primary);
 }
 
 /* 响应式设计 */
