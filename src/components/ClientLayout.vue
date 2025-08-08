@@ -439,6 +439,7 @@ onMounted(() => {
   border-right: 1px solid var(--border-color); /* Add right border */
   transition: width 0.3s ease; /* Add transition for smooth collapse */
   overflow-y: auto; /* Allow sidebar content to scroll */
+  min-width: 80px; /* Ensure minimum width when collapsed */
 }
 
 .sidebar-nav {
@@ -458,6 +459,7 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s;
+  min-height: 44px; /* Ensure consistent height */
 }
 
 .sidebar-nav-item:hover {
@@ -494,11 +496,20 @@ onMounted(() => {
   display: none;
 }
 
+.sidebar.collapsed .logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 
 .collapse-btn {
   font-size: 18px;
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .collapse-btn:hover {
@@ -514,6 +525,7 @@ onMounted(() => {
   justify-content: center;
   padding: 12px 0;
   gap: 0;
+  min-height: 44px;
 }
 
 .sidebar.collapsed .sidebar-nav-item span {
@@ -523,6 +535,16 @@ onMounted(() => {
 .sidebar.collapsed .sidebar-nav-item .anticon {
   font-size: 20px;
   margin: 0;
+}
+
+/* Ensure icons are visible when sidebar is collapsed */
+.sidebar.collapsed .sidebar-nav-item .anticon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 20px;
+  min-height: 20px;
 }
 
 

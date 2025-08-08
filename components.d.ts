@@ -41,7 +41,6 @@ declare module 'vue' {
     ATooltip: typeof import('ant-design-vue/es')['Tooltip']
     ATransfer: typeof import('ant-design-vue/es')['Transfer']
     ClashConfigEditor: typeof import('./src/components/ClashConfigEditor.vue')['default']
-    ClashProxyFormModal: typeof import('./src/components/ClashProxyFormModal.vue')['default']
     ClashProxyGroupFormModal: typeof import('./src/components/ClashProxyGroupFormModal.vue')['default']
     ClashRuleFormModal: typeof import('./src/components/ClashRuleFormModal.vue')['default']
     ClientLayout: typeof import('./src/components/ClientLayout.vue')['default']
