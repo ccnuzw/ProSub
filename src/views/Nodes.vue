@@ -1134,11 +1134,16 @@ onMounted(() => {
   font-size: 12px;
   height: 28px;
   padding: 0 8px;
+  color: var(--text-primary); /* Ensure text color is visible in light mode */
 }
 
 .action-button:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+
+.dark .action-button {
+  color: var(--text-primary); /* Ensure text color is visible in dark mode */
 }
 
 /* 加载状态样式 */

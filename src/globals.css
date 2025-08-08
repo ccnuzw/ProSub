@@ -101,10 +101,83 @@
   --color-success: #10b981;
   --color-error: #ef4444;
   --color-warning: #f59e0b;
+
+  /* Tag Colors */
+  --tag-online-bg: #f6ffed;
+  --tag-online-border: #b7eb8f;
+  --tag-online-color: #52c41a;
+
+  --tag-offline-bg: #fff2f0;
+  --tag-offline-border: #ffccc7;
+  --tag-offline-color: #ff4d4f;
+
+  --tag-checking-bg: #e6f7ff;
+  --tag-checking-border: #91d5ff;
+  --tag-checking-color: #1890ff;
+
+  --tag-unknown-bg: #fafafa;
+  --tag-unknown-border: #d9d9d9;
+  --tag-unknown-color: #8c8c8c;
+
+  --tag-vmess-bg: #e6f7ff;
+  --tag-vmess-border: #91d5ff;
+  --tag-vmess-color: #1890ff;
+
+  --tag-vless-bg: #f6ffed;
+  --tag-vless-border: #b7eb8f;
+  --tag-vless-color: #52c41a;
+
+  --tag-trojan-bg: #f9f0ff;
+  --tag-trojan-border: #d3adf7;
+  --tag-trojan-color: #722ed1;
+
+  --tag-ss-bg: #fff7e6;
+  --tag-ss-border: #ffd591;
+  --tag-ss-color: #fa8c16;
+
+  --tag-ssr-bg: #fff2f0;
+  --tag-ssr-border: #ffccc7;
+  --tag-ssr-color: #ff4d4f;
 }
 
 /* 深色模式变量 - 符合苹果设计规范 */
 .dark {
+  /* Tag Colors for Dark Mode */
+  --tag-online-bg: rgba(82, 196, 26, 0.2);
+  --tag-online-border: rgba(82, 196, 26, 0.5);
+  --tag-online-color: #52c41a;
+
+  --tag-offline-bg: rgba(255, 77, 79, 0.2);
+  --tag-offline-border: rgba(255, 77, 79, 0.5);
+  --tag-offline-color: #ff4d4f;
+
+  --tag-checking-bg: rgba(24, 144, 255, 0.2);
+  --tag-checking-border: rgba(24, 144, 255, 0.5);
+  --tag-checking-color: #1890ff;
+
+  --tag-unknown-bg: rgba(140, 140, 140, 0.2);
+  --tag-unknown-border: rgba(140, 140, 140, 0.5);
+  --tag-unknown-color: #8c8c8c;
+
+  --tag-vmess-bg: rgba(24, 144, 255, 0.2);
+  --tag-vmess-border: rgba(24, 144, 255, 0.5);
+  --tag-vmess-color: #1890ff;
+
+  --tag-vless-bg: rgba(82, 196, 26, 0.2);
+  --tag-vless-border: rgba(82, 196, 26, 0.5);
+  --tag-vless-color: #52c41a;
+
+  --tag-trojan-bg: rgba(114, 46, 209, 0.2);
+  --tag-trojan-border: rgba(114, 46, 209, 0.5);
+  --tag-trojan-color: #722ed1;
+
+  --tag-ss-bg: rgba(250, 140, 22, 0.2);
+  --tag-ss-border: rgba(250, 140, 22, 0.5);
+  --tag-ss-color: #fa8c16;
+
+  --tag-ssr-bg: rgba(255, 77, 79, 0.2);
+  --tag-ssr-border: rgba(255, 77, 79, 0.5);
+  --tag-ssr-color: #ff4d4f;
   /* 系统背景色 */
   --background-color: #000000;
   --surface-color: #1c1c1e;
@@ -316,12 +389,28 @@ body {
 .dark .ant-btn-default {
   background: var(--card-bg);
   border-color: var(--border-color);
-  color: var(--text-primary);
+  color: var(--text-primary); /* Ensure this resolves to white in dark mode */
 }
 
 .dark .ant-btn-default:hover {
   background: rgba(10, 132, 255, 0.1);
   border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Text Button Styles for Dark Mode */
+.ant-btn-text {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.dark .ant-btn-text {
+  background: rgba(152, 152, 159, 0.1); /* Subtle background for text buttons in dark mode */
+  color: var(--text-primary);
+}
+
+.dark .ant-btn-text:hover {
+  background: rgba(10, 132, 255, 0.1);
   color: var(--primary-color);
 }
 
@@ -389,17 +478,36 @@ body {
   line-height: 1.2;
 }
 
+.dark .ant-statistic {
+  color: var(--text-primary);
+}
+
+.dark .ant-statistic-title {
+  color: var(--text-secondary);
+}
+
+.dark .ant-statistic-content {
+  color: var(--text-primary);
+}
+
 .ant-tag {
   border-radius: var(--radius-lg);
   font-weight: 500;
   padding: var(--space-1) var(--space-3);
   border: none;
   transition: all var(--transition-fast);
+  color: var(--text-primary); /* Ensure text color is set */
+  background: var(--color-fill-tertiary); /* Ensure background is set */
 }
 
 .ant-tag:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
+}
+
+.dark .ant-tag {
+  color: var(--text-primary);
+  background: rgba(152, 152, 159, 0.1); /* Dark mode background for tags */
 }
 
 .ant-input, .ant-input-affix-wrapper {
@@ -436,11 +544,60 @@ body {
   border-radius: var(--radius-lg) !important;
   border: 1px solid var(--border-color) !important;
   background: var(--card-bg) !important;
+  color: var(--text-primary) !important; /* Added for consistency */
 }
 
 .ant-select-focused .ant-select-selector {
   border-color: var(--primary-color) !important;
   box-shadow: 0 0 0 2px var(--primary-50) !important;
+}
+
+.dark .ant-select-selector {
+  background: #2c2c2e !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Select Dropdown Styles */
+.ant-select-dropdown {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.ant-select-item {
+  color: var(--text-primary);
+}
+
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: var(--primary-50);
+  color: var(--primary-color);
+}
+
+.ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: var(--primary-50);
+  color: var(--primary-color);
+}
+
+.dark .ant-select-dropdown {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.dark .ant-select-item {
+  color: var(--text-primary);
+}
+
+.dark .ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--primary-color);
+}
+
+.dark .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--primary-color);
 }
 
 .ant-modal-content {
@@ -644,6 +801,14 @@ body {
   color: white;
 }
 
+.ant-pagination-item a {
+  color: var(--text-primary); /* Ensure text color is set for numbers */
+}
+
+.ant-pagination-item-active a {
+  color: white; /* Ensure active text color is white */
+}
+
 .dark .ant-pagination-item {
   background: #2c2c2e;
   border-color: var(--border-color);
@@ -659,6 +824,55 @@ body {
   background: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
+}
+
+.dark .ant-pagination-item a {
+  color: var(--text-primary); /* Ensure text color is set for numbers in dark mode */
+}
+
+.dark .ant-pagination-item-active a {
+  color: white; /* Ensure active text color is white in dark mode */
+}
+
+.ant-pagination-options-quick-jumper input {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  transition: all var(--transition-fast);
+}
+
+.ant-pagination-options-quick-jumper input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-50);
+}
+
+.dark .ant-pagination-options-quick-jumper input {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .ant-pagination-options-quick-jumper input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
+}
+
+.ant-pagination-options-quick-jumper {
+  /* Hide original "Go to" text */
+  font-size: 0; /* Hide original text */
+}
+
+.ant-pagination-options-quick-jumper::before {
+  content: "转到";
+  font-size: var(--font-size-base); /* Restore font size */
+  color: var(--text-primary); /* Ensure text color is visible */
+  margin-right: 8px; /* Add some spacing */
+}
+
+.dark .ant-pagination-options-quick-jumper::before {
+  color: var(--text-primary); /* Ensure text color is visible in dark mode */
 }
 
 .ant-breadcrumb {
@@ -1053,6 +1267,14 @@ body {
   color: var(--error-color);
 }
 
+.dark .ant-form-item-label > label {
+  color: var(--text-primary);
+}
+
+.dark .ant-form-item-explain-error {
+  color: var(--error-color);
+}
+
 .ant-menu {
   background: var(--card-bg);
   border-radius: var(--radius-xl);
@@ -1062,6 +1284,7 @@ body {
   border-radius: var(--radius-lg);
   margin: var(--space-1);
   transition: all var(--transition-fast);
+  color: var(--text-primary); /* Ensure text color is set */
 }
 
 .ant-menu-item:hover {
@@ -1092,9 +1315,28 @@ body {
   color: white;
 }
 
+.dark .ant-menu {
+  background: #1c1c1e;
+}
+
+.dark .ant-menu-item {
+  color: var(--text-primary);
+}
+
+.dark .ant-menu-item:hover {
+  background: rgba(10, 132, 255, 0.1);
+  color: var(--primary-color);
+}
+
+.dark .ant-menu-item-selected {
+  background: var(--primary-color);
+  color: white;
+}
+
 .ant-tabs-tab {
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
+  color: var(--text-secondary); /* Ensure text color is set */
 }
 
 .ant-tabs-tab:hover {
@@ -1112,6 +1354,22 @@ body {
 .ant-tabs-ink-bar {
   background: var(--primary-color);
   border-radius: var(--radius-lg);
+}
+
+.dark .ant-tabs-tab {
+  color: var(--text-secondary);
+}
+
+.dark .ant-tabs-tab:hover {
+  color: var(--primary-color);
+}
+
+.dark .ant-tabs-tab-active {
+  color: var(--primary-color);
+}
+
+.dark .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--primary-color);
 }
 
 .dark .ant-tabs-tab {
@@ -1178,6 +1436,27 @@ body {
   color: var(--text-primary);
 }
 
+.dark .ant-collapse {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.dark .ant-collapse-item {
+  border-bottom-color: var(--border-color);
+}
+
+.dark .ant-collapse-header {
+  color: var(--text-primary);
+}
+
+.dark .ant-collapse-content {
+  background: #1c1c1e;
+}
+
+.dark .ant-collapse-content-box {
+  color: var(--text-primary);
+}
+
 .ant-popconfirm-inner-content {
   border-radius: var(--radius-xl);
   background: var(--card-bg);
@@ -1193,10 +1472,26 @@ body {
 .ant-dropdown-menu-item {
   border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
+  color: var(--text-primary); /* Ensure text color is set */
 }
 
 .ant-dropdown-menu-item:hover {
   background: var(--primary-50);
+  color: var(--primary-color);
+}
+
+.dark .ant-dropdown-menu {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.dark .ant-dropdown-menu-item {
+  color: var(--text-primary);
+}
+
+.dark .ant-dropdown-menu-item:hover {
+  background: rgba(10, 132, 255, 0.1);
   color: var(--primary-color);
 }
 
@@ -1260,6 +1555,19 @@ body {
 .ant-page-header-heading-sub-title {
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
+}
+
+.dark .ant-page-header {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.dark .ant-page-header-heading-title {
+  color: var(--text-primary);
+}
+
+.dark .ant-page-header-heading-sub-title {
+  color: var(--text-secondary);
 }
 
 .dark .ant-page-header {
