@@ -16,7 +16,7 @@ export class NodeDataAccess {
       port: row.port as number,
       password: row.password as string,
       type: row.type as string,
-      params: row.params ? JSON.parse(row.params as string) : {},
+      params: result.params ? JSON.parse(result.params as string) : {},
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string
     }));
@@ -38,7 +38,7 @@ export class NodeDataAccess {
       port: result.port as number,
       password: result.password as string,
       type: result.type as string,
-      params: row.params ? JSON.parse(row.params as string) : {},
+      params: result.params ? JSON.parse(result.params as string) : {},
       createdAt: result.created_at as string,
       updatedAt: result.updated_at as string
     };
@@ -189,7 +189,7 @@ export class SubscriptionDataAccess {
       url: row.url as string,
       nodeCount: row.node_count as number,
       lastUpdated: row.last_updated as string,
-      error: row.error as string,
+      error: result.error as string,
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string
     }));
@@ -210,7 +210,7 @@ export class SubscriptionDataAccess {
       url: result.url as string,
       nodeCount: result.node_count as number,
       lastUpdated: result.last_updated as string,
-      error: row.error as string,
+      error: result.error as string,
       createdAt: result.created_at as string,
       updatedAt: result.updated_at as string
     };
