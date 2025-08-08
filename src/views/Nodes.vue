@@ -664,10 +664,34 @@ onMounted(() => {
 }
 
 .stat-card {
+  background: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
+}
+
+.dark .stat-card {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.stat-card :deep(.ant-card-body) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.dark .stat-card :deep(.ant-card-body) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.stat-card :deep(.ant-statistic-title) {
+  color: var(--text-primary);
+}
+
+.dark .stat-card :deep(.ant-statistic-title) {
+  color: var(--text-primary);
 }
 
 .stat-card:hover {
@@ -681,6 +705,147 @@ onMounted(() => {
   border: 1px solid var(--border-color);
   padding: 20px;
   margin-bottom: 24px;
+}
+
+.dark .filter-section {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.filter-section :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.filter-section :deep(.ant-input-search) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.filter-section :deep(.ant-select) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.filter-section :deep(.ant-select-selector) {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.filter-section :deep(.ant-btn) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.filter-section :deep(.ant-btn:hover) {
+  background: var(--primary-50);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.filter-section :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.filter-section :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.dark .filter-section :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-input-search) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-select) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-select-selector) {
+  background: #2c2c2e !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .filter-section :deep(.ant-btn) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-btn:hover) {
+  background: rgba(10, 132, 255, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .filter-section :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .filter-section :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.filter-section :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .filter-section :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.filter-section :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .filter-section :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.filter-section :deep(.ant-input-search .ant-input-search-icon) {
+  color: var(--text-tertiary);
+}
+
+.dark .filter-section :deep(.ant-input-search .ant-input-search-icon) {
+  color: var(--text-tertiary);
+}
+
+.filter-section :deep(.ant-input-clear-icon) {
+  color: var(--text-tertiary);
+}
+
+.dark .filter-section :deep(.ant-input-clear-icon) {
+  color: var(--text-tertiary);
+}
+
+.filter-section :deep(.ant-input-clear-icon:hover) {
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-input-clear-icon:hover) {
+  color: var(--text-primary);
 }
 
 .nodes-content {
@@ -732,6 +897,43 @@ onMounted(() => {
   background: var(--surface-color);
 }
 
+.dark .nodes-table :deep(.ant-table-thead > tr > th) {
+  background: #2c2c2e;
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--border-light);
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(10, 132, 255, 0.1);
+}
+
+.dark .nodes-table :deep(.ant-table-row-selected > td) {
+  background: rgba(10, 132, 255, 0.1);
+}
+
+.dark .nodes-table :deep(.ant-table) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-table-container) {
+  background: #1c1c1e;
+}
+
+.dark .nodes-table :deep(.ant-table-content) {
+  background: #1c1c1e;
+}
+
+.dark .nodes-table :deep(.ant-table-body) {
+  background: #1c1c1e;
+}
+
 .nodes-table :deep(.ant-pagination) {
   background: var(--surface-color);
   color: var(--text-primary);
@@ -778,6 +980,52 @@ onMounted(() => {
 
 .nodes-table :deep(.ant-select-selector) {
   background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .nodes-table :deep(.ant-pagination) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-pagination-item) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-pagination-item:hover) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .nodes-table :deep(.ant-pagination-item-active) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .nodes-table :deep(.ant-pagination-prev),
+.dark .nodes-table :deep(.ant-pagination-next) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-pagination-prev:hover),
+.dark .nodes-table :deep(.ant-pagination-next:hover) {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .nodes-table :deep(.ant-select) {
+  background: #2c2c2e;
+  color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-select-selector) {
+  background: #2c2c2e !important;
   border-color: var(--border-color) !important;
   color: var(--text-primary) !important;
 }

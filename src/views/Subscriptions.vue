@@ -76,6 +76,8 @@
       @ok="handleSubmit"
       @cancel="handleCancel"
       :confirm-loading="submitting"
+      ok-text="确定"
+      cancel-text="取消"
     >
       <a-form :model="formData" :rules="formRules" layout="vertical" ref="formRef">
         <a-form-item label="订阅名称" name="name">
@@ -95,6 +97,8 @@
       @ok="handleImport"
       @cancel="handleCancel"
       :confirm-loading="importing"
+      ok-text="确定"
+      cancel-text="取消"
     >
       <a-form layout="vertical">
         <a-form-item label="订阅链接">
@@ -495,8 +499,204 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.dark .subscriptions-content {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
 .subscriptions-table {
   border-radius: 12px;
+}
+
+.subscriptions-content :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.subscriptions-content :deep(.ant-select) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.subscriptions-content :deep(.ant-select-selector) {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.subscriptions-content :deep(.ant-btn) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.subscriptions-content :deep(.ant-btn:hover) {
+  background: var(--primary-50);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.subscriptions-content :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.subscriptions-content :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.subscriptions-content :deep(.ant-btn-danger) {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+}
+
+.subscriptions-content :deep(.ant-btn-danger:hover) {
+  background: #ff7875;
+  border-color: #ff7875;
+  color: white;
+}
+
+.dark .subscriptions-content :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .subscriptions-content :deep(.ant-select) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .subscriptions-content :deep(.ant-select-selector) {
+  background: #2c2c2e !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .subscriptions-content :deep(.ant-btn) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .subscriptions-content :deep(.ant-btn:hover) {
+  background: rgba(10, 132, 255, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .subscriptions-content :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .subscriptions-content :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.dark .subscriptions-content :deep(.ant-btn-danger) {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+}
+
+.dark .subscriptions-content :deep(.ant-btn-danger:hover) {
+  background: #ff7875;
+  border-color: #ff7875;
+  color: white;
+}
+
+.subscriptions-content :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .subscriptions-content :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.subscriptions-content :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .subscriptions-content :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.subscriptions-table :deep(.ant-table-thead > tr > th) {
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subscriptions-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.subscriptions-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--primary-50);
+}
+
+.subscriptions-table :deep(.ant-table) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.subscriptions-table :deep(.ant-table-container) {
+  background: var(--surface-color);
+}
+
+.subscriptions-table :deep(.ant-table-content) {
+  background: var(--surface-color);
+}
+
+.subscriptions-table :deep(.ant-table-body) {
+  background: var(--surface-color);
+}
+
+.dark .subscriptions-table :deep(.ant-table-thead > tr > th) {
+  background: #2c2c2e;
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .subscriptions-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--border-light);
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .subscriptions-table :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(10, 132, 255, 0.1);
+}
+
+.dark .subscriptions-table :deep(.ant-table) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .subscriptions-table :deep(.ant-table-container) {
+  background: #1c1c1e;
+}
+
+.dark .subscriptions-table :deep(.ant-table-content) {
+  background: #1c1c1e;
+}
+
+.dark .subscriptions-table :deep(.ant-table-body) {
+  background: #1c1c1e;
 }
 
 @media (max-width: 768px) {

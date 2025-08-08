@@ -204,6 +204,270 @@ onMounted(() => {
   border-top: none;
 }
 
+.dark .tab-content {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+}
+
+.tab-content :deep(.ant-input) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-select) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-select-selector) {
+  background: var(--surface-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.tab-content :deep(.ant-btn) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-btn:hover) {
+  background: var(--primary-50);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.tab-content :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.tab-content :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.tab-content :deep(.ant-btn-danger) {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+}
+
+.tab-content :deep(.ant-btn-danger:hover) {
+  background: #ff7875;
+  border-color: #ff7875;
+  color: white;
+}
+
+.tab-content :deep(.ant-tabs) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-tabs-tab) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-tabs-tab-active) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--primary-color);
+}
+
+.tab-content :deep(.ant-radio-group) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-radio-button) {
+  background: var(--surface-color);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-radio-button-checked) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .tab-content :deep(.ant-input) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-select) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-select-selector) {
+  background: #2c2c2e !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .tab-content :deep(.ant-btn) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-btn:hover) {
+  background: rgba(10, 132, 255, 0.1);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.dark .tab-content :deep(.ant-btn-primary) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.dark .tab-content :deep(.ant-btn-primary:hover) {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
+}
+
+.dark .tab-content :deep(.ant-btn-danger) {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: white;
+}
+
+.dark .tab-content :deep(.ant-btn-danger:hover) {
+  background: #ff7875;
+  border-color: #ff7875;
+  color: white;
+}
+
+.dark .tab-content :deep(.ant-tabs) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-tabs-tab) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-tabs-tab-active) {
+  background: #1c1c1e;
+  border-color: var(--border-color);
+  color: var(--primary-color);
+}
+
+.dark .tab-content :deep(.ant-radio-group) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-radio-button) {
+  background: #2c2c2e;
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-radio-button-checked) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.tab-content :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .tab-content :deep(.ant-input::placeholder) {
+  color: var(--text-tertiary);
+}
+
+.tab-content :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.dark .tab-content :deep(.ant-select-selection-placeholder) {
+  color: var(--text-tertiary);
+}
+
+.tab-content :deep(.ant-table-thead > tr > th) {
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--primary-50);
+}
+
+.tab-content :deep(.ant-table) {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+.tab-content :deep(.ant-table-container) {
+  background: var(--surface-color);
+}
+
+.tab-content :deep(.ant-table-content) {
+  background: var(--surface-color);
+}
+
+.tab-content :deep(.ant-table-body) {
+  background: var(--surface-color);
+}
+
+.dark .tab-content :deep(.ant-table-thead > tr > th) {
+  background: #2c2c2e;
+  border-bottom-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--border-light);
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(10, 132, 255, 0.1);
+}
+
+.dark .tab-content :deep(.ant-table) {
+  background: #1c1c1e;
+  color: var(--text-primary);
+}
+
+.dark .tab-content :deep(.ant-table-container) {
+  background: #1c1c1e;
+}
+
+.dark .tab-content :deep(.ant-table-content) {
+  background: #1c1c1e;
+}
+
+.dark .tab-content :deep(.ant-table-body) {
+  background: #1c1c1e;
+}
+
 .tab-header {
   display: flex;
   justify-content: space-between;
