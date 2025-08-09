@@ -192,7 +192,6 @@ const generateNodeLink = (node: Node): string => {
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
   transition: all 0.2s ease;
-  cursor: pointer;
 }
 
 .dark .node-card {

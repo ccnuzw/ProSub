@@ -3,7 +3,7 @@
     <!-- PC端侧边导航 -->
     <aside class="sidebar" v-show="!isMobile" :class="{ 'collapsed': isSidebarCollapsed }">
       <div class="sidebar-header">
-        <div class="logo" @click="goHome" style="cursor: pointer;">
+        <div class="logo" @click="goHome">
           <div class="logo-icon">
             <ThunderboltOutlined />
           </div>

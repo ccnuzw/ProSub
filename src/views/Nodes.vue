@@ -139,14 +139,14 @@
           </template>
           
           <template v-if="column.key === 'type'">
-            <a-tag :color="getTypeColor(record.type)" class="type-tag">
+            <a-tag :class="['type-tag', record.type]">
               {{ getTypeText(record.type) }}
             </a-tag>
           </template>
           
           <template v-if="column.key === 'actions'">
             <a-space>
-              <a-button type="text" size="small" @click="handleCheck(record)" :loading="isChecking(record.id)" class="action-button">
+              <a-button type="primary" size="small" @click="handleCheck(record)" :loading="isChecking(record.id)" class="action-button">
                 <template #icon><ReloadOutlined /></template>
                 检查
               </a-button>
@@ -156,7 +156,7 @@
                 ok-text="确定"
                 cancel-text="取消"
               >
-                <a-button type="text" size="small" danger class="action-button">
+                <a-button type="primary" size="small" danger class="action-button">
                   <template #icon><DeleteOutlined /></template>
                   删除
                 </a-button>
@@ -384,7 +384,9 @@ const getTypeColor = (type: string) => {
     vless: 'green',
     trojan: 'purple',
     ss: 'orange',
-    ssr: 'red'
+    ssr: 'red',
+    hysteria2: 'hysteria2',
+    'vless-reality': 'vless-reality'
   }
   return colorMap[type] || 'default'
 }
@@ -395,7 +397,9 @@ const getTypeText = (type: string) => {
     vless: 'VLESS',
     trojan: 'Trojan',
     ss: 'Shadowsocks',
-    ssr: 'ShadowsocksR'
+    ssr: 'ShadowsocksR',
+    hysteria2: 'Hysteria2',
+    'vless-reality': 'VLESS-Reality'
   }
   return typeMap[type] || type
 }
@@ -824,6 +828,42 @@ onMounted(() => {
   color: var(--text-tertiary);
 }
 
+/* 修复选择器文本颜色问题 */
+.filter-section :deep(.ant-select-selection-item) {
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-select-selection-item) {
+  color: var(--text-primary);
+}
+
+/* 确保选择器在所有状态下都有正确的文本颜色 */
+.filter-section :deep(.ant-select-single .ant-select-selector .ant-select-selection-item) {
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-select-single .ant-select-selector .ant-select-selection-item) {
+  color: var(--text-primary);
+}
+
+/* 确保选择器默认状态下的文字可见 */
+.filter-section :deep(.ant-select .ant-select-selector) {
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-select .ant-select-selector) {
+  color: var(--text-primary);
+}
+
+/* 确保选择器箭头图标在深色模式下可见 */
+.filter-section :deep(.ant-select-arrow) {
+  color: var(--text-tertiary);
+}
+
+.dark .filter-section :deep(.ant-select-arrow) {
+  color: var(--text-tertiary);
+}
+
 .filter-section :deep(.ant-input-search .ant-input-search-icon) {
   color: var(--text-tertiary);
 }
@@ -932,6 +972,24 @@ onMounted(() => {
 
 .dark .nodes-table :deep(.ant-table-body) {
   background: #1c1c1e;
+}
+
+.dark .type-tag.ssr {
+  color: var(--tag-ssr-color);
+  background: var(--tag-ssr-bg);
+  border-color: var(--tag-ssr-border);
+}
+
+.dark .type-tag.hysteria2 {
+  color: var(--tag-hysteria2-color);
+  background: var(--tag-hysteria2-bg);
+  border-color: var(--tag-hysteria2-border);
+}
+
+.dark .type-tag.vless-reality {
+  color: var(--tag-vless-reality-color);
+  background: var(--tag-vless-reality-bg);
+  border-color: var(--tag-vless-reality-border);
 }
 
 .nodes-table :deep(.ant-pagination) {
@@ -1092,40 +1150,52 @@ onMounted(() => {
 }
 
 /* 类型标签样式 */
-.type-tag {
+:deep(.type-tag) {
   border-radius: 6px;
   font-weight: 500;
   padding: 2px 8px;
 }
 
-.type-tag.vmess {
-  background: #e6f7ff;
-  border: 1px solid #91d5ff;
-  color: #1890ff;
+:deep(.type-tag.vmess) {
+  background: var(--tag-vmess-bg);
+  border: 1px solid var(--tag-vmess-border);
+  color: var(--tag-vmess-color);
 }
 
-.type-tag.vless {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  color: #52c41a;
+:deep(.type-tag.vless) {
+  background: var(--tag-vless-bg);
+  border: 1px solid var(--tag-vless-border);
+  color: var(--tag-vless-color);
 }
 
-.type-tag.trojan {
-  background: #f9f0ff;
-  border: 1px solid #d3adf7;
-  color: #722ed1;
+:deep(.type-tag.trojan) {
+  background: var(--tag-trojan-bg);
+  border: 1px solid var(--tag-trojan-border);
+  color: var(--tag-trojan-color);
 }
 
-.type-tag.ss {
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  color: #fa8c16;
+:deep(.type-tag.ss) {
+  background: var(--tag-ss-bg);
+  border: 1px solid var(--tag-ss-border);
+  color: var(--tag-ss-color);
 }
 
-.type-tag.ssr {
-  background: #fff2f0;
-  border: 1px solid #ffccc7;
-  color: #ff4d4f;
+:deep(.type-tag.ssr) {
+  background: var(--tag-ssr-bg);
+  border: 1px solid var(--tag-ssr-border);
+  color: var(--tag-ssr-color);
+}
+
+:deep(.type-tag.hysteria2) {
+  background: var(--tag-hysteria2-bg);
+  border: 1px solid var(--tag-hysteria2-border);
+  color: var(--tag-hysteria2-color);
+}
+
+:deep(.type-tag.vless-reality) {
+  background: var(--tag-vless-reality-bg);
+  border: 1px solid var(--tag-vless-reality-border);
+  color: var(--tag-vless-reality-color);
 }
 
 /* 操作按钮样式 */
