@@ -66,14 +66,18 @@
 
     <!-- 搜索和筛选 -->
     <div class="filter-section">
-      <a-row :gutter="16" align="middle">
+      <a-row :gutter="16" align="middle" style="flex: 1">
         <a-col :span="8">
           <a-input-search
             v-model:value="searchText"
             placeholder="搜索节点名称或服务器地址"
             @search="handleSearch"
             allow-clear
-          />
+          >
+            <template #enterButton>
+              <SearchOutlined />
+            </template>
+          </a-input-search>
         </a-col>
         <a-col :span="4">
           <a-select
@@ -181,7 +185,8 @@ import {
   DeleteOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  DownloadOutlined
+  DownloadOutlined,
+  SearchOutlined
 } from '@ant-design/icons-vue'
 import type { Node, HealthStatus } from '@shared/types'
 import { parseNodeLink } from '@shared/node-parser'
@@ -199,8 +204,8 @@ const nodeImportModalRef = ref()
 
 // 搜索和筛选
 const searchText = ref('')
-const statusFilter = ref<string>('')
-const typeFilter = ref<string>('')
+const statusFilter = ref<string | null>(null)
+const typeFilter = ref<string | null>(null)
 
 // 分页
 const pagination = ref({
@@ -390,7 +395,9 @@ const getTypeColor = (type: string) => {
     vless: 'green',
     trojan: 'purple',
     ss: 'orange',
-    ssr: 'red'
+    ssr: 'red',
+    hysteria2: 'cyan',
+    'vless-reality': 'purple'
   }
   return colorMap[type] || 'default'
 }
@@ -401,7 +408,9 @@ const getTypeText = (type: string) => {
     vless: 'VLESS',
     trojan: 'Trojan',
     ss: 'Shadowsocks',
-    ssr: 'ShadowsocksR'
+    ssr: 'ShadowsocksR',
+    hysteria2: 'Hysteria2',
+    'vless-reality': 'VLESS-Reality'
   }
   return typeMap[type] || type
 }
@@ -411,14 +420,16 @@ const isChecking = (id: string) => {
   return status ? status.status === 'checking' : false
 }
 
-const handleSearch = () => {
-  // 搜索功能已通过计算属性实现
+const handleSearch = (value: string) => {
+  searchText.value = value;
+  // Reset pagination to first page when searching
+  pagination.value.current = 1;
 }
 
 const handleClearFilters = () => {
   searchText.value = ''
-  statusFilter.value = ''
-  typeFilter.value = ''
+  statusFilter.value = null
+  typeFilter.value = null
 }
 
 const handleTableChange = (pag: any) => {
@@ -711,6 +722,8 @@ onMounted(() => {
   border: 1px solid var(--border-color);
   padding: 20px;
   margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .dark .filter-section {
@@ -728,6 +741,8 @@ onMounted(() => {
   background: var(--surface-color);
   border-color: var(--border-color);
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
 }
 
 .filter-section :deep(.ant-select) {
@@ -824,22 +839,51 @@ onMounted(() => {
 
 .filter-section :deep(.ant-select-selection-placeholder) {
   color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
 }
 
 .dark .filter-section :deep(.ant-select-selection-placeholder) {
   color: var(--text-tertiary);
 }
 
+/* Ensure select options are visible */
+.filter-section :deep(.ant-select-item) {
+  color: var(--text-primary);
+}
+
+.filter-section :deep(.ant-select-item-option-selected) {
+  background-color: var(--primary-50);
+  color: var(--primary-color);
+}
+
+.dark .filter-section :deep(.ant-select-item) {
+  color: var(--text-primary);
+}
+
+.dark .filter-section :deep(.ant-select-item-option-selected) {
+  background-color: rgba(10, 132, 255, 0.1);
+  color: var(--primary-color);
+}
+
 .filter-section :deep(.ant-input-search .ant-input-search-icon) {
-  color: var(--text-tertiary);
+  color: var(--primary-color);
+}
+
+.filter-section :deep(.ant-input-search .ant-input-search-icon:hover) {
+  color: var(--primary-dark);
 }
 
 .dark .filter-section :deep(.ant-input-search .ant-input-search-icon) {
-  color: var(--text-tertiary);
+  color: var(--primary-color);
 }
 
-.filter-section :deep(.ant-input-clear-icon) {
-  color: var(--text-tertiary);
+.dark .filter-section :deep(.ant-input-search .ant-input-search-icon:hover) {
+  color: var(--primary-light);
+}
+
+.filter-section :deep(.ant-input-group-addon) {
+  padding: 0;
 }
 
 .dark .filter-section :deep(.ant-input-clear-icon) {
@@ -852,6 +896,18 @@ onMounted(() => {
 
 .dark .filter-section :deep(.ant-input-clear-icon:hover) {
   color: var(--text-primary);
+}
+
+/* Fix for select clear button */
+.filter-section :deep(.ant-select-clear) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-color);
+}
+
+.dark .filter-section :deep(.ant-select-clear) {
+  background: #2c2c2e;
 }
 
 .nodes-content {
@@ -1017,6 +1073,16 @@ onMounted(() => {
   background: #2c2c2e;
   border-color: var(--border-color);
   color: var(--text-primary);
+}
+
+.dark .nodes-table :deep(.ant-pagination-prev .ant-pagination-item-link),
+.dark .nodes-table :deep(.ant-pagination-next .ant-pagination-item-link) {
+  color: white;
+}
+
+.dark .nodes-table :deep(.ant-pagination-prev .ant-pagination-item-link svg),
+.dark .nodes-table :deep(.ant-pagination-next .ant-pagination-item-link svg) {
+  color: white;
 }
 
 .dark .nodes-table :deep(.ant-pagination-prev:hover),
