@@ -33,7 +33,7 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
-            <a-tag :color="getStatusColor(record.id)">
+            <a-tag :class="['status-tag', `status-${getSubscriptionStatusClass(record.id)}`]">
               {{ getStatusText(record.id) }}
             </a-tag>
           </template>
@@ -268,6 +268,14 @@ const getStatusText = (id: string) => {
   if (status.status === 'error') return '更新失败'
   if (status.status === 'updating') return '更新中'
   return '正常'
+}
+
+const getSubscriptionStatusClass = (id: string) => {
+  const status = statuses.value[id]
+  if (!status) return 'unknown'
+  if (status.status === 'error') return 'error'
+  if (status.status === 'updating') return 'checking'
+  return 'online'
 }
 
 const isUpdating = (id: string) => {

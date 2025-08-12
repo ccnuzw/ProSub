@@ -133,13 +133,13 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
-            <a-tag :color="getStatusColor(record.id)" class="status-tag">
+            <a-tag :class="['status-tag', `status-${getStatusClass(record.id)}`]">
               {{ getStatusText(record.id) }}
             </a-tag>
           </template>
           
           <template v-if="column.key === 'type'">
-            <a-tag :color="getTypeColor(record.type)" class="type-tag">
+            <a-tag :class="['type-tag', `type-${record.type}`]">
               {{ getTypeText(record.type) }}
             </a-tag>
           </template>
@@ -365,6 +365,12 @@ const getStatusColor = (id: string) => {
   if (status.status === 'offline') return 'error'
   if (status.status === 'checking') return 'processing'
   return 'success'
+}
+
+const getStatusClass = (id: string) => {
+  const status = nodeStatus.value[id]
+  if (!status) return 'unknown'
+  return status.status
 }
 
 const getStatusText = (id: string) => {
@@ -1060,73 +1066,6 @@ onMounted(() => {
   }
 }
 
-/* 状态标签样式 */
-.status-tag {
-  border-radius: 6px;
-  font-weight: 500;
-  padding: 2px 8px;
-}
-
-.status-tag.online {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  color: #52c41a;
-}
-
-.status-tag.offline {
-  background: #fff2f0;
-  border: 1px solid #ffccc7;
-  color: #ff4d4f;
-}
-
-.status-tag.checking {
-  background: #e6f7ff;
-  border: 1px solid #91d5ff;
-  color: #1890ff;
-}
-
-.status-tag.unknown {
-  background: #fafafa;
-  border: 1px solid #d9d9d9;
-  color: #8c8c8c;
-}
-
-/* 类型标签样式 */
-.type-tag {
-  border-radius: 6px;
-  font-weight: 500;
-  padding: 2px 8px;
-}
-
-.type-tag.vmess {
-  background: #e6f7ff;
-  border: 1px solid #91d5ff;
-  color: #1890ff;
-}
-
-.type-tag.vless {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  color: #52c41a;
-}
-
-.type-tag.trojan {
-  background: #f9f0ff;
-  border: 1px solid #d3adf7;
-  color: #722ed1;
-}
-
-.type-tag.ss {
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  color: #fa8c16;
-}
-
-.type-tag.ssr {
-  background: #fff2f0;
-  border: 1px solid #ffccc7;
-  color: #ff4d4f;
-}
 
 /* 操作按钮样式 */
 .action-button {
