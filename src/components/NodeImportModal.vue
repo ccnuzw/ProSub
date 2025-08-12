@@ -467,6 +467,15 @@ defineExpose({
   color: var(--text-primary);
 }
 
+/* Ensure the import button text is white in dark mode */
+.dark .modal-footer :deep(.ant-btn-primary) {
+  color: white !important;
+}
+
+.dark .modal-footer :deep(.ant-btn-primary span) {
+  color: white !important;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .stats {

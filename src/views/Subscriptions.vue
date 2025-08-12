@@ -33,7 +33,7 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
-            <a-tag :color="getStatusColor(record.id)">
+            <a-tag :class="['status-tag', `status-${getSubscriptionStatusClass(record.id)}`]">
               {{ getStatusText(record.id) }}
             </a-tag>
           </template>
@@ -124,6 +124,7 @@
           :data-source="previewNodes"
           :pagination="{ pageSize: 10 }"
           size="small"
+          class="preview-table"
         />
       </a-spin>
     </a-modal>
@@ -268,6 +269,14 @@ const getStatusText = (id: string) => {
   if (status.status === 'error') return '更新失败'
   if (status.status === 'updating') return '更新中'
   return '正常'
+}
+
+const getSubscriptionStatusClass = (id: string) => {
+  const status = statuses.value[id]
+  if (!status) return 'unknown'
+  if (status.status === 'error') return 'error'
+  if (status.status === 'updating') return 'checking'
+  return 'online'
 }
 
 const isUpdating = (id: string) => {
@@ -661,6 +670,77 @@ onMounted(() => {
   background: var(--primary-50);
 }
 
+/* Preview table styles - matching subscription table exactly with maximum specificity */
+.ant-modal :deep(.preview-table) {
+  background: var(--surface-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-modal :deep(.preview-table) :deep(.ant-table-container) {
+  background: var(--surface-color) !important;
+}
+
+.ant-modal :deep(.preview-table) :deep(.ant-table-content) {
+  background: var(--surface-color) !important;
+}
+
+.ant-modal :deep(.preview-table) :deep(.ant-table-body) {
+  background: var(--surface-color) !important;
+}
+
+.ant-modal :deep(.preview-table) :deep(.ant-table-thead > tr > th) {
+  background: var(--surface-color) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-modal :deep(.preview-table) :deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid var(--border-light) !important;
+  background: var(--surface-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.ant-modal :deep(.preview-table) :deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Even more specific targeting for hover */
+.ant-modal :deep(.preview-table) :deep(.ant-table-tbody) :deep(tr):hover :deep(td) {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Target the exact cell elements */
+.ant-modal :deep(.preview-table) td.ant-table-cell:hover {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Override any potential Ant Design default styles */
+.ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row:hover > .ant-table-cell {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Ultimate override - target everything that could possibly be setting a white background */
+.ant-modal :deep(.preview-table) .ant-table-tbody td,
+.ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-cell,
+.ant-modal :deep(.preview-table) .ant-table-tbody tr td,
+.ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row td,
+.ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row .ant-table-cell {
+  background: var(--surface-color) !important;
+}
+
+.ant-modal :deep(.preview-table) .ant-table-tbody tr:hover td,
+.ant-modal :deep(.preview-table) .ant-table-tbody tr:hover .ant-table-cell,
+.ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row:hover td,
+.ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row:hover .ant-table-cell {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
 .subscriptions-table :deep(.ant-table) {
   background: var(--surface-color);
   color: var(--text-primary);
@@ -694,39 +774,71 @@ onMounted(() => {
   background: rgba(10, 132, 255, 0.1);
 }
 
-.dark .subscriptions-table :deep(.ant-table) {
-  background: #1c1c1e;
-  color: var(--text-primary);
+/* Preview table styles for dark mode - matching subscription table exactly with maximum specificity */
+.dark .ant-modal :deep(.preview-table) {
+  background: #1c1c1e !important;
+  color: var(--text-primary) !important;
 }
 
-.dark .subscriptions-table :deep(.ant-table-container) {
-  background: #1c1c1e;
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-container) {
+  background: #1c1c1e !important;
 }
 
-.dark .subscriptions-table :deep(.ant-table-content) {
-  background: #1c1c1e;
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-content) {
+  background: #1c1c1e !important;
 }
 
-.dark .subscriptions-table :deep(.ant-table-body) {
-  background: #1c1c1e;
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-body) {
+  background: #1c1c1e !important;
 }
 
-@media (max-width: 768px) {
-  .subscriptions-page {
-    padding: 16px;
-  }
-  
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .header-actions {
-    justify-content: stretch;
-  }
-  
-  .header-actions .ant-btn {
-    flex: 1;
-  }
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-thead > tr > th) {
+  background: #2c2c2e !important;
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
 }
+
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: var(--border-light) !important;
+  background: #1c1c1e !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-tbody > tr:hover > td) {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Even more specific targeting for hover in dark mode */
+.dark .ant-modal :deep(.preview-table) :deep(.ant-table-tbody) :deep(tr):hover :deep(td) {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Target the exact cell elements in dark mode */
+.dark .ant-modal :deep(.preview-table) td.ant-table-cell:hover {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Override any potential Ant Design default styles in dark mode */
+.dark .ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row:hover > .ant-table-cell {
+  background: var(--primary-50) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Ultimate override - target everything that could possibly be setting a white background */
+.dark .ant-modal :deep(.preview-table) .ant-table-tbody td,
+.dark .ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-cell,
+.dark .ant-modal :deep(.preview-table) .ant-table-tbody tr td,
+.dark .ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row td,
+.dark .ant-modal :deep(.preview-table) .ant-table-tbody .ant-table-row .ant-table-cell {
+  background: #1c1c1e !important;
+}
+
+
+
+
+
+
 </style>
